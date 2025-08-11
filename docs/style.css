@@ -1,13 +1,11 @@
-/* =========================================
-   VALTIX – Estilos base
-========================================= */
 :root{
   --bg:#ffffff;
   --fg:#0a0a0a;
   --muted:#6b6b6b;
   --border:#eaeaea;
   --shadow:0 10px 30px rgba(0,0,0,.08);
-  --promo-speed: 5.5s; /* Velocidad animación promo-box */
+  --promo-speed: 5.5s;
+  --promo-msg-in: 750ms;
 }
 
 *{box-sizing:border-box}
@@ -21,9 +19,7 @@ body{
 
 .container{max-width:1200px;margin:0 auto;padding:0 20px}
 
-/* =========================================
-   HEADER
-========================================= */
+/* ===== Header ===== */
 .header{
   position:sticky;
   top:0;
@@ -32,31 +28,97 @@ body{
   border-bottom:1px solid var(--border);
   backdrop-filter:saturate(180%) blur(6px);
 }
-.header-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--fg)}
-.brand-logo{width:32px;height:32px;border:2px solid var(--fg);border-radius:8px;display:grid;place-items:center;font-weight:700}
+.header-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  height:64px;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  text-decoration:none;
+  color:var(--fg);
+}
+.brand-logo{
+  width:32px;
+  height:32px;
+  border:2px solid var(--fg);
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  font-weight:700;
+}
 .brand-name{font-weight:700;letter-spacing:.5px}
 .nav{display:flex;gap:14px;flex-wrap:wrap}
-.nav a{color:var(--fg);text-decoration:none;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:.92rem}
+.nav a{
+  color:var(--fg);
+  text-decoration:none;
+  border:1px solid var(--border);
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:.92rem
+}
 .nav a:hover{border-color:var(--fg)}
 
-.cart-btn{display:flex;align-items:center;gap:8px;border:1px solid var(--fg);background:var(--fg);color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer}
-.cart-count{background:#fff;color:var(--fg);border:1px solid var(--fg);padding:2px 8px;border-radius:999px;font-weight:600;font-size:.85rem}
+.cart-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--fg);
+  background:var(--fg);
+  color:#fff;
+  padding:8px 12px;
+  border-radius:999px;
+  cursor:pointer
+}
+.cart-count{
+  background:#fff;
+  color:var(--fg);
+  border:1px solid var(--fg);
+  padding:2px 8px;
+  border-radius:999px;
+  font-weight:600;
+  font-size:.85rem
+}
 
-/* =========================================
-   HERO
-========================================= */
+/* ===== Hero ===== */
 .hero{padding:60px 0 30px}
-.hero-inner{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
-.hero h1{font-size:clamp(26px,4vw,40px);line-height:1.12;margin:0 0 8px;letter-spacing:.3px}
+.hero-inner{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:24px;
+  align-items:center
+}
+.hero h1{
+  font-size:clamp(26px,4vw,40px);
+  line-height:1.12;
+  margin:0 0 8px;
+  letter-spacing:.3px
+}
 .sub{margin:0 0 16px;color:var(--muted);max-width:62ch}
-.cta{display:inline-block;background:var(--fg);color:#fff;text-decoration:none;padding:12px 18px;border-radius:12px;border:1px solid var(--fg)}
+.cta{
+  display:inline-block;
+  background:var(--fg);
+  color:#fff;
+  text-decoration:none;
+  padding:12px 18px;
+  border-radius:12px;
+  border:1px solid var(--fg)
+}
 .cta:hover{filter:brightness(.96)}
-.hero-img{aspect-ratio:4/3;width:100%;background:#000;border-radius:16px;display:grid;place-items:center;box-shadow:var(--shadow)}
+.hero-img{
+  aspect-ratio:4/3;
+  width:100%;
+  background:#000;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  box-shadow:var(--shadow)
+}
 
-/* =========================================
-   PROMO BOX con animación lenta
-========================================= */
+/* ===== Promo vertical animada ===== */
 .promo-box{
   color:#fff;
   font-weight:700;
@@ -70,82 +132,154 @@ body{
   display:inline-block;
   white-space:nowrap;
   overflow:hidden;
-
+}
+.promo-box .msg{
+  display:inline-block;
   opacity:0;
-  transform:translateX(-80px);
-  animation:promoSlideIn var(--promo-speed) cubic-bezier(.22,.61,.23,.99) forwards;
+  transform:translateY(14px);
+  animation:promoMsgIn var(--promo-msg-in) ease forwards;
 }
-
-@keyframes promoSlideIn{
-  0%   { opacity:0; transform:translateX(-80px) }
-  60%  { opacity:.95; transform:translateX(10px) }
-  100% { opacity:1; transform:translateX(0) }
+@keyframes promoMsgIn{
+  0%   { opacity:0; transform:translateY(14px) }
+  60%  { opacity:.95; transform:translateY(2px) }
+  100% { opacity:1; transform:translateY(0) }
 }
-
 @media (max-width:600px){
-  :root{ --promo-speed: 6.5s; }
+  :root{ --promo-msg-in: 900ms; }
 }
 @media (prefers-reduced-motion: reduce){
-  .promo-box{ animation:none; opacity:1; transform:none }
+  .promo-box .msg{ animation:none; opacity:1; transform:none }
 }
 
-/* =========================================
-   PRODUCT GRID
-========================================= */
+/* ===== Products grid ===== */
 .section{padding:24px 0 60px}
-.grid{display:grid;gap:18px;grid-template-columns:repeat(4,minmax(0,1fr))}
-.card{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#fff;transition:.25s transform,.25s box-shadow}
+.grid{
+  display:grid;
+  gap:18px;
+  grid-template-columns:repeat(4,minmax(0,1fr))
+}
+.card{
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+  background:#fff;
+  transition:.25s transform,.25s box-shadow
+}
 .card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
-.card-img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f6f6f6}
+.card-img{
+  width:100%;
+  aspect-ratio:1/1;
+  object-fit:cover;
+  background:#f6f6f6
+}
 .card-body{padding:14px}
 .card-title{font-weight:600;margin:0 0 6px}
 .card-price{margin:0 0 10px;color:var(--muted)}
-.btn{width:100%;display:inline-block;text-align:center;cursor:pointer;background:var(--fg);color:#fff;border:1px solid var(--fg);padding:10px 12px;border-radius:10px;font-weight:600}
+.btn{
+  width:100%;
+  display:inline-block;
+  text-align:center;
+  cursor:pointer;
+  background:var(--fg);
+  color:#fff;
+  border:1px solid var(--fg);
+  padding:10px 12px;
+  border-radius:10px;
+  font-weight:600
+}
 .btn:hover{filter:brightness(.95)}
 
-/* =========================================
-   FOOTER & SEO LINKS
-========================================= */
-.footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color:var(--muted)}
+/* ===== Footer ===== */
+.footer{
+  border-top:1px solid var(--border);
+  padding:24px 0;
+  text-align:center;
+  color:var(--muted)
+}
 .seo-internal{padding:28px 24px;border-top:1px solid var(--border)}
 .seo-internal h4{margin:0 0 10px;font-size:1.05rem}
-.seo-links{display:flex;flex-wrap:wrap;gap:12px;padding:0;margin:0;list-style:none}
-.seo-links a{border-bottom:1px dashed var(--border);text-decoration:none;color:var(--fg)}
+.seo-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:0;
+  margin:0;
+  list-style:none
+}
+.seo-links a{
+  border-bottom:1px dashed var(--border);
+  text-decoration:none;
+  color:var(--fg)
+}
 .seo-links a:hover{border-color:var(--fg)}
 
-/* =========================================
-   DRAWER (Carrito lateral)
-========================================= */
-.drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);display:none;z-index:80}
-.drawer{position:fixed;top:0;right:-420px;width:360px;max-width:90vw;height:100%;background:#fff;border-left:1px solid var(--border);box-shadow:var(--shadow);display:flex;flex-direction:column;z-index:90;transition:right .28s ease}
+/* ===== Drawer ===== */
+.drawer-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  backdrop-filter:blur(2px);
+  display:none;
+  z-index:80
+}
+.drawer{
+  position:fixed;
+  top:0;
+  right:-420px;
+  width:360px;
+  max-width:90vw;
+  height:100%;
+  background:#fff;
+  border-left:1px solid var(--border);
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  z-index:90;
+  transition:right .28s ease
+}
 .drawer.open{right:0}
 .drawer-backdrop.show{display:block}
-.drawer-header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--border)}
+.drawer-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px;
+  border-bottom:1px solid var(--border)
+}
 .drawer-title{font-weight:700}
 .drawer-body{padding:16px;overflow:auto;flex:1}
-.drawer-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--border)}
-.drawer-item img{width:64px;height:64px;object-fit:cover;background:#f6f6f6;border-radius:8px}
+.drawer-item{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:10px 0;
+  border-bottom:1px dashed var(--border)
+}
+.drawer-item img{
+  width:64px;
+  height:64px;
+  object-fit:cover;
+  background:#f6f6f6;
+  border-radius:8px
+}
 .qty{display:flex;align-items:center;gap:8px}
-.qty button{width:28px;height:28px;border:1px solid var(--border);background:#fff;cursor:pointer;border-radius:6px}
+.qty button{
+  width:28px;
+  height:28px;
+  border:1px solid var(--border);
+  background:#fff;
+  cursor:pointer;
+  border-radius:6px
+}
 .drawer-footer{padding:16px;border-top:1px solid var(--border)}
-.subtotal{display:flex;justify-content:space-between;margin-bottom:10px;font-weight:600}
-
-/* =========================================
-   ACCESIBILIDAD
-========================================= */
-.visually-hidden{
-  position:absolute!important;
-  clip:rect(1px,1px,1px,1px);
-  padding:0;
-  border:0;
-  height:1px;
-  width:1px;
-  overflow:hidden;
+.subtotal{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
+  font-weight:600
 }
 
-/* =========================================
-   RESPONSIVE
-========================================= */
+/* ===== Responsive ===== */
 @media (max-width:1024px){
   .grid{grid-template-columns:repeat(3,1fr)}
   .hero-inner{grid-template-columns:1fr}
