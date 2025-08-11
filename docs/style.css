@@ -75,11 +75,22 @@ body{
 
 /* Footer & SEO links */
 .footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color:var(--muted)}
+.legal-links{display:inline-flex;gap:14px;margin-left:16px}
+.legal-links a{color:var(--muted);text-decoration:none;border-bottom:1px dashed transparent}
+.legal-links a:hover{color:var(--fg);border-bottom-color:var(--border)}
 .seo-internal{padding:28px 24px;border-top:1px solid var(--border)}
 .seo-internal h4{margin:0 0 10px;font-size:1.05rem}
 .seo-links{display:flex;flex-wrap:wrap;gap:12px;padding:0;margin:0;list-style:none}
 .seo-links a{border-bottom:1px dashed var(--border);text-decoration:none;color:var(--fg)}
 .seo-links a:hover{border-color:var(--fg)}
+
+/* Páginas legales */
+.legal-page{padding:36px 0}
+.legal-inner{max-width:900px}
+.legal-page h1{font-size:clamp(22px,3.2vw,32px);margin-bottom:10px}
+.legal-page h2{font-size:clamp(18px,2.6vw,22px);margin:18px 0 6px}
+.legal-page p,.legal-page li{color:var(--fg)}
+.legal-page ul{padding-left:18px;margin:8px 0}
 
 /* Drawer Carrito */
 .drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);display:none;z-index:80}
@@ -96,8 +107,18 @@ body{
 .drawer-footer{padding:16px;border-top:1px solid var(--border)}
 .subtotal{display:flex;justify-content:space-between;margin-bottom:10px;font-weight:600}
 
+/* Cookie banner */
+.cookie-banner{position:fixed;left:0;right:0;bottom:0;background:#000;color:#fff;padding:16px;z-index:9999;box-shadow:0 -2px 6px rgba(0,0,0,.3)}
+.cookie-content{display:flex;flex-direction:column;gap:12px;max-width:960px;margin:auto}
+.cookie-content p{margin:0;font-size:14px;line-height:1.4}
+.cookie-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cookie-actions .btn{background:#fff;color:#000;padding:6px 12px;border-radius:4px;border:none;cursor:pointer;font-size:14px}
+.cookie-actions .btn:hover{opacity:.85}
+.cookie-actions .btn-alt{background:transparent;border:1px solid #fff;color:#fff}
+@media(min-width:640px){.cookie-content{flex-direction:row;align-items:center;justify-content:space-between}}
+
 /* Accesibilidad */
-.visually-hidden{position:absolute!important;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden}
+.visualmente-oculto{position:absolute!important;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden}
 
 /* Responsive */
 @media (max-width:1024px){.grid{grid-template-columns:repeat(3,1fr)} .hero-inner{grid-template-columns:1fr}}
