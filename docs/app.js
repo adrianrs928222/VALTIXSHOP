@@ -217,11 +217,7 @@ clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
   window.addEventListener("hashchange", updateBreadcrumbs);
 })();
 
-/* ========= INIT ========= */
-function init(){ renderProducts(); renderCart(); }
-window.addEventListener("hashchange", renderProducts);
-document.addEventListener("DOMContentLoaded", init);
-/* ===== Router simple para páginas legales (#info/...) ===== */
+/* ========= Router legal (#info/...) ========= */
 (function legalRouter(){
   const hero = document.querySelector(".hero");
   const catalog = document.querySelector(".section");
@@ -233,12 +229,10 @@ document.addEventListener("DOMContentLoaded", init);
   };
 
   function showLegal(slug){
-    // Oculta todo
     Object.values(pages).forEach(s => s && (s.hidden = true));
     if (hero) hero.style.display = "none";
     if (catalog) catalog.style.display = "none";
     if (seoBlock) seoBlock.style.display = "none";
-    // Muestra
     const sec = pages[slug];
     if (sec) sec.hidden = false;
   }
@@ -257,10 +251,37 @@ document.addEventListener("DOMContentLoaded", init);
       showLegal(slug);
     } else {
       showShop();
-      renderProducts(); // por si cambió categoría #c/...
+      renderProducts(); // por si cambió categoría
     }
   }
 
   window.addEventListener("hashchange", onHash);
   document.addEventListener("DOMContentLoaded", onHash);
 })();
+
+/* ========= Banner de cookies ========= */
+(function cookieBanner(){
+  const banner = document.getElementById("cookie-banner");
+  const btnAccept = document.getElementById("cookie-accept");
+  const btnDecline = document.getElementById("cookie-decline");
+
+  if (!localStorage.getItem("cookieConsent")) {
+    banner.hidden = false;
+  }
+
+  btnAccept.addEventListener("click", () => {
+    localStorage.setItem("cookieConsent", "accepted");
+    banner.remove();
+    // Aquí podrías inicializar scripts de análisis si quieres
+  });
+
+  btnDecline.addEventListener("click", () => {
+    localStorage.setItem("cookieConsent", "declined");
+    banner.remove();
+  });
+})();
+
+/* ========= INIT ========= */
+function init(){ renderProducts(); renderCart(); }
+window.addEventListener("hashchange", renderProducts);
+document.addEventListener("DOMContentLoaded", init);
