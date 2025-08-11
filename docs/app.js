@@ -221,3 +221,46 @@ clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
 function init(){ renderProducts(); renderCart(); }
 window.addEventListener("hashchange", renderProducts);
 document.addEventListener("DOMContentLoaded", init);
+/* ===== Router simple para páginas legales (#info/...) ===== */
+(function legalRouter(){
+  const hero = document.querySelector(".hero");
+  const catalog = document.querySelector(".section");
+  const seoBlock = document.querySelector(".seo-internal");
+  const pages = {
+    "aviso-legal": document.getElementById("legal-aviso"),
+    "politica-compras": document.getElementById("legal-compras"),
+    "privacidad": document.getElementById("legal-privacidad")
+  };
+
+  function showLegal(slug){
+    // Oculta todo
+    Object.values(pages).forEach(s => s && (s.hidden = true));
+    if (hero) hero.style.display = "none";
+    if (catalog) catalog.style.display = "none";
+    if (seoBlock) seoBlock.style.display = "none";
+    // Muestra
+    const sec = pages[slug];
+    if (sec) sec.hidden = false;
+  }
+
+  function showShop(){
+    Object.values(pages).forEach(s => s && (s.hidden = true));
+    if (hero) hero.style.display = "";
+    if (catalog) catalog.style.display = "";
+    if (seoBlock) seoBlock.style.display = "";
+  }
+
+  function onHash(){
+    const h = location.hash || "";
+    if (h.startsWith("#info/")){
+      const slug = decodeURIComponent(h.replace("#info/",""));
+      showLegal(slug);
+    } else {
+      showShop();
+      renderProducts(); // por si cambió categoría #c/...
+    }
+  }
+
+  window.addEventListener("hashchange", onHash);
+  document.addEventListener("DOMContentLoaded", onHash);
+})();
