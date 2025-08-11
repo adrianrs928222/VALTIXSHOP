@@ -16,11 +16,10 @@ const clearCartBtn = document.getElementById("clearCartBtn");
 /* ========= ESTADO ========= */
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-/* ========= CATEGORÍAS POR HASH ========= */
-// #c/camisetas, #c/sudaderas, #c/pantalones, #c/zapatos, #c/accesorios
+/* ========= CATEGORÍAS (hash) ========= */
 function getCategoryFromHash(){
   if (!location.hash.startsWith("#c/")) return "";
-  return decodeURIComponent(location.hash.replace("#c/","").trim());
+  return decodeURIComponent(location.hash.slice(3)); // tras "#c/"
 }
 
 /* ========= RENDER PRODUCTOS ========= */
@@ -29,28 +28,28 @@ function renderProducts(){
     gridEl.innerHTML = `<div style="padding:16px;border:1px dashed #eaeaea;border-radius:12px">No se han podido cargar los productos (products.js).</div>`;
     return;
   }
-
   const cat = getCategoryFromHash();
-  const items = cat ? products.filter(p => (p.categories||[]).includes(cat)) : products;
+  const list = cat ? products.filter(p => (p.categories||[]).includes(cat)) : products;
 
   gridEl.innerHTML = "";
-  if (items.length === 0){
+  if (!list.length){
     gridEl.innerHTML = `<div style="padding:16px;border:1px dashed #eaeaea;border-radius:12px">No hay productos en esta categoría.</div>`;
     return;
   }
 
-  items.forEach(p => {
+  list.forEach(prod => {
+    const price = Number(prod.price) || 0;
     const card = document.createElement("article");
     card.className = "card";
     card.innerHTML = `
-      <img class="card-img" src="${p.image}" alt="${p.name}" loading="lazy">
+      <img class="card-img" src="${prod.image}" alt="${prod.name}" loading="lazy">
       <div class="card-body">
-        <h3 class="card-title">${p.name}</h3>
-        <p class="card-price">€${(p.price||0).toFixed(2)}</p>
-        <button class="btn" data-sku="${p.sku}">Añadir al carrito</button>
+        <h3 class="card-title">${prod.name}</h3>
+        <p class="card-price">€${price.toFixed(2)}</p>
+        <button class="btn" data-sku="${prod.sku}">Añadir al carrito</button>
       </div>
     `;
-    card.querySelector(".btn").addEventListener("click", () => addToCart(p.sku));
+    card.querySelector(".btn").addEventListener("click", () => addToCart(prod.sku));
     gridEl.appendChild(card);
   });
 }
@@ -61,7 +60,7 @@ function addToCart(sku){
   if (!p) return;
   const found = cart.find(i => i.sku === sku);
   if (found) found.quantity += 1;
-  else cart.push({ sku:p.sku, name:p.name, price:p.price, image:p.image, quantity:1 });
+  else cart.push({ sku:p.sku, name:p.name, price:Number(p.price)||0, image:p.image, quantity:1 });
   saveCart();
 }
 function removeFromCart(sku){
@@ -88,14 +87,16 @@ function renderCart(){
   let total = 0;
 
   cart.forEach(item => {
-    total += (item.price||0) * item.quantity;
+    const price = Number(item.price) || 0;
+    total += price * item.quantity;
+
     const row = document.createElement("div");
     row.className = "drawer-item";
     row.innerHTML = `
       <img src="${item.image}" alt="${item.name}" loading="lazy">
       <div style="flex:1">
         <div style="font-weight:600">${item.name}</div>
-        <div style="color:#6b6b6b">€${(item.price||0).toFixed(2)}</div>
+        <div style="color:#6b6b6b">€${price.toFixed(2)}</div>
         <div class="qty" style="margin-top:8px">
           <button onclick="changeQty('${item.sku}', -1)">−</button>
           <span>${item.quantity}</span>
@@ -112,7 +113,7 @@ function renderCart(){
   checkoutBtn.disabled = cart.length === 0;
 }
 
-/* Exponer funciones globales para los onclick del carrito */
+/* Exponer para onclick */
 window.removeFromCart = removeFromCart;
 window.changeQty = changeQty;
 
@@ -140,8 +141,6 @@ async function checkout(){
     alert("Error conectando con el servidor.");
   }
 }
-
-/* Botones */
 checkoutBtn && checkoutBtn.addEventListener("click", checkout);
 clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
 
@@ -149,41 +148,27 @@ clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
 (function promoVertical(){
   const box = document.querySelector(".promo-box");
   if (!box) return;
-
   const mensajes = [
     '🇪🇸📦 <strong>Envíos rápidos a toda España</strong>',
     '🌍🚀 <strong>Entrega internacional garantizada</strong>',
     '🛒✨ <strong>Compra fácil, pago 100% seguro</strong>',
     '💎👕 <strong>Buena calidad en cada prenda</strong>'
   ];
-
   let i = 0;
-  function setMensaje(html){
-    box.innerHTML = `<span class="msg">${html}</span>`;
-  }
+  function setMensaje(html){ box.innerHTML = `<span class="msg">${html}</span>`; }
   setMensaje(mensajes[i]);
-  setInterval(() => {
-    i = (i + 1) % mensajes.length;
-    setMensaje(mensajes[i]);
-  }, 6500);
+  setInterval(() => { i = (i + 1) % mensajes.length; setMensaje(mensajes[i]); }, 6500);
 })();
 
 /* ========= JSON-LD: Products + Breadcrumbs ========= */
 (function seoJsonLd(){
   function injectJsonLd(id, obj){
     let tag = document.getElementById(id);
-    if(!tag){
-      tag = document.createElement("script");
-      tag.type = "application/ld+json";
-      tag.id = id;
-      document.head.appendChild(tag);
-    }
+    if(!tag){ tag = document.createElement("script"); tag.type="application/ld+json"; tag.id=id; document.head.appendChild(tag); }
     tag.textContent = JSON.stringify(obj);
   }
-
   const BASE = "https://adrianrs928222.github.io/VALTIXSHOP/";
 
-  // Products JSON-LD
   function buildProductsJsonLd(items){
     return {
       "@context": "https://schema.org",
@@ -206,9 +191,8 @@ clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
     };
   }
 
-  // Breadcrumbs por categoría
   function updateBreadcrumbs(){
-    const cat = (location.hash.startsWith("#c/") ? decodeURIComponent(location.hash.replace("#c/","")) : "");
+    const cat = (location.hash.startsWith("#c/") ? decodeURIComponent(location.hash.slice(3)) : "");
     const breadcrumbs = {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -218,8 +202,7 @@ clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
     };
     if (cat){
       breadcrumbs.itemListElement.push({
-        "@type":"ListItem",
-        "position": 2,
+        "@type":"ListItem","position":2,
         "name": cat.charAt(0).toUpperCase()+cat.slice(1),
         "item": `${BASE}#c/${encodeURIComponent(cat)}`
       });
@@ -227,7 +210,6 @@ clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
     injectJsonLd("breadcrumbs-jsonld", breadcrumbs);
   }
 
-  // Inyecta productos y breadcrumbs
   if (Array.isArray(window.products) && window.products.length){
     injectJsonLd("products-jsonld", buildProductsJsonLd(window.products));
   }
@@ -236,9 +218,6 @@ clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
 })();
 
 /* ========= INIT ========= */
-function init(){
-  renderProducts();
-  renderCart();
-}
+function init(){ renderProducts(); renderCart(); }
 window.addEventListener("hashchange", renderProducts);
 document.addEventListener("DOMContentLoaded", init);
