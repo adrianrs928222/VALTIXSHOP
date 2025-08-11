@@ -1,287 +1,241 @@
-/* ========= CONFIG ========= */
-const BACKEND = "https://una-tienda1.onrender.com";
+// ======= Config =======
+const BACKEND_URL = "https://una-tienda1.onrender.com"; // Render
+const CHECKOUT_PATH = "/create-checkout-session";
 
-/* ========= SELECTORES ========= */
-const gridEl = document.getElementById("grid");
-const cartCountEl = document.getElementById("cartCount");
-const backdropEl = document.getElementById("backdrop");
-const drawerEl = document.getElementById("drawer");
-const cartItemsEl = document.getElementById("cartItems");
-const subtotalEl = document.getElementById("subtotal");
-const openCartBtn = document.getElementById("openCart");
-const closeCartBtn = document.getElementById("closeCart");
-const checkoutBtn = document.getElementById("checkoutBtn");
-const clearCartBtn = document.getElementById("clearCartBtn");
+// ======= Helpers =======
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
-/* ========= ESTADO ========= */
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+// ======= Estado =======
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-/* ========= CATEGORÍAS (hash) ========= */
-function getCategoryFromHash(){
-  if (!location.hash.startsWith("#c/")) return "";
-  return decodeURIComponent(location.hash.slice(3)); // tras "#c/"
+// ======= UI Base =======
+function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
+function toggleMenu(){ $("#mainNav").classList.toggle("open"); }
+
+// ======= Categoría activa =======
+function getActiveCategory(){
+  const h = location.hash || "";
+  if (h.startsWith("#c/")) return decodeURIComponent(h.slice(3));
+  return "all";
 }
 
-/* ========= RENDER PRODUCTOS ========= */
+// ======= Render productos =======
 function renderProducts(){
-  if (!Array.isArray(products)) {
-    gridEl.innerHTML = `<div style="padding:16px;border:1px dashed #eaeaea;border-radius:12px">No se han podido cargar los productos (products.js).</div>`;
-    return;
-  }
-  const cat = getCategoryFromHash();
-  const list = cat ? products.filter(p => (p.categories||[]).includes(cat)) : products;
+  const grid = $("#grid");
+  if (!grid) return;
+  grid.innerHTML = "";
 
-  gridEl.innerHTML = "";
-  if (!list.length){
-    gridEl.innerHTML = `<div style="padding:16px;border:1px dashed #eaeaea;border-radius:12px">No hay productos en esta categoría.</div>`;
+  if (!Array.isArray(window.products)){
+    grid.innerHTML = `<p style="color:#777">Aún no hay productos. Añade objetos en <code>products.js</code>.</p>`;
     return;
   }
 
-  list.forEach(prod => {
-    const price = Number(prod.price) || 0;
-    const card = document.createElement("article");
+  const cat = getActiveCategory();
+  const list = cat==="all" ? products : products.filter(p => (p.categories||[]).includes(cat));
+
+  list.forEach(p=>{
+    const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
-      <img class="card-img" src="${prod.image}" alt="${prod.name}" loading="lazy">
+      <img class="card-img" src="${p.image}" alt="${p.name}">
       <div class="card-body">
-        <h3 class="card-title">${prod.name}</h3>
-        <p class="card-price">€${price.toFixed(2)}</p>
-        <button class="btn" data-sku="${prod.sku}">Añadir al carrito</button>
+        <h3 class="card-title">${p.name}</h3>
+        <p class="card-price">${Number(p.price).toFixed(2)} €</p>
+        <button class="btn" data-sku="${p.sku}">Añadir al carrito</button>
       </div>
     `;
-    card.querySelector(".btn").addEventListener("click", () => addToCart(prod.sku));
-    gridEl.appendChild(card);
+    grid.appendChild(card);
+  });
+
+  // eventos añadir
+  $$("#grid .btn").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      const sku = e.currentTarget.getAttribute("data-sku");
+      const prod = products.find(x=>x.sku===sku);
+      if (prod){ addToCart(prod); }
+    });
   });
 }
 
-/* ========= CARRITO ========= */
-function addToCart(sku){
-  const p = products.find(x => x.sku === sku);
-  if (!p) return;
-  const found = cart.find(i => i.sku === sku);
-  if (found) found.quantity += 1;
-  else cart.push({ sku:p.sku, name:p.name, price:Number(p.price)||0, image:p.image, quantity:1 });
-  saveCart();
+// ======= Breadcrumb JSON-LD simple (opcional) =======
+function updateBreadcrumb(){
+  const cat = getActiveCategory();
+  const script = document.getElementById("breadcrumbs-jsonld");
+  if (!script) return;
+  const base = "https://adrianrs928222.github.io/VALTIXSHOP/";
+  const list = [
+    { "@type":"ListItem","position":1,"name":"Inicio","item":base }
+  ];
+  if (cat && cat!=="all"){
+    list.push({ "@type":"ListItem","position":2,"name":cat,"item":`${base}#c/${encodeURIComponent(cat)}` });
+  }
+  script.textContent = JSON.stringify({
+    "@context":"https://schema.org",
+    "@type":"BreadcrumbList",
+    "itemListElement": list
+  });
 }
-function removeFromCart(sku){
-  cart = cart.filter(i => i.sku !== sku);
-  saveCart();
+
+// ======= Carrito =======
+function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
+
+function addToCart(p){
+  const idx = cart.findIndex(i=>i.sku===p.sku);
+  if (idx>=0) cart[idx].qty += 1;
+  else cart.push({ sku:p.sku, name:p.name, price:p.price, image:p.image, variant_id:p.variant_id, qty:1 });
+  saveCart(); openCart();
 }
+
 function changeQty(sku, delta){
-  const i = cart.find(x => x.sku === sku);
-  if (!i) return;
-  i.quantity += delta;
-  if (i.quantity <= 0) return removeFromCart(sku);
+  const item = cart.find(i=>i.sku===sku);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty<=0) cart = cart.filter(i=>i.sku!==sku);
   saveCart();
 }
-function clearCart(){
-  cart = [];
-  saveCart();
-}
-function saveCart(){
-  localStorage.setItem("cart", JSON.stringify(cart));
-  renderCart();
-}
+
+function clearCart(){ cart = []; saveCart(); }
+
+function subtotal(){ return cart.reduce((s,i)=> s + (Number(i.price)*i.qty), 0); }
+
 function renderCart(){
-  cartItemsEl.innerHTML = "";
-  let total = 0;
+  $("#cartCount").textContent = cart.reduce((s,i)=>s+i.qty,0);
+  const box = $("#cartItems");
+  box.innerHTML = "";
 
-  cart.forEach(item => {
-    const price = Number(item.price) || 0;
-    total += price * item.quantity;
-
-    const row = document.createElement("div");
-    row.className = "drawer-item";
-    row.innerHTML = `
-      <img src="${item.image}" alt="${item.name}" loading="lazy">
-      <div style="flex:1">
-        <div style="font-weight:600">${item.name}</div>
-        <div style="color:#6b6b6b">€${price.toFixed(2)}</div>
-        <div class="qty" style="margin-top:8px">
-          <button onclick="changeQty('${item.sku}', -1)">−</button>
-          <span>${item.quantity}</span>
-          <button onclick="changeQty('${item.sku}', 1)">+</button>
-          <button style="margin-left:auto" onclick="removeFromCart('${item.sku}')">Eliminar</button>
+  if (cart.length===0){
+    box.innerHTML = `<p style="color:#666">Tu carrito está vacío.</p>`;
+  } else {
+    cart.forEach(i=>{
+      const row = document.createElement("div");
+      row.className = "drawer-item";
+      row.innerHTML = `
+        <img src="${i.image}" alt="${i.name}">
+        <div style="flex:1">
+          <div style="font-weight:700">${i.name}</div>
+          <div class="qty">
+            <button aria-label="Quitar">-</button>
+            <span>${i.qty}</span>
+            <button aria-label="Añadir">+</button>
+          </div>
+          <div style="color:#666">${Number(i.price).toFixed(2)} €</div>
         </div>
-      </div>
-    `;
-    cartItemsEl.appendChild(row);
-  });
-
-  cartCountEl.textContent = cart.reduce((s,i) => s + i.quantity, 0);
-  subtotalEl.textContent = `€${total.toFixed(2)}`;
-  checkoutBtn.disabled = cart.length === 0;
+      `;
+      const [minus, , plus] = row.querySelectorAll(".qty button, .qty span");
+      minus.addEventListener("click", ()=> changeQty(i.sku, -1));
+      plus.addEventListener("click", ()=> changeQty(i.sku, 1));
+      box.appendChild(row);
+    });
+  }
+  $("#subtotal").textContent = `${subtotal().toFixed(2)} €`;
 }
 
-/* Exponer para onclick */
-window.removeFromCart = removeFromCart;
-window.changeQty = changeQty;
+// ======= Drawer =======
+function openCart(){
+  $("#drawerBackdrop").classList.add("show");
+  $("#cartDrawer").classList.add("open");
+  $("#cartDrawer").setAttribute("aria-hidden","false");
+}
+function closeCart(){
+  $("#drawerBackdrop").classList.remove("show");
+  $("#cartDrawer").classList.remove("open");
+  $("#cartDrawer").setAttribute("aria-hidden","true");
+}
 
-/* ========= DRAWER ========= */
-function openDrawer(){ backdropEl.classList.add("show"); drawerEl.classList.add("open"); }
-function closeDrawer(){ backdropEl.classList.remove("show"); drawerEl.classList.remove("open"); }
-openCartBtn && openCartBtn.addEventListener("click", openDrawer);
-closeCartBtn && closeCartBtn.addEventListener("click", closeDrawer);
-backdropEl && backdropEl.addEventListener("click", closeDrawer);
+// ======= Checkout (Stripe vía Render) =======
+async function goCheckout(){
+  if (cart.length===0) return alert("Tu carrito está vacío.");
 
-/* ========= CHECKOUT (Stripe via Render) ========= */
-async function checkout(){
-  if (cart.length === 0) return alert("Tu carrito está vacío.");
+  // Solo enviamos lo necesario al backend (sin claves)
+  const items = cart.map(i => ({
+    variant_id: i.variant_id, // <-- Printful variant_id (lo pones en products.js)
+    quantity: i.qty,
+    sku: i.sku,
+    name: i.name,
+    price: Number(i.price)
+  }));
+
   try{
-    const res = await fetch(`${BACKEND}/checkout`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ items: cart })
+    const res = await fetch(`${BACKEND_URL}${CHECKOUT_PATH}`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ items })
     });
     const data = await res.json();
-    if (data && data.url) location.href = data.url;
-    else alert("No se pudo iniciar el pago.");
-  }catch(e){
-    console.error(e);
-    alert("Error conectando con el servidor.");
+    if (data && data.url){
+      window.location.href = data.url; // Stripe Checkout
+    } else {
+      alert("No se pudo iniciar el pago. Intenta más tarde.");
+    }
+  }catch(err){
+    console.error(err);
+    alert("Error de conexión con el servidor.");
   }
 }
-checkoutBtn && checkoutBtn.addEventListener("click", checkout);
-clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
 
-/* ========= PROMO VERTICAL (4 mensajes con emojis) ========= */
-(function promoVertical(){
-  const box = document.querySelector(".promo-box");
+// ======= Navegación hash =======
+function handleHash(){
+  const h = location.hash;
+
+  // Legales
+  const pages = {
+    "#info/aviso-legal":"#legal-aviso",
+    "#info/politica-compras":"#legal-compras",
+    "#info/privacidad":"#legal-privacidad"
+  };
+  Object.values(pages).forEach(sel => { const el = document.querySelector(sel); if (el) el.hidden = true; });
+
+  if (pages[h]){
+    const el = document.querySelector(pages[h]);
+    if (el){ el.hidden = false; window.scrollTo({top:el.offsetTop-60,behavior:"smooth"}); }
+    return;
+  }
+
+  // Categorías
+  renderProducts();
+  updateBreadcrumb();
+}
+
+// ======= Promo lenta =======
+function startPromo(){
+  const box = $("#promoBox");
   if (!box) return;
-  const mensajes = [
-    '🇪🇸📦 <strong>Envíos rápidos a toda España</strong>',
-    '🌍🚀 <strong>Entrega internacional garantizada</strong>',
-    '🛒✨ <strong>Compra fácil, pago 100% seguro</strong>',
-    '💎👕 <strong>Buena calidad en cada prenda</strong>'
+  const msgs = [
+    "💎 Buena calidad en cada prenda",
+    "🇪🇸📦 Envío 2–5 días en España",
+    "🌍 Entrega internacional garantizada",
+    "💳 Pago seguro con Stripe"
   ];
   let i = 0;
-  function setMensaje(html){ box.innerHTML = `<span class="msg">${html}</span>`; }
-  setMensaje(mensajes[i]);
-  setInterval(() => { i = (i + 1) % mensajes.length; setMensaje(mensajes[i]); }, 6500);
-})();
+  setInterval(()=>{
+    i = (i+1)%msgs.length;
+    box.classList.remove("swap");
+    box.textContent = msgs[i];
+    void box.offsetWidth;
+    box.classList.add("swap");
+  }, 6000);
+}
 
-/* ========= JSON-LD: Products + Breadcrumbs ========= */
-(function seoJsonLd(){
-  function injectJsonLd(id, obj){
-    let tag = document.getElementById(id);
-    if(!tag){ tag = document.createElement("script"); tag.type="application/ld+json"; tag.id=id; document.head.appendChild(tag); }
-    tag.textContent = JSON.stringify(obj);
-  }
-  const BASE = "https://adrianrs928222.github.io/VALTIXSHOP/";
+// ======= Init =======
+document.addEventListener("DOMContentLoaded", ()=>{
+  setYear();
+  renderProducts();
+  renderCart();
+  updateBreadcrumb();
+  startPromo();
 
-  function buildProductsJsonLd(items){
-    return {
-      "@context": "https://schema.org",
-      "@graph": items.map(p => ({
-        "@type": "Product",
-        "@id": `${BASE}#product-${encodeURIComponent(p.id || p.sku)}`,
-        "name": p.name,
-        "image": (p.image && p.image.startsWith("http")) ? p.image : `${BASE}${p.image.replace(/^.\//,'')}`,
-        "sku": p.sku,
-        "brand": { "@type":"Brand", "name":"VALTIX" },
-        "category": (p.categories && p.categories[0]) ? p.categories[0] : "general",
-        "offers": {
-          "@type": "Offer",
-          "priceCurrency": "EUR",
-          "price": (Number(p.price) || 0).toFixed(2),
-          "url": BASE,
-          "availability": "https://schema.org/InStock"
-        }
-      }))
-    };
-  }
+  // CTA “fuego” -> scroll a productos
+  const cta = document.querySelector('.big-sale');
+  if (cta) cta.addEventListener('click', (e)=>{ e.preventDefault(); document.querySelector('#grid').scrollIntoView({behavior:'smooth'}); });
 
-  function updateBreadcrumbs(){
-    const cat = (location.hash.startsWith("#c/") ? decodeURIComponent(location.hash.slice(3)) : "");
-    const breadcrumbs = {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type":"ListItem","position":1,"name":"Inicio","item": BASE }
-      ]
-    };
-    if (cat){
-      breadcrumbs.itemListElement.push({
-        "@type":"ListItem","position":2,
-        "name": cat.charAt(0).toUpperCase()+cat.slice(1),
-        "item": `${BASE}#c/${encodeURIComponent(cat)}`
-      });
-    }
-    injectJsonLd("breadcrumbs-jsonld", breadcrumbs);
-  }
+  // Menú y carrito
+  $("#menuToggle").addEventListener("click", toggleMenu);
+  $("#openCart").addEventListener("click", openCart);
+  $("#closeCart").addEventListener("click", closeCart);
+  $("#drawerBackdrop").addEventListener("click", closeCart);
+  $("#clearCart").addEventListener("click", clearCart);
+  $("#checkoutBtn").addEventListener("click", goCheckout);
 
-  if (Array.isArray(window.products) && window.products.length){
-    injectJsonLd("products-jsonld", buildProductsJsonLd(window.products));
-  }
-  updateBreadcrumbs();
-  window.addEventListener("hashchange", updateBreadcrumbs);
-})();
-
-/* ========= Router legal (#info/...) ========= */
-(function legalRouter(){
-  const hero = document.querySelector(".hero");
-  const catalog = document.querySelector(".section");
-  const seoBlock = document.querySelector(".seo-internal");
-  const pages = {
-    "aviso-legal": document.getElementById("legal-aviso"),
-    "politica-compras": document.getElementById("legal-compras"),
-    "privacidad": document.getElementById("legal-privacidad")
-  };
-
-  function showLegal(slug){
-    Object.values(pages).forEach(s => s && (s.hidden = true));
-    if (hero) hero.style.display = "none";
-    if (catalog) catalog.style.display = "none";
-    if (seoBlock) seoBlock.style.display = "none";
-    const sec = pages[slug];
-    if (sec) sec.hidden = false;
-  }
-
-  function showShop(){
-    Object.values(pages).forEach(s => s && (s.hidden = true));
-    if (hero) hero.style.display = "";
-    if (catalog) catalog.style.display = "";
-    if (seoBlock) seoBlock.style.display = "";
-  }
-
-  function onHash(){
-    const h = location.hash || "";
-    if (h.startsWith("#info/")){
-      const slug = decodeURIComponent(h.replace("#info/",""));
-      showLegal(slug);
-    } else {
-      showShop();
-      renderProducts(); // por si cambió categoría
-    }
-  }
-
-  window.addEventListener("hashchange", onHash);
-  document.addEventListener("DOMContentLoaded", onHash);
-})();
-
-/* ========= Banner de cookies ========= */
-(function cookieBanner(){
-  const banner = document.getElementById("cookie-banner");
-  const btnAccept = document.getElementById("cookie-accept");
-  const btnDecline = document.getElementById("cookie-decline");
-
-  if (!localStorage.getItem("cookieConsent")) {
-    banner.hidden = false;
-  }
-
-  btnAccept.addEventListener("click", () => {
-    localStorage.setItem("cookieConsent", "accepted");
-    banner.remove();
-    // Aquí podrías inicializar scripts de análisis si quieres
-  });
-
-  btnDecline.addEventListener("click", () => {
-    localStorage.setItem("cookieConsent", "declined");
-    banner.remove();
-  });
-})();
-
-/* ========= INIT ========= */
-function init(){ renderProducts(); renderCart(); }
-window.addEventListener("hashchange", renderProducts);
-document.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("hashchange", handleHash);
+});
