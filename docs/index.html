@@ -14,7 +14,6 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- Tipografías + estilos -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -49,8 +48,7 @@
           Camisetas, sudaderas, pantalones, zapatos y accesorios de alta calidad.
           🌍 Envíos internacionales y en España en 2–5 días hábiles.
         </h2>
-        <!-- Botón que te pidió: "Catálogo" -->
-        <a class="cta" href="#catalogo" id="goCatalog">Catálogo</a>
+        <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
       <div class="hero-img" role="region" aria-label="Mensaje destacado">
         <div class="promo-box" id="promoBox">💎 Buena calidad en cada prenda</div>
@@ -62,13 +60,13 @@
   <main class="main">
     <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
-        <h3 id="catalogo-title" class="visually-hidden">Catálogo</h3>
+        <h3 id="catalogo-title">Catálogo</h3>
         <div id="grid" class="grid"></div>
       </div>
     </section>
   </main>
 
-  <!-- Footer simple -->
+  <!-- Footer -->
   <footer class="footer">
     <div class="container footer-inner">
       <div>© <span id="year"></span> VALTIX</div>
@@ -80,12 +78,11 @@
     </div>
   </footer>
 
-  <!-- Páginas legales (resumen profesional, sin proveedores) -->
+  <!-- Legales (opcionales) -->
   <section id="legal-aviso" class="legal-page" hidden>
     <div class="container legal-inner">
       <h1>Aviso legal</h1>
-      <p><strong>VALTIX</strong> es una marca de moda online. Este sitio y su contenido se ofrecen “tal cual”. Podemos actualizar precios, promociones, descripciones y disponibilidad sin aviso previo.</p>
-      <p>El uso de este sitio implica la aceptación de estas condiciones y de las políticas publicadas.</p>
+      <p>VALTIX es una marca de moda online. Este sitio puede actualizar precios, descripciones y disponibilidad sin previo aviso. El uso del sitio implica aceptar estas condiciones y políticas.</p>
       <p>Contacto: <a href="mailto:tienda@valtix.store">tienda@valtix.store</a></p>
     </div>
   </section>
@@ -93,27 +90,14 @@
   <section id="legal-compras" class="legal-page" hidden>
     <div class="container legal-inner">
       <h1>Política de compras</h1>
-      <h2>Procesamiento y fabricación</h2>
-      <p>Muchos productos se preparan bajo pedido para optimizar stock y reducir desperdicio (producción habitual 1–3 días hábiles).</p>
-      <h2>Envíos</h2>
-      <p>España peninsular: 2–5 días hábiles desde confirmación. Internacional: 5–10 días según destino. Fechas estimadas.</p>
-      <h2>Pagos</h2>
-      <p>Pagos seguros con <strong>Stripe</strong>. No almacenamos datos de tarjetas.</p>
-      <h2>Cambios y devoluciones</h2>
-      <p>14 días naturales desde la entrega (sin usar y con etiquetas). Prendas personalizadas/ usadas no admiten devolución salvo defecto. Si llega dañado o con error de fabricación, reemplazo sin coste tras verificación.</p>
-      <h2>Direcciones y entregas</h2>
-      <p>Verifica tu dirección antes de finalizar. Si la mensajería devuelve el paquete por dirección incorrecta/ausencia, el reenvío puede tener coste adicional.</p>
+      <p>Producción bajo pedido (1–3 días hábiles). Envíos: España 2–5 días hábiles; internacional 5–10 según destino. Pagos seguros con Stripe. Devoluciones 14 días (sin usar y con etiquetas). Reemplazo sin coste en caso de defecto tras verificación.</p>
     </div>
   </section>
 
   <section id="legal-privacidad" class="legal-page" hidden>
     <div class="container legal-inner">
       <h1>Política de privacidad</h1>
-      <p>Tratamos tus datos para gestionar pedidos, soporte y comunicaciones de tu compra. Base legal: ejecución del contrato e interés legítimo.</p>
-      <p>Pagos procesados por Stripe; VALTIX no almacena datos de tarjetas.</p>
-      <p>Conservación: el tiempo necesario para obligaciones legales y garantía.</p>
-      <p>Derechos: acceso, rectificación, supresión y otros escribiendo a <a href="mailto:tienda@valtix.store">tienda@valtix.store</a>.</p>
-      <p>Cookies: usamos cookies técnicas y analíticas. Puedes gestionar tu consentimiento desde el banner cuando lo añadas.</p>
+      <p>Usamos tus datos para gestionar pedidos y soporte. No almacenamos datos de tarjeta; Stripe procesa los pagos de forma segura. Derechos: solicita info a <a href="mailto:tienda@valtix.store">tienda@valtix.store</a>.</p>
     </div>
   </section>
 
@@ -134,7 +118,7 @@
     </div>
   </aside>
 
-  <!-- Scripts -->
+  <!-- Scripts (products.js SIEMPRE antes de app.js) -->
   <script src="./products.js"></script>
   <script src="./app.js"></script>
 </body>
