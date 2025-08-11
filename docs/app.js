@@ -11,6 +11,14 @@ let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
+function setActiveNav(){
+  const cat = getActiveCategory();
+  $$("#main-nav a").forEach(a=>{
+    const aCat = a.getAttribute("href").replace("#c/","");
+    if (cat !== "all" && aCat === cat) a.setAttribute("aria-current","page");
+    else a.removeAttribute("aria-current");
+  });
+}
 
 // ===== SEO: Breadcrumbs + Product JSON-LD =====
 function updateBreadcrumbsSchema(){
@@ -45,7 +53,7 @@ function injectProductSchemas(list){
   });
 }
 
-// ===== Render productos (con tallas) =====
+// ===== Render productos (con tallas y badges) =====
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -61,12 +69,14 @@ function renderProducts(){
   list.forEach(p=>{
     const sizes = p.variant_map ? Object.keys(p.variant_map) : [];
     const sizeBtns = sizes.map((sz,idx)=>`<button class="option-btn" data-sz="${sz}" ${idx===0?"aria-pressed='true'":""}>${sz}</button>`).join("");
+    const badge = p.badge ? `<span class="badge ${p.badge==='Más vendido'?'hit':''}">${p.badge}</span>` : "";
 
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
       <img class="card-img" src="${p.image}" alt="${p.name}" loading="lazy">
       <div class="card-body">
+        ${badge}
         <h3 class="card-title">${p.name}</h3>
         <p class="card-price">${money(p.price)}</p>
         ${sizes.length?`<div class="options" role="group" aria-label="Tallas">${sizeBtns}</div>`:""}
@@ -108,6 +118,7 @@ function renderProducts(){
   });
 
   injectProductSchemas(list);
+  setActiveNav();
 }
 
 // ===== Carrito =====
@@ -193,20 +204,20 @@ function handleHash(){
   renderProducts(); updateBreadcrumbsSchema();
 }
 
-// ===== Promo alternando (incluye envío gratis 60€) =====
+// ===== Promo alternando (sin temporizador de oferta) =====
 function startPromo(){
-  const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
+  const textEl=$(".promo-text"); if(!textEl) return;
   const msgs=[
-    "💥 ¡ENVÍO GRATIS en pedidos +60€! 📦 España 2–5 días • Internacional 5–10 🌍",
-    "Compra hoy y recibe en España o en cualquier parte del mundo 🌍"
+    "💥 ENVÍO GRATIS en pedidos +60€ • España 2–5 días",
+    "🌍 Entrega internacional 5–10 días • Pago seguro con Stripe"
   ];
   let i=0;
   const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
   show(); setInterval(show,8000);
 }
 
-// ===== Menú móvil (hamburguesa) =====
-function initMobileMenu(){
+// ===== Menú móvil + FAB carrito =====
+function initMobileUI(){
   const menuBtn = $("#menu-toggle");
   const mainNav = $("#main-nav");
   if (menuBtn && mainNav){
@@ -218,17 +229,18 @@ function initMobileMenu(){
       a.addEventListener("click", ()=> mainNav.classList.remove("show"));
     });
   }
+  $("#fabCart")?.addEventListener("click", openCart);
 }
 
 // ===== Init =====
 document.addEventListener("DOMContentLoaded", ()=>{
   setYear();
-  initMobileMenu();
+  initMobileUI();
   handleHash();      // pinta catálogo o legales según hash
   renderCart();
   startPromo();
 
-  // CTA scroll suave
+  // CTA scroll suave a catálogo
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
 
   // Carrito
