@@ -1,6 +1,6 @@
 :root{
   --bg:#fff; --fg:#0a0a0a; --muted:#6b6b6b; --border:#eaeaea; --shadow:0 12px 30px rgba(0,0,0,.08);
-  --radius:16px; --container:1200px; --accent:#ffd700; /* dorado sutil para conversión */
+  --radius:16px; --container:1200px; --accent:#ffd700;
 }
 *{box-sizing:border-box} html,body{height:100%}
 body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);line-height:1.5}
@@ -10,10 +10,14 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 .visually-hidden{position:absolute!important;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden}
 .sr-only{position:absolute!important;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
 
-/* Topbar */
-.topbar{background:#0a0a0a;color:#fff;border-bottom:1px solid #111}
-.topbar-inner{display:flex;gap:16px;justify-content:center;align-items:center;height:36px;font-size:.9rem}
-.topbar-inner span strong{color:var(--accent)}
+/* Barra superior */
+.top-bar{
+  background:#000; color:#fff; text-align:center; font-weight:700;
+  padding:6px 10px; font-size:.95rem; letter-spacing:.3px;
+}
+@media (max-width:520px){
+  .top-bar{ font-size:.9rem; padding:8px; white-space:normal }
+}
 
 /* Header */
 .header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--border)}
@@ -124,7 +128,6 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
   .nav a{border-radius:10px; border:1px solid var(--border); padding:10px 12px}
   .nav.show{display:flex}
   .fab-cart{display:inline-grid; place-items:center}
-  .topbar-inner{font-size:.85rem}
 }
 @media (max-width:720px){
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -137,17 +140,3 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 /* Legales */
 .legal-page{padding:40px 0}
 .legal-inner{max-width:900px;margin:0 auto;padding:0 16px}
-/* Topbar visible completo en móvil */
-@media (max-width: 520px){
-  .topbar-inner{
-    flex-wrap: wrap;          /* Permite que bajen de línea */
-    font-size: 0.85rem;        /* Texto un poco más pequeño */
-    gap: 6px;                  /* Menos espacio entre mensajes */
-    padding: 4px 8px;
-    justify-content: center;   /* Centrar mensajes */
-    text-align: center;
-  }
-  .topbar-inner span{
-    flex: 1 1 auto;            /* Que cada mensaje ocupe su espacio */
-  }
-}
