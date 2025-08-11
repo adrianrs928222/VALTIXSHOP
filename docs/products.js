@@ -1,49 +1,51 @@
-// VALTIX — 1 producto por categoría (Printful)
-// Cambia los variant_id por los tuyos reales
-const products = [
+// Lista de productos de ejemplo para VALTIX
+// Recuerda: sustituye "variant_id" por el real de Printful
+// y cambia las imágenes por las de tus productos
+
+window.products = [
   {
     id: "tee-white",
-    name: "Camiseta Blanca Premium",
+    name: "Camiseta Premium Blanca 180g",
     price: 29.99,
-    image: "./assets/tee.jpg",
-    sku: "camiseta_blanca_premium",
-    variant_id: 1234567890,
+    image: "https://via.placeholder.com/500x500.png?text=Camiseta+Blanca",
+    sku: "tee_white_180g",
+    variant_id: 1234567890, // <-- tu variant_id real
     categories: ["camisetas"]
   },
   {
     id: "hoodie-black",
-    name: "Sudadera Negra con Capucha",
+    name: "Sudadera Negra Clásica",
     price: 49.99,
-    image: "./assets/hoodie.jpg",
-    sku: "sudadera_negra_capucha",
-    variant_id: 2234567890,
+    image: "https://via.placeholder.com/500x500.png?text=Sudadera+Negra",
+    sku: "hoodie_black_classic",
+    variant_id: 2234567890, // <-- tu variant_id real
     categories: ["sudaderas"]
   },
   {
     id: "pants-black",
     name: "Pantalón Negro Elegante",
     price: 39.99,
-    image: "./assets/pants.jpg",
-    sku: "pantalon_negro_lino",
-    variant_id: 3234567890,
+    image: "https://via.placeholder.com/500x500.png?text=Pantalon+Negro",
+    sku: "pants_black_elegant",
+    variant_id: 3234567890, // <-- tu variant_id real
     categories: ["pantalones"]
   },
   {
-    id: "shoes-black",
-    name: "Zapatillas Negras Minimal",
+    id: "sneaker-black",
+    name: "Zapatillas Minimal Negras",
     price: 59.99,
-    image: "./assets/shoes.jpg",
-    sku: "zapatillas_negras_minimal",
-    variant_id: 4234567890,
+    image: "https://via.placeholder.com/500x500.png?text=Zapatillas+Negras",
+    sku: "sneaker_black_min",
+    variant_id: 4234567890, // <-- tu variant_id real
     categories: ["zapatos"]
   },
   {
-    id: "cap-black",
-    name: "Gorra Negra VALTIX",
+    id: "cap-logo",
+    name: "Gorra Logo VALTIX",
     price: 19.99,
-    image: "./assets/cap.jpg",
-    sku: "gorra_negra_valtix",
-    variant_id: 5234567890,
+    image: "https://via.placeholder.com/500x500.png?text=Gorra+VALTIX",
+    sku: "cap_valtix_logo",
+    variant_id: 5234567890, // <-- tu variant_id real
     categories: ["accesorios"]
   }
 ];
