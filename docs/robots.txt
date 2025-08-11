@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://adrianrs928222.github.io/VALTIXSHOP/sitemap.xml
