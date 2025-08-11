@@ -10,33 +10,10 @@
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- 120 keywords ES+EN (intent to buy, long-tail, Spain + International) -->
-  <meta name="keywords" content="
-  comprar camisetas premium, camisetas oversize hombre comprar, camisetas blancas algodón 100 online, camiseta blanca premium envío rápido,
-  sudadera negra premium hombre, sudadera básica negra mujer, sudadera con capucha negra unisex, sudadera negra sin estampado comprar,
-  pantalón negro elegante hombre, pantalón negro vestir mujer, pantalón jogger negro comprar, pantalón cargo negro hombre online,
-  zapatillas negras minimalistas, sneakers negras urbanas comprar, zapatos negros elegantes hombre oficina, zapatillas negras sin cordones,
-  accesorios negros minimalistas, gorra negra bordada, cinturón piel negro auténtica, bolso negro shopper mujer,
-  ropa premium España envío 2-5 días, tienda ropa online España, moda urbana premium España, ropa casual elegante hombre mujer,
-  ropa monocromática comprar, total black outfit España, básicos de armario premium, ropa atemporal de calidad,
-  premium white t-shirt men, premium white t-shirt women, oversized white tee buy, heavy cotton white tee, blank white tee premium,
-  plain black hoodie men, plain black hoodie women, premium black hoodie buy, fleece black hoodie, organic cotton hoodie black,
-  elegant black trousers men, elegant black pants women, black skinny pants men, black cargo pants buy, black joggers men,
-  minimalist black sneakers, black sneakers running, black sneakers casual men, black dress shoes office men,
-  minimal black accessories, black cap embroidered, black leather belt men, black clutch bag women,
-  premium streetwear Spain, premium basics store EU, online clothing store Spain, fast EU shipping clothing,
-  international shipping clothing, free shipping 60 euros, envio gratis 60€, secure checkout Stripe, print-on-demand premium apparel,
-  white tee Spain, black hoodie Spain, black trousers Spain, black sneakers Spain,
-  ropa premium hombre comprar, ropa premium mujer comprar, camisetas premium valtx, sudaderas premium valtix, pantalones premium valtix, zapatos premium valtix, accesorios premium valtix,
-  sustainable basics clothing, slow fashion basics, organic cotton t-shirt black white, capsule wardrobe black white,
-  best white t-shirt men 2025, best black hoodie 2025, trending streetwear Spain, urban fashion essentials,
-  ropa para oficina negra hombre, ropa para universidad casual, ropa para viajar cómoda negra, look minimalista hombre 2025,
-  look minimalista mujer 2025, outfits monocromáticos ideas, guía tallas sudadera negra, guía tallas camiseta blanca,
-  comprar camisetas premium España, comprar sudadera negra España, comprar pantalón negro España, comprar sneakers negras España,
-  premium fashion brand Spain, european fashion store, worldwide delivery fashion, gifts premium clothing black white
-  " />
+  <!-- Keywords ES+EN (intención de compra, long-tail) -->
+  <meta name="keywords" content="comprar camisetas premium, camisetas oversize hombre, camiseta blanca algodón 100, sudadera negra premium, plain black hoodie, pantalón negro elegante, black cargo pants, black joggers, zapatillas negras minimalistas, minimalist black sneakers, zapatos negros oficina, accesorios negros minimalistas, black cap, black leather belt, tienda ropa España, premium basics EU, international shipping clothing, free shipping 60€, secure checkout Stripe, VALTIX clothing" />
 
-  <!-- Open Graph / Twitter -->
+  <!-- OG / Twitter -->
   <meta property="og:title" content="VALTIX | Premium fashion for every style – Moda premium que combina contigo" />
   <meta property="og:description" content="Premium basics & streetwear. Free shipping 60€+. Spain 2–5 days & international 5–10 days. Secure Stripe checkout." />
   <meta property="og:image" content="https://via.placeholder.com/1200x630" />
@@ -102,32 +79,16 @@
   }
   </script>
 
-  <!-- FAQPage para rich results (envíos, devoluciones, pagos) -->
+  <!-- FAQ para rich results -->
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
     "@type":"FAQPage",
     "mainEntity":[
-      {
-        "@type":"Question",
-        "name":"¿En cuánto tiempo recibo mi pedido?",
-        "acceptedAnswer":{"@type":"Answer","text":"España: 2–5 días hábiles. Internacional: 5–10 días, según destino."}
-      },
-      {
-        "@type":"Question",
-        "name":"¿Tenéis envío gratuito?",
-        "acceptedAnswer":{"@type":"Answer","text":"Sí, envío gratis en pedidos iguales o superiores a 60€ dentro de España."}
-      },
-      {
-        "@type":"Question",
-        "name":"¿El pago es seguro?",
-        "acceptedAnswer":{"@type":"Answer","text":"Sí. Usamos Stripe para pagos seguros. No almacenamos datos de tarjeta."}
-      },
-      {
-        "@type":"Question",
-        "name":"¿Puedo cambiar o devolver?",
-        "acceptedAnswer":{"@type":"Answer","text":"Sí, tienes 14 días naturales desde la recepción. Si el producto llega con defecto, cubrimos el coste de reposición."}
-      }
+      {"@type":"Question","name":"¿Plazos de entrega?","acceptedAnswer":{"@type":"Answer","text":"España: 2–5 días hábiles. Internacional: 5–10 días según destino."}},
+      {"@type":"Question","name":"¿Envío gratuito?","acceptedAnswer":{"@type":"Answer","text":"Sí, en pedidos iguales o superiores a 60€ en España."}},
+      {"@type":"Question","name":"¿Pago seguro?","acceptedAnswer":{"@type":"Answer","text":"Pagos procesados por Stripe. No almacenamos datos de tarjeta."}},
+      {"@type":"Question","name":"¿Devoluciones?","acceptedAnswer":{"@type":"Answer","text":"14 días naturales desde la recepción. Si hay defecto, cubrimos la reposición."}}
     ]
   }
   </script>
@@ -135,6 +96,15 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <!-- Topbar beneficios -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <span>🚚 <strong>Envío GRATIS</strong> en pedidos +60€</span>
+      <span>🔒 Pago seguro con Stripe</span>
+      <span>↩️ Devoluciones 14 días</span>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="header">
     <div class="container header-inner">
@@ -183,19 +153,14 @@
       </div>
     </section>
 
-    <!-- Link cloud interno oculto (anchors long-tail) -->
+    <!-- Nube de anchors interna oculta (SEO) -->
     <nav class="sr-only" aria-label="Búsquedas populares VALTIX">
       <ul>
-        <li><a href="#c/camisetas">comprar camisetas premium</a></li>
-        <li><a href="#c/camisetas">oversized white tee buy</a></li>
+        <li><a href="#c/camisetas">comprar camiseta blanca premium</a></li>
         <li><a href="#c/sudaderas">plain black hoodie premium</a></li>
-        <li><a href="#c/sudaderas">sudadera negra con capucha hombre</a></li>
         <li><a href="#c/pantalones">elegant black trousers men</a></li>
-        <li><a href="#c/pantalones">pantalón cargo negro comprar</a></li>
         <li><a href="#c/zapatos">minimalist black sneakers</a></li>
-        <li><a href="#c/zapatos">zapatos negros oficina hombre</a></li>
         <li><a href="#c/accesorios">black leather belt</a></li>
-        <li><a href="#c/accesorios">gorra negra bordada</a></li>
       </ul>
     </nav>
   </main>
@@ -227,7 +192,7 @@
     </div>
   </aside>
 
-  <!-- Páginas legales -->
+  <!-- Páginas legales (hash routing) -->
   <section id="legal-aviso" class="legal-page" hidden>
     <div class="container legal-inner">
       <h1>Aviso legal</h1>
@@ -240,7 +205,7 @@
       <h1>Política de compras</h1>
       <h2>Pagos</h2><p>Pagos seguros con <strong>Stripe</strong> en EUR. Aceptamos tarjetas y wallets compatibles.</p>
       <h2>Envíos</h2><p>España: <strong>2–5 días hábiles</strong>. Internacional: 5–10 días. <strong>Envío gratis</strong> en pedidos ≥ 60€ (España). Tarifas según destino para otros países.</p>
-      <h2>Cambios y devoluciones</h2><p>14 días naturales desde la recepción. Si el producto llega con defecto, asumimos el coste de reposición.</p>
+      <h2>Cambios y devoluciones</h2><p>14 días naturales desde la recepción. Si el producto llega con defecto, cubrimos el coste de reposición.</p>
     </div>
   </section>
   <section id="legal-privacidad" class="legal-page" hidden>
@@ -250,7 +215,10 @@
     </div>
   </section>
 
-  <!-- Scripts (orden obligatorio) -->
+  <!-- Botón flotante de carrito (móvil) -->
+  <button id="fabCart" class="fab-cart" aria-label="Abrir carrito">🛒</button>
+
+  <!-- Scripts -->
   <script src="./products.js"></script>
   <script src="./app.js"></script>
 </body>
