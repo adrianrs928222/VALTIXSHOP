@@ -9,6 +9,11 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 .section{padding:18px 0 56px}
 .visually-hidden{position:absolute!important;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden}
 
+/* Oculto accesible (para SEO interno) */
+.sr-only{
+  position:absolute!important;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;
+}
+
 /* Header */
 .header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--border)}
 .header-inner{display:flex;align-items:center;gap:12px;height:64px;position:relative}
@@ -122,3 +127,7 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
   .grid{grid-template-columns:1fr}
   .cart-btn{padding:8px 10px}
 }
+
+/* Legales */
+.legal-page{padding:40px 0}
+.legal-inner{max-width:900px;margin:0 auto;padding:0 16px}
