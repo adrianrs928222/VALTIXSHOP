@@ -1,13 +1,14 @@
-// ===== Config (tu backend Render) =====
+// ===== Config =====
 const BACKEND_URL = "https://una-tienda1.onrender.com";
 const CHECKOUT_PATH = "/create-checkout-session";
 
-// ===== Helpers =====
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
+
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-function setYear(){ const y=$("#year"); if(y) y.textContent=new Date().getFullYear(); }
+// ===== Util =====
+function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
 
@@ -19,8 +20,8 @@ function updateBreadcrumbsSchema(){
       { "@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/" }
     ]
   };
-  const cat=getActiveCategory();
-  if(cat!=="all"){
+  const cat = getActiveCategory();
+  if (cat!=="all"){
     base.itemListElement.push({
       "@type":"ListItem","position":2,"name":cat.charAt(0).toUpperCase()+cat.slice(1),
       "item":`https://adrianrs928222.github.io/VALTIXSHOP/#c/${encodeURIComponent(cat)}`
@@ -192,17 +193,16 @@ function handleHash(){
   renderProducts(); updateBreadcrumbsSchema();
 }
 
-// ===== Promo =====
+// ===== Promo alternando (incluye envío gratis 60€) =====
 function startPromo(){
-  const box=$("#promoBox"); if(!box) return;
+  const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   const msgs=[
-    "💎 Buena calidad en cada prenda",
-    "🇪🇸📦 Envío 2–5 días en España",
-    "🌍 Entrega internacional garantizada",
-    "💳 Pago seguro con Stripe"
+    "Compra hoy y recibe en España o en cualquier parte del mundo 🌍",
+    "🚚 Envío gratuito en pedidos superiores a 60€"
   ];
-  let i=0; box.textContent=msgs[0]; box.classList.add("show");
-  setInterval(()=>{ i=(i+1)%msgs.length; box.classList.remove("show"); void box.offsetWidth; box.textContent=msgs[i]; box.classList.add("show"); }, 6000);
+  let i=0;
+  const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
+  show(); setInterval(show,8000);
 }
 
 // ===== Init =====
