@@ -1,5 +1,5 @@
 // ======= Config =======
-const BACKEND_URL = "https://una-tienda1.onrender.com"; // Render
+const BACKEND_URL = "https://una-tienda1.onrender.com"; // tu Render
 const CHECKOUT_PATH = "/create-checkout-session";
 
 // ======= Helpers =======
@@ -9,11 +9,10 @@ const $$ = s => document.querySelectorAll(s);
 // ======= Estado =======
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-// ======= UI Base =======
+// ======= Util =======
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
-function toggleMenu(){ $("#mainNav").classList.toggle("open"); }
 
-// ======= Categoría activa =======
+// Categoría activa via hash (#c/...)
 function getActiveCategory(){
   const h = location.hash || "";
   if (h.startsWith("#c/")) return decodeURIComponent(h.slice(3));
@@ -32,7 +31,7 @@ function renderProducts(){
   }
 
   const cat = getActiveCategory();
-  const list = cat==="all" ? products : products.filter(p => (p.categories||[]).includes(cat));
+  const list = cat === "all" ? products : products.filter(p => (p.categories||[]).includes(cat));
 
   list.forEach(p=>{
     const card = document.createElement("div");
@@ -48,32 +47,13 @@ function renderProducts(){
     grid.appendChild(card);
   });
 
-  // eventos añadir
+  // Click en "Añadir al carrito"
   $$("#grid .btn").forEach(btn=>{
     btn.addEventListener("click", (e)=>{
       const sku = e.currentTarget.getAttribute("data-sku");
       const prod = products.find(x=>x.sku===sku);
       if (prod){ addToCart(prod); }
     });
-  });
-}
-
-// ======= Breadcrumb JSON-LD simple (opcional) =======
-function updateBreadcrumb(){
-  const cat = getActiveCategory();
-  const script = document.getElementById("breadcrumbs-jsonld");
-  if (!script) return;
-  const base = "https://adrianrs928222.github.io/VALTIXSHOP/";
-  const list = [
-    { "@type":"ListItem","position":1,"name":"Inicio","item":base }
-  ];
-  if (cat && cat!=="all"){
-    list.push({ "@type":"ListItem","position":2,"name":cat,"item":`${base}#c/${encodeURIComponent(cat)}` });
-  }
-  script.textContent = JSON.stringify({
-    "@context":"https://schema.org",
-    "@type":"BreadcrumbList",
-    "itemListElement": list
   });
 }
 
@@ -84,7 +64,8 @@ function addToCart(p){
   const idx = cart.findIndex(i=>i.sku===p.sku);
   if (idx>=0) cart[idx].qty += 1;
   else cart.push({ sku:p.sku, name:p.name, price:p.price, image:p.image, variant_id:p.variant_id, qty:1 });
-  saveCart(); openCart();
+  saveCart();
+  openCart();
 }
 
 function changeQty(sku, delta){
@@ -147,9 +128,9 @@ function closeCart(){
 async function goCheckout(){
   if (cart.length===0) return alert("Tu carrito está vacío.");
 
-  // Solo enviamos lo necesario al backend (sin claves)
+  // Enviamos solo lo necesario (sin exponer claves)
   const items = cart.map(i => ({
-    variant_id: i.variant_id, // <-- Printful variant_id (lo pones en products.js)
+    variant_id: i.variant_id, // Printful
     quantity: i.qty,
     sku: i.sku,
     name: i.name,
@@ -164,7 +145,7 @@ async function goCheckout(){
     });
     const data = await res.json();
     if (data && data.url){
-      window.location.href = data.url; // Stripe Checkout
+      window.location.href = data.url; // redirección a Stripe Checkout
     } else {
       alert("No se pudo iniciar el pago. Intenta más tarde.");
     }
@@ -178,7 +159,7 @@ async function goCheckout(){
 function handleHash(){
   const h = location.hash;
 
-  // Legales
+  // Páginas legales
   const pages = {
     "#info/aviso-legal":"#legal-aviso",
     "#info/politica-compras":"#legal-compras",
@@ -192,9 +173,8 @@ function handleHash(){
     return;
   }
 
-  // Categorías
+  // Categorías del catálogo
   renderProducts();
-  updateBreadcrumb();
 }
 
 // ======= Promo lenta =======
@@ -222,20 +202,25 @@ document.addEventListener("DOMContentLoaded", ()=>{
   setYear();
   renderProducts();
   renderCart();
-  updateBreadcrumb();
   startPromo();
 
-  // CTA “fuego” -> scroll a productos
-  const cta = document.querySelector('.big-sale');
-  if (cta) cta.addEventListener('click', (e)=>{ e.preventDefault(); document.querySelector('#grid').scrollIntoView({behavior:'smooth'}); });
+  // CTA "Catálogo": scroll suave
+  const goCatalog = $("#goCatalog");
+  if (goCatalog){
+    goCatalog.addEventListener("click", (e)=>{
+      e.preventDefault();
+      const sec = document.querySelector("#catalogo");
+      if (sec) sec.scrollIntoView({ behavior:"smooth" });
+    });
+  }
 
-  // Menú y carrito
-  $("#menuToggle").addEventListener("click", toggleMenu);
+  // Carrito
   $("#openCart").addEventListener("click", openCart);
   $("#closeCart").addEventListener("click", closeCart);
   $("#drawerBackdrop").addEventListener("click", closeCart);
   $("#clearCart").addEventListener("click", clearCart);
   $("#checkoutBtn").addEventListener("click", goCheckout);
 
+  // Hash (categorías / legales)
   window.addEventListener("hashchange", handleHash);
 });
