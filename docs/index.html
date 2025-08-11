@@ -4,17 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <title>VALTIX |  – Moda premium que combina contigo</title>
-  <meta name="description" content="VALTIX: camisetas, sudaderas, pantalones, zapatos y accesorios premium. Free shipping on orders 60€+. Fast delivery in Spain (2–5 days) & worldwide (5–10 days). Secure checkout with Stripe." />
+  <title>VALTIX | Premium fashion for every style – Moda premium que combina contigo</title>
+  <meta name="description" content="VALTIX: camisetas, sudaderas, pantalones, zapatos y accesorios premium. Envío GRATIS en pedidos +60€. Entrega en España 2–5 días e internacional 5–10 días. Pago seguro con Stripe." />
   <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- Keywords ES+EN (intención de compra, long-tail) -->
-  <meta name="keywords" content="comprar camisetas premium, camisetas oversize hombre, camiseta blanca algodón 100, sudadera negra premium, plain black hoodie, pantalón negro elegante, black cargo pants, black joggers, zapatillas negras minimalistas, minimalist black sneakers, zapatos negros oficina, accesorios negros minimalistas, black cap, black leather belt, tienda ropa España, premium basics EU, international shipping clothing, free shipping 60€, secure checkout Stripe, VALTIX clothing" />
+  <!-- Keywords long-tail ES/EN -->
+  <meta name="keywords" content="comprar camisetas premium, sudadera negra premium, plain black hoodie, pantalón negro elegante, minimalist black sneakers, accesorios negros minimalistas, tienda ropa España, premium basics EU, international shipping clothing, free shipping 60€, secure checkout Stripe, VALTIX clothing" />
 
   <!-- OG / Twitter -->
-  <meta property="og:title" content="VALTIX |  – Moda premium que combina contigo" />
+  <meta property="og:title" content="VALTIX | Premium fashion for every style – Moda premium que combina contigo" />
   <meta property="og:description" content="Premium basics & streetwear. Free shipping 60€+. Spain 2–5 days & international 5–10 days. Secure Stripe checkout." />
   <meta property="og:image" content="https://via.placeholder.com/1200x630" />
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
@@ -26,7 +26,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="preload" as="image" href="https://via.placeholder.com/1200x630" />
 
-  <!-- Schema: WebSite + Organization -->
+  <!-- Schema base -->
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -68,7 +68,7 @@
   }
   </script>
 
-  <!-- Breadcrumbs (app.js los actualiza) -->
+  <!-- Breadcrumbs (app.js lo actualiza) -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -79,16 +79,16 @@
   }
   </script>
 
-  <!-- FAQ para rich results -->
+  <!-- FAQ -->
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
     "@type":"FAQPage",
     "mainEntity":[
       {"@type":"Question","name":"¿Plazos de entrega?","acceptedAnswer":{"@type":"Answer","text":"España: 2–5 días hábiles. Internacional: 5–10 días según destino."}},
-      {"@type":"Question","name":"¿Envío gratuito?","acceptedAnswer":{"@type":"Answer","text":"Sí, en pedidos iguales o superiores a 60€ en España."}},
+      {"@type":"Question","name":"¿Envío gratuito?","acceptedAnswer":{"@type":"Answer","text":"Sí, para pedidos ≥ 60€ en España."}},
       {"@type":"Question","name":"¿Pago seguro?","acceptedAnswer":{"@type":"Answer","text":"Pagos procesados por Stripe. No almacenamos datos de tarjeta."}},
-      {"@type":"Question","name":"¿Devoluciones?","acceptedAnswer":{"@type":"Answer","text":"14 días naturales desde la recepción. Si hay defecto, cubrimos la reposición."}}
+      {"@type":"Question","name":"¿Devoluciones?","acceptedAnswer":{"@type":"Answer","text":"14 días naturales desde la recepción. Defectos cubiertos por la tienda."}}
     ]
   }
   </script>
@@ -96,13 +96,9 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <!-- Topbar beneficios -->
-  <div class="topbar">
-    <div class="container topbar-inner">
-      <span>🚚 <strong>Envío GRATIS</strong> en pedidos +60€</span>
-      <span>🔒 Pago seguro con Stripe</span>
-      <span>↩️ Devoluciones 14 días</span>
-    </div>
+  <!-- Barra superior (móvil y desktop; en móvil se adapta) -->
+  <div class="top-bar">
+    🚚 Envío GRATIS en pedidos superiores a 60€
   </div>
 
   <!-- Header -->
@@ -134,7 +130,7 @@
   <section class="hero">
     <div class="container hero-inner">
       <div>
-        <h1>VALTIX |– Moda premium que combina contigo</h1>
+        <h1>VALTIX | Premium fashion for every style – Moda premium que combina contigo</h1>
         <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. España 2–5 días • Internacional 5–10 días.</h2>
         <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
@@ -153,7 +149,7 @@
       </div>
     </section>
 
-    <!-- Nube de anchors interna oculta (SEO) -->
+    <!-- Nube interna oculta (SEO seguro) -->
     <nav class="sr-only" aria-label="Búsquedas populares VALTIX">
       <ul>
         <li><a href="#c/camisetas">comprar camiseta blanca premium</a></li>
@@ -192,7 +188,7 @@
     </div>
   </aside>
 
-  <!-- Páginas legales (hash routing) -->
+  <!-- Páginas legales -->
   <section id="legal-aviso" class="legal-page" hidden>
     <div class="container legal-inner">
       <h1>Aviso legal</h1>
@@ -204,7 +200,7 @@
     <div class="container legal-inner">
       <h1>Política de compras</h1>
       <h2>Pagos</h2><p>Pagos seguros con <strong>Stripe</strong> en EUR. Aceptamos tarjetas y wallets compatibles.</p>
-      <h2>Envíos</h2><p>España: <strong>2–5 días hábiles</strong>. Internacional: 5–10 días. <strong>Envío gratis</strong> en pedidos ≥ 60€ (España). Tarifas según destino para otros países.</p>
+      <h2>Envíos</h2><p>España: <strong>2–5 días hábiles</strong>. Internacional: 5–10 días. <strong>Envío gratis</strong> en pedidos ≥ 60€ (España). Tarifas según destino en otros países.</p>
       <h2>Cambios y devoluciones</h2><p>14 días naturales desde la recepción. Si el producto llega con defecto, cubrimos el coste de reposición.</p>
     </div>
   </section>
@@ -215,10 +211,10 @@
     </div>
   </section>
 
-  <!-- Botón flotante de carrito (móvil) -->
+  <!-- Botón flotante carrito (móvil) -->
   <button id="fabCart" class="fab-cart" aria-label="Abrir carrito">🛒</button>
 
-  <!-- Scripts -->
+  <!-- Scripts (orden importante) -->
   <script src="./products.js"></script>
   <script src="./app.js"></script>
 </body>
