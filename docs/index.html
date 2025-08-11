@@ -42,7 +42,7 @@
           <a class="cta" href="#c/camisetas">Comprar ahora</a>
         </div>
         <div class="hero-img">
-          <div class="promo-box">Compra hoy y recibe en España o en cualquier parte del mundo</div>
+          <div class="promo-box"></div>
         </div>
       </div>
     </section>
@@ -81,7 +81,10 @@
     <div class="drawer-body" id="cartItems"></div>
     <div class="drawer-footer">
       <div class="subtotal"><span>Subtotal</span><span id="subtotal">€0.00</span></div>
-      <button class="btn" id="checkoutBtn" disabled>Pagar con Stripe</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn--light" id="clearCartBtn" type="button">Vaciar carrito</button>
+        <button class="btn" id="checkoutBtn" disabled type="button">Pagar</button>
+      </div>
     </div>
   </aside>
 
