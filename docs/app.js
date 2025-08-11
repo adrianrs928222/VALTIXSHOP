@@ -112,8 +112,7 @@ function renderCart(){
   checkoutBtn.disabled = cart.length === 0;
 }
 
-/* Exponer funciones globales para los onclick */
-window.addToCart = addToCart;
+/* Exponer funciones globales para los onclick del carrito */
 window.removeFromCart = removeFromCart;
 window.changeQty = changeQty;
 
@@ -146,7 +145,7 @@ async function checkout(){
 checkoutBtn && checkoutBtn.addEventListener("click", checkout);
 clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
 
-/* ========= PROMO VERTICAL (4 mensajes) ========= */
+/* ========= PROMO VERTICAL (4 mensajes con emojis) ========= */
 (function promoVertical(){
   const box = document.querySelector(".promo-box");
   if (!box) return;
@@ -167,6 +166,73 @@ clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
     i = (i + 1) % mensajes.length;
     setMensaje(mensajes[i]);
   }, 6500);
+})();
+
+/* ========= JSON-LD: Products + Breadcrumbs ========= */
+(function seoJsonLd(){
+  function injectJsonLd(id, obj){
+    let tag = document.getElementById(id);
+    if(!tag){
+      tag = document.createElement("script");
+      tag.type = "application/ld+json";
+      tag.id = id;
+      document.head.appendChild(tag);
+    }
+    tag.textContent = JSON.stringify(obj);
+  }
+
+  const BASE = "https://adrianrs928222.github.io/VALTIXSHOP/";
+
+  // Products JSON-LD
+  function buildProductsJsonLd(items){
+    return {
+      "@context": "https://schema.org",
+      "@graph": items.map(p => ({
+        "@type": "Product",
+        "@id": `${BASE}#product-${encodeURIComponent(p.id || p.sku)}`,
+        "name": p.name,
+        "image": (p.image && p.image.startsWith("http")) ? p.image : `${BASE}${p.image.replace(/^.\//,'')}`,
+        "sku": p.sku,
+        "brand": { "@type":"Brand", "name":"VALTIX" },
+        "category": (p.categories && p.categories[0]) ? p.categories[0] : "general",
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "EUR",
+          "price": (Number(p.price) || 0).toFixed(2),
+          "url": BASE,
+          "availability": "https://schema.org/InStock"
+        }
+      }))
+    };
+  }
+
+  // Breadcrumbs por categoría
+  function updateBreadcrumbs(){
+    const cat = (location.hash.startsWith("#c/") ? decodeURIComponent(location.hash.replace("#c/","")) : "");
+    const breadcrumbs = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type":"ListItem","position":1,"name":"Inicio","item": BASE }
+      ]
+    };
+    if (cat){
+      breadcrumbs.itemListElement.push({
+        "@type":"ListItem",
+        "position": 2,
+        "name": cat.charAt(0).toUpperCase()+cat.slice(1),
+        "item": `${BASE}#c/${encodeURIComponent(cat)}`
+      });
+    }
+    injectJsonLd("breadcrumbs-jsonld", breadcrumbs);
+  }
+
+  // Inyecta productos y breadcrumbs
+  if (Array.isArray(window.products) && window.products.length){
+    injectJsonLd("products-jsonld", buildProductsJsonLd(window.products));
+  }
+  updateBreadcrumbs();
+  window.addEventListener("hashchange", updateBreadcrumbs);
 })();
 
 /* ========= INIT ========= */
