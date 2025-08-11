@@ -197,17 +197,34 @@ function handleHash(){
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   const msgs=[
-    "Compra hoy y recibe en España o en cualquier parte del mundo 🌍",
-    "🚚 Envío gratuito en pedidos superiores a 60€"
+    "💥 ¡ENVÍO GRATIS en pedidos +60€! 📦 España 2–5 días • Internacional 5–10 🌍",
+    "Compra hoy y recibe en España o en cualquier parte del mundo 🌍"
   ];
   let i=0;
   const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
   show(); setInterval(show,8000);
 }
 
+// ===== Menú móvil (hamburguesa) =====
+function initMobileMenu(){
+  const menuBtn = $("#menu-toggle");
+  const mainNav = $("#main-nav");
+  if (menuBtn && mainNav){
+    menuBtn.addEventListener("click", ()=>{
+      const isOpen = mainNav.classList.toggle("show");
+      menuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+    // Cerrar al navegar
+    mainNav.querySelectorAll("a").forEach(a=>{
+      a.addEventListener("click", ()=> mainNav.classList.remove("show"));
+    });
+  }
+}
+
 // ===== Init =====
 document.addEventListener("DOMContentLoaded", ()=>{
   setYear();
+  initMobileMenu();
   handleHash();      // pinta catálogo e integra hash
   renderCart();
   startPromo();
