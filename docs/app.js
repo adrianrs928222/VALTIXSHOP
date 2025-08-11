@@ -65,7 +65,7 @@ function renderProducts(){
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
-      <img class="card-img" src="${p.image}" alt="${p.name}">
+      <img class="card-img" src="${p.image}" alt="${p.name}" loading="lazy">
       <div class="card-body">
         <h3 class="card-title">${p.name}</h3>
         <p class="card-price">${money(p.price)}</p>
@@ -74,7 +74,7 @@ function renderProducts(){
       </div>
     `;
 
-    // selección de talla por tarjeta
+    // selección de talla
     let selectedSize = sizes.length ? sizes[0] : null;
     const btns = card.querySelectorAll(".option-btn");
     btns.forEach(btn=>{
@@ -214,7 +214,6 @@ function initMobileMenu(){
       const isOpen = mainNav.classList.toggle("show");
       menuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
-    // Cerrar al navegar
     mainNav.querySelectorAll("a").forEach(a=>{
       a.addEventListener("click", ()=> mainNav.classList.remove("show"));
     });
@@ -225,7 +224,7 @@ function initMobileMenu(){
 document.addEventListener("DOMContentLoaded", ()=>{
   setYear();
   initMobileMenu();
-  handleHash();      // pinta catálogo e integra hash
+  handleHash();      // pinta catálogo o legales según hash
   renderCart();
   startPromo();
 
