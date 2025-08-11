@@ -1,120 +1,152 @@
-const productGrid = document.getElementById("grid");
-const cartCount = document.getElementById("cartCount");
-const cartItemsContainer = document.getElementById("cartItems");
-const cartTotal = document.getElementById("subtotal");
+/* ========= CONFIG ========= */
+const BACKEND = "https://una-tienda1.onrender.com";
 
+/* ========= SELECTORES ========= */
+const gridEl = document.getElementById("grid");
+const cartCountEl = document.getElementById("cartCount");
+const backdropEl = document.getElementById("backdrop");
+const drawerEl = document.getElementById("drawer");
+const cartItemsEl = document.getElementById("cartItems");
+const subtotalEl = document.getElementById("subtotal");
+const openCartBtn = document.getElementById("openCart");
+const closeCartBtn = document.getElementById("closeCart");
+const checkoutBtn = document.getElementById("checkoutBtn");
+const clearCartBtn = document.getElementById("clearCartBtn");
+
+/* ========= ESTADO ========= */
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-function renderProducts() {
-  productGrid.innerHTML = "";
-  products.forEach(prod => {
-    const card = document.createElement("div");
+/* ========= CATEGORÍAS POR HASH ========= */
+// #c/camisetas, #c/sudaderas, #c/pantalones, #c/zapatos, #c/accesorios
+function getCategoryFromHash(){
+  if (!location.hash.startsWith("#c/")) return "";
+  return decodeURIComponent(location.hash.replace("#c/","").trim());
+}
+
+/* ========= RENDER PRODUCTOS ========= */
+function renderProducts(){
+  if (!Array.isArray(products)) {
+    gridEl.innerHTML = `<div style="padding:16px;border:1px dashed #eaeaea;border-radius:12px">No se han podido cargar los productos (products.js).</div>`;
+    return;
+  }
+
+  const cat = getCategoryFromHash();
+  const items = cat ? products.filter(p => (p.categories||[]).includes(cat)) : products;
+
+  gridEl.innerHTML = "";
+  if (items.length === 0){
+    gridEl.innerHTML = `<div style="padding:16px;border:1px dashed #eaeaea;border-radius:12px">No hay productos en esta categoría.</div>`;
+    return;
+  }
+
+  items.forEach(p => {
+    const card = document.createElement("article");
     card.className = "card";
     card.innerHTML = `
-      <img src="${prod.image}" alt="${prod.name}" class="card-img">
+      <img class="card-img" src="${p.image}" alt="${p.name}" loading="lazy">
       <div class="card-body">
-        <h3 class="card-title">${prod.name}</h3>
-        <p class="card-price">${prod.price.toFixed(2)} €</p>
-        <button class="btn" onclick="addToCart('${prod.sku}')">Añadir al carrito</button>
+        <h3 class="card-title">${p.name}</h3>
+        <p class="card-price">€${(p.price||0).toFixed(2)}</p>
+        <button class="btn" data-sku="${p.sku}">Añadir al carrito</button>
       </div>
     `;
-    productGrid.appendChild(card);
+    card.querySelector(".btn").addEventListener("click", () => addToCart(p.sku));
+    gridEl.appendChild(card);
   });
 }
 
-function addToCart(sku) {
-  const product = products.find(p => p.sku === sku);
-  if (!product) return;
-  
-  const existing = cart.find(item => item.sku === sku);
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    cart.push({ ...product, qty: 1 });
-  }
-  
+/* ========= CARRITO ========= */
+function addToCart(sku){
+  const p = products.find(x => x.sku === sku);
+  if (!p) return;
+  const found = cart.find(i => i.sku === sku);
+  if (found) found.quantity += 1;
+  else cart.push({ sku:p.sku, name:p.name, price:p.price, image:p.image, quantity:1 });
   saveCart();
 }
-
-function removeFromCart(sku) {
-  cart = cart.filter(item => item.sku !== sku);
+function removeFromCart(sku){
+  cart = cart.filter(i => i.sku !== sku);
   saveCart();
 }
-
-function changeQty(sku, delta) {
-  const item = cart.find(i => i.sku === sku);
-  if (!item) return;
-  item.qty += delta;
-  if (item.qty <= 0) removeFromCart(sku);
+function changeQty(sku, delta){
+  const i = cart.find(x => x.sku === sku);
+  if (!i) return;
+  i.quantity += delta;
+  if (i.quantity <= 0) return removeFromCart(sku);
   saveCart();
 }
-
-function saveCart() {
+function clearCart(){
+  cart = [];
+  saveCart();
+}
+function saveCart(){
   localStorage.setItem("cart", JSON.stringify(cart));
   renderCart();
 }
-
-function renderCart() {
-  cartItemsContainer.innerHTML = "";
+function renderCart(){
+  cartItemsEl.innerHTML = "";
   let total = 0;
 
   cart.forEach(item => {
-    total += item.price * item.qty;
-    const div = document.createElement("div");
-    div.className = "drawer-item";
-    div.innerHTML = `
-      <img src="${item.image}" alt="${item.name}">
-      <div style="flex:1;">
-        <div>${item.name}</div>
-        <div>${item.price.toFixed(2)} €</div>
-        <div class="qty">
-          <button onclick="changeQty('${item.sku}', -1)">-</button>
-          <span>${item.qty}</span>
+    total += (item.price||0) * item.quantity;
+    const row = document.createElement("div");
+    row.className = "drawer-item";
+    row.innerHTML = `
+      <img src="${item.image}" alt="${item.name}" loading="lazy">
+      <div style="flex:1">
+        <div style="font-weight:600">${item.name}</div>
+        <div style="color:#6b6b6b">€${(item.price||0).toFixed(2)}</div>
+        <div class="qty" style="margin-top:8px">
+          <button onclick="changeQty('${item.sku}', -1)">−</button>
+          <span>${item.quantity}</span>
           <button onclick="changeQty('${item.sku}', 1)">+</button>
+          <button style="margin-left:auto" onclick="removeFromCart('${item.sku}')">Eliminar</button>
         </div>
       </div>
     `;
-    cartItemsContainer.appendChild(div);
+    cartItemsEl.appendChild(row);
   });
 
-  cartCount.textContent = cart.reduce((sum, item) => sum + item.qty, 0);
-  cartTotal.textContent = `${total.toFixed(2)} €`;
+  cartCountEl.textContent = cart.reduce((s,i) => s + i.quantity, 0);
+  subtotalEl.textContent = `€${total.toFixed(2)}`;
+  checkoutBtn.disabled = cart.length === 0;
 }
 
-function toggleCart() {
-  document.getElementById("backdrop").classList.toggle("show");
-  document.getElementById("drawer").classList.toggle("open");
-}
+/* Exponer funciones globales para los onclick */
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+window.changeQty = changeQty;
 
-document.getElementById("openCart").addEventListener("click", toggleCart);
-document.getElementById("closeCart").addEventListener("click", toggleCart);
+/* ========= DRAWER ========= */
+function openDrawer(){ backdropEl.classList.add("show"); drawerEl.classList.add("open"); }
+function closeDrawer(){ backdropEl.classList.remove("show"); drawerEl.classList.remove("open"); }
+openCartBtn && openCartBtn.addEventListener("click", openDrawer);
+closeCartBtn && closeCartBtn.addEventListener("click", closeDrawer);
+backdropEl && backdropEl.addEventListener("click", closeDrawer);
 
-async function checkout() {
+/* ========= CHECKOUT (Stripe via Render) ========= */
+async function checkout(){
   if (cart.length === 0) return alert("Tu carrito está vacío.");
-
-  try {
-    const res = await fetch("https://una-tienda1.onrender.com/create-checkout-session", {
+  try{
+    const res = await fetch(`${BACKEND}/checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cart })
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ items: cart })
     });
-
     const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      alert("Error al iniciar el pago.");
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Error de conexión con el servidor.");
+    if (data && data.url) location.href = data.url;
+    else alert("No se pudo iniciar el pago.");
+  }catch(e){
+    console.error(e);
+    alert("Error conectando con el servidor.");
   }
 }
 
-renderProducts();
-renderCart();
+/* Botones */
+checkoutBtn && checkoutBtn.addEventListener("click", checkout);
+clearCartBtn && clearCartBtn.addEventListener("click", clearCart);
 
-/* ===== Promo vertical con emojis ===== */
+/* ========= PROMO VERTICAL (4 mensajes) ========= */
 (function promoVertical(){
   const box = document.querySelector(".promo-box");
   if (!box) return;
@@ -136,3 +168,11 @@ renderCart();
     setMensaje(mensajes[i]);
   }, 6500);
 })();
+
+/* ========= INIT ========= */
+function init(){
+  renderProducts();
+  renderCart();
+}
+window.addEventListener("hashchange", renderProducts);
+document.addEventListener("DOMContentLoaded", init);
