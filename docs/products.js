@@ -1,15 +1,13 @@
-// VALTIX ─ Productos (1 por categoría) conectados con Printful
-// Nota: cambia los variant_id por los tuyos reales de Printful.
-// Asegúrate de usar los mismos SKU en tu backend (PRINTFUL_VARIANTS).
-
+// VALTIX — 1 producto por categoría (Printful)
+// Cambia los variant_id por los tuyos reales
 const products = [
   {
     id: "tee-white",
     name: "Camiseta Blanca Premium",
     price: 29.99,
-    image: "./assets/tee.jpg",              // reemplaza la imagen en /docs/assets/
-    sku: "camiseta_blanca_premium",        // <- debe coincidir con el backend
-    variant_id: 1234567890,                // <- tu ID de Printful
+    image: "./assets/tee.jpg",
+    sku: "camiseta_blanca_premium",
+    variant_id: 1234567890,
     categories: ["camisetas"]
   },
   {
