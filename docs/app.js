@@ -1,89 +1,138 @@
-(function(){
-  const $ = (sel, el=document) => el.querySelector(sel);
-  const state = { cart: [] };
-  const BACKEND = "https://una-tienda1.onrender.com";
+const productGrid = document.getElementById("grid");
+const cartCount = document.getElementById("cartCount");
+const cartItemsContainer = document.getElementById("cartItems");
+const cartTotal = document.getElementById("subtotal");
 
-  const format = v => "€" + v.toFixed(2);
-  const byHashCategory = () => (location.hash.startsWith("#c/") ? location.hash.slice(3) : "");
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-  function renderGrid() {
-    const grid = $("#grid"); grid.innerHTML = "";
-    const cat = byHashCategory();
-    const items = window.PRODUCTS.filter(p => !cat || p.categories.includes(cat));
-    items.forEach(p => {
-      const card = document.createElement("article");
-      card.className = "card";
-      card.innerHTML = `
-        <img class="card-img" src="${p.image}" alt="${p.name}" loading="lazy" width="800" height="800" />
-        <div class="card-body">
-          <h3 class="card-title">${p.name}</h3>
-          <p class="card-price">${format(p.price)}</p>
-          <button class="btn">Añadir al carrito</button>
-        </div>`;
-      card.querySelector(".btn").addEventListener("click", () => addToCart(p));
-      grid.appendChild(card);
+function renderProducts() {
+  productGrid.innerHTML = "";
+  products.forEach(prod => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${prod.image}" alt="${prod.name}" class="card-img">
+      <div class="card-body">
+        <h3 class="card-title">${prod.name}</h3>
+        <p class="card-price">${prod.price.toFixed(2)} €</p>
+        <button class="btn" onclick="addToCart('${prod.sku}')">Añadir al carrito</button>
+      </div>
+    `;
+    productGrid.appendChild(card);
+  });
+}
+
+function addToCart(sku) {
+  const product = products.find(p => p.sku === sku);
+  if (!product) return;
+  
+  const existing = cart.find(item => item.sku === sku);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.push({ ...product, qty: 1 });
+  }
+  
+  saveCart();
+}
+
+function removeFromCart(sku) {
+  cart = cart.filter(item => item.sku !== sku);
+  saveCart();
+}
+
+function changeQty(sku, delta) {
+  const item = cart.find(i => i.sku === sku);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) removeFromCart(sku);
+  saveCart();
+}
+
+function saveCart() {
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderCart();
+}
+
+function renderCart() {
+  cartItemsContainer.innerHTML = "";
+  let total = 0;
+
+  cart.forEach(item => {
+    total += item.price * item.qty;
+    const div = document.createElement("div");
+    div.className = "drawer-item";
+    div.innerHTML = `
+      <img src="${item.image}" alt="${item.name}">
+      <div style="flex:1;">
+        <div>${item.name}</div>
+        <div>${item.price.toFixed(2)} €</div>
+        <div class="qty">
+          <button onclick="changeQty('${item.sku}', -1)">-</button>
+          <span>${item.qty}</span>
+          <button onclick="changeQty('${item.sku}', 1)">+</button>
+        </div>
+      </div>
+    `;
+    cartItemsContainer.appendChild(div);
+  });
+
+  cartCount.textContent = cart.reduce((sum, item) => sum + item.qty, 0);
+  cartTotal.textContent = `${total.toFixed(2)} €`;
+}
+
+function toggleCart() {
+  document.getElementById("backdrop").classList.toggle("show");
+  document.getElementById("drawer").classList.toggle("open");
+}
+
+document.getElementById("openCart").addEventListener("click", toggleCart);
+document.getElementById("closeCart").addEventListener("click", toggleCart);
+
+async function checkout() {
+  if (cart.length === 0) return alert("Tu carrito está vacío.");
+
+  try {
+    const res = await fetch("https://una-tienda1.onrender.com/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cart })
     });
-  }
 
-  function addToCart(p) {
-    const idx = state.cart.findIndex(x => x.sku === p.sku);
-    if (idx >= 0) state.cart[idx].quantity += 1;
-    else state.cart.push({ name: p.name, price: p.price, sku: p.sku, image: p.image, quantity: 1 });
-    updateCartUI();
-  }
-
-  function updateCartUI() {
-    $("#cartCount").textContent = state.cart.length;
-    const ci = $("#cartItems"); ci.innerHTML = "";
-    let subtotal = 0;
-    state.cart.forEach(item => {
-      subtotal += item.price * item.quantity;
-      const row = document.createElement("div");
-      row.className = "drawer-item";
-      row.innerHTML = `
-        <img src="${item.image}" alt="${item.name}" width="64" height="64" loading="lazy"/>
-        <div style="flex:1">
-          <div style="font-weight:600">${item.name}</div>
-          <div style="color:#6b6b6b">${format(item.price)}</div>
-          <div class="qty" style="margin-top:8px">
-            <button class="dec">−</button>
-            <span>${item.quantity}</span>
-            <button class="inc">+</button>
-            <button class="rm" style="margin-left:auto">Eliminar</button>
-          </div>
-        </div>`;
-      row.querySelector(".dec").onclick = () => { item.quantity = Math.max(1, item.quantity-1); updateCartUI(); };
-      row.querySelector(".inc").onclick = () => { item.quantity += 1; updateCartUI(); };
-      row.querySelector(".rm").onclick  = () => { state.cart = state.cart.filter(x => x.sku !== item.sku); updateCartUI(); };
-      ci.appendChild(row);
-    });
-    $("#subtotal").textContent = format(subtotal);
-    $("#checkoutBtn").disabled = state.cart.length === 0;
-  }
-
-  const openDrawer = () => { $("#drawer").classList.add("open"); $("#backdrop").classList.add("show"); };
-  const closeDrawer = () => { $("#drawer").classList.remove("open"); $("#backdrop").classList.remove("show"); };
-  $("#openCart").onclick = openDrawer;
-  $("#closeCart").onclick = closeDrawer;
-  $("#backdrop").onclick = closeDrawer;
-
-  $("#checkoutBtn").onclick = async () => {
-    try {
-      const r = await fetch(BACKEND + "/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: state.cart })
-      });
-      const data = await r.json();
-      if (data && data.url) location.href = data.url;
-      else alert("No se pudo iniciar el pago.");
-    } catch (e) {
-      alert("Error conectando con el servidor.");
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert("Error al iniciar el pago.");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Error de conexión con el servidor.");
+  }
+}
 
-  $("#year").textContent = new Date().getFullYear();
-  window.addEventListener("hashchange", renderGrid);
-  renderGrid();
-  updateCartUI();
+renderProducts();
+renderCart();
+
+/* ===== Promo vertical con emojis ===== */
+(function promoVertical(){
+  const box = document.querySelector(".promo-box");
+  if (!box) return;
+
+  const mensajes = [
+    '🇪🇸📦 <strong>Envíos rápidos a toda España</strong>',
+    '🌍🚀 <strong>Entrega internacional garantizada</strong>',
+    '🛒✨ <strong>Compra fácil, pago 100% seguro</strong>',
+    '💎👕 <strong>Buena calidad en cada prenda</strong>'
+  ];
+
+  let i = 0;
+  function setMensaje(html){
+    box.innerHTML = `<span class="msg">${html}</span>`;
+  }
+  setMensaje(mensajes[i]);
+  setInterval(() => {
+    i = (i + 1) % mensajes.length;
+    setMensaje(mensajes[i]);
+  }, 6500);
 })();
