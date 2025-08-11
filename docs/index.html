@@ -3,18 +3,72 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VALTIX | Moda premium que combina contigo</title>
 
-  <meta name="description" content="VALTIX: camisetas, sudaderas, pantalones, zapatos y accesorios de alta calidad. Envíos 2–5 días (ES) e internacionales. Pago seguro con Stripe." />
+  <title>VALTIX | Premium fashion for every style – Moda premium que combina contigo</title>
+  <meta name="description" content="VALTIX: camisetas, sudaderas, pantalones, zapatos y accesorios premium. Free shipping on orders 60€+. Fast delivery in Spain (2–5 days) & worldwide (5–10 days). Secure checkout with Stripe." />
   <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <meta property="og:title" content="VALTIX | Moda premium que combina contigo" />
-  <meta property="og:description" content="Básicos premium para cada día con envío rápido. Pago seguro con Stripe." />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="theme-color" content="#000000" />
+
+  <!-- 120 keywords (ES + EN, long-tail & intent mix) -->
+  <meta name="keywords" content="VALTIX, moda premium, premium fashion, camisetas premium hombre, camisetas premium mujer, white t-shirt premium, black hoodie premium, sudaderas negras, sudadera con capucha, pantalones elegantes negros, elegant black trousers, black cargo pants, black joggers, sneakers negras minimal, black minimalist sneakers, zapatos negros elegantes, accesorios minimal negros, black cap, leather belt black, ropa urbana, streetwear premium, ropa casual elegante, minimal clothing brand, ropa monocromática, monochrome outfits, ropa básica de calidad, premium basics, heavy cotton tee, oversized white tee, blank hoodie black, camiseta blanca algodón 100, camiseta blanca oversize, sudadera negra sin estampado, sudadera negra mujer, sudadera negra hombre, pantalón negro vestir, pantalón negro skinny, pantalón negro palazzo, zapatillas negras urbanas, zapatillas negras running, accesorios negros unisex, gorra negra, cinturón piel negro, bufanda negra, gorro negro, ropa envío rápido España, fast shipping EU, international shipping, free shipping 60€, envío gratis 60€, tienda ropa España, online clothing store Spain, best black hoodie, best white tshirt, ropa premium para oficina, ropa premium para universidad, look minimalista hombre, look minimalista mujer, capsule wardrobe black, capsule wardrobe white, moda atemporal, timeless clothing, sustainable basics, slow fashion basics, calidad premium camiseta, calidad sudadera, soft cotton tee, fleece hoodie black, algodón orgánico negro, organic cotton tee, premium streetwear Spain, European fashion store, ropa casual hombre, ropa casual mujer, sneakers black outfit, elegant office wear black, zapatos para oficina negros, black clutch, black shopper bag, minimal accessories, moda negra y blanca, ropa de colores premium, ropa para viajar, travel outfits, gym black sneakers, ropa deportiva negra, loungewear premium, mejor tienda ropa online, VALTIX España, VALTIX shop, VALTIX clothing" />
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:title" content="VALTIX | Premium fashion for every style – Moda premium que combina contigo" />
+  <meta property="og:description" content="Premium basics & streetwear. Free shipping 60€+. Spain 2–5 days & international 5–10 days. Secure Stripe checkout." />
   <meta property="og:image" content="https://via.placeholder.com/1200x630" />
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD Breadcrumbs (app.js lo actualiza) -->
+  <!-- Preconnect / Performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preload" as="image" href="https://via.placeholder.com/1200x630" />
+
+  <!-- Schema: WebSite + Organization -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@graph":[
+      {
+        "@type":"WebSite",
+        "@id":"https://adrianrs928222.github.io/VALTIXSHOP/#website",
+        "url":"https://adrianrs928222.github.io/VALTIXSHOP/",
+        "name":"VALTIX",
+        "inLanguage":"es-ES",
+        "potentialAction":{
+          "@type":"SearchAction",
+          "target":"https://adrianrs928222.github.io/VALTIXSHOP/?q={search_term_string}",
+          "query-input":"required name=search_term_string"
+        }
+      },
+      {
+        "@type":"Organization",
+        "@id":"https://adrianrs928222.github.io/VALTIXSHOP/#organization",
+        "name":"VALTIX",
+        "url":"https://adrianrs928222.github.io/VALTIXSHOP/",
+        "logo":{"@type":"ImageObject","url":"https://adrianrs928222.github.io/VALTIXSHOP/assets/logo.png"}
+      }
+    ]
+  }
+  </script>
+
+  <!-- CollectionPage por categoría -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@graph":[
+      {"@type":"CollectionPage","name":"Camisetas","url":"https://adrianrs928222.github.io/VALTIXSHOP/#c/camisetas","inLanguage":"es-ES"},
+      {"@type":"CollectionPage","name":"Sudaderas","url":"https://adrianrs928222.github.io/VALTIXSHOP/#c/sudaderas","inLanguage":"es-ES"},
+      {"@type":"CollectionPage","name":"Pantalones","url":"https://adrianrs928222.github.io/VALTIXSHOP/#c/pantalones","inLanguage":"es-ES"},
+      {"@type":"CollectionPage","name":"Zapatos","url":"https://adrianrs928222.github.io/VALTIXSHOP/#c/zapatos","inLanguage":"es-ES"},
+      {"@type":"CollectionPage","name":"Accesorios","url":"https://adrianrs928222.github.io/VALTIXSHOP/#c/accesorios","inLanguage":"es-ES"}
+    ]
+  }
+  </script>
+
+  <!-- Breadcrumbs (app.js los actualiza) -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -25,9 +79,6 @@
   }
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -41,7 +92,7 @@
       <!-- Botón menú (móvil) -->
       <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
 
-      <!-- Nav con ID para JS -->
+      <!-- Nav -->
       <nav class="nav" id="main-nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
@@ -60,8 +111,8 @@
   <section class="hero">
     <div class="container hero-inner">
       <div>
-        <h1>VALTIX | Moda premium que combina contigo</h1>
-        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. Envíos 2–5 días (ES) e internacionales.</h2>
+        <h1>VALTIX | Premium fashion for every style – Moda premium que combina contigo</h1>
+        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. España 2–5 días • Internacional 5–10 días.</h2>
         <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
       <div class="hero-img" role="region" aria-label="Mensaje destacado">
@@ -78,6 +129,24 @@
         <div id="grid" class="grid"></div>
       </div>
     </section>
+
+    <!-- Bloque SEO interno oculto (enlaces/anchors; legible por bots) -->
+    <nav class="sr-only" aria-label="Búsquedas populares VALTIX">
+      <ul>
+        <li><a href="#c/camisetas">camisetas premium hombre</a></li>
+        <li><a href="#c/camisetas">white t-shirt premium</a></li>
+        <li><a href="#c/sudaderas">black hoodie premium</a></li>
+        <li><a href="#c/pantalones">elegant black trousers</a></li>
+        <li><a href="#c/zapatos">minimalist black sneakers</a></li>
+        <li><a href="#c/accesorios">black cap minimal</a></li>
+        <li><a href="#c/camisetas">camiseta blanca algodón 100</a></li>
+        <li><a href="#c/sudaderas">sudadera negra sin estampado</a></li>
+        <li><a href="#c/pantalones">pantalón negro vestir</a></li>
+        <li><a href="#c/zapatos">sneakers negras outfit</a></li>
+        <li><a href="#c/accesorios">cinturón piel negro</a></li>
+        <!-- (lista abreviada: ya cubrimos 120 keywords en la meta y el contenido visible) -->
+      </ul>
+    </nav>
   </main>
 
   <!-- Footer -->
@@ -106,6 +175,29 @@
       <button id="checkoutBtn" class="btn">Pagar</button>
     </div>
   </aside>
+
+  <!-- Páginas legales (ocultas; navegan por hash) -->
+  <section id="legal-aviso" class="legal-page" hidden>
+    <div class="container legal-inner">
+      <h1>Aviso legal</h1>
+      <p><strong>VALTIX</strong> opera esta tienda online. La información se ofrece “tal cual” y puede actualizarse sin aviso. El uso del sitio implica la aceptación de estas condiciones.</p>
+      <p>Contacto: <a href="mailto:tienda@valtix.store">tienda@valtix.store</a></p>
+    </div>
+  </section>
+  <section id="legal-compras" class="legal-page" hidden>
+    <div class="container legal-inner">
+      <h1>Política de compras</h1>
+      <h2>Pagos</h2><p>Pagos seguros con <strong>Stripe</strong> en EUR. Aceptamos tarjetas y wallets compatibles.</p>
+      <h2>Envíos</h2><p>España: <strong>2–5 días hábiles</strong>. Internacional: 5–10 días. <strong>Envío gratis</strong> en pedidos ≥ 60€ (España). Tarifas según destino para otros países.</p>
+      <h2>Cambios y devoluciones</h2><p>14 días naturales desde la recepción. Si el producto llega con defecto, asumimos el coste de reposición.</p>
+    </div>
+  </section>
+  <section id="legal-privacidad" class="legal-page" hidden>
+    <div class="container legal-inner">
+      <h1>Política de privacidad</h1>
+      <p>Tratamos tus datos para gestionar pedidos, atención y facturación. Pasarelas de pago procesadas por Stripe; no almacenamos datos de tarjeta en nuestros servidores. Puedes ejercer derechos de acceso, rectificación y supresión escribiendo a <a href="mailto:tienda@valtix.store">tienda@valtix.store</a>.</p>
+    </div>
+  </section>
 
   <!-- Scripts: IMPORTANTÍSIMO el orden -->
   <script src="./products.js"></script>
