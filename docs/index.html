@@ -37,13 +37,19 @@
       <a class="brand" href="./" aria-label="Inicio VALTIX">
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
-      <nav class="nav" aria-label="Categorías">
+
+      <!-- Botón menú (móvil) -->
+      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+
+      <!-- Nav con ID para JS -->
+      <nav class="nav" id="main-nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
         <a href="#c/pantalones">Pantalones</a>
         <a href="#c/zapatos">Zapatos</a>
         <a href="#c/accesorios">Accesorios</a>
       </nav>
+
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
