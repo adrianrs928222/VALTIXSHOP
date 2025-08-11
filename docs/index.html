@@ -5,20 +5,29 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>VALTIX | Moda premium que combina contigo</title>
 
-  <meta name="description" content="VALTIX: camisetas, sudaderas, pantalones, zapatos y accesorios de alta calidad. Envíos 2–5 días en España y entrega internacional. Pago seguro con Stripe." />
+  <meta name="description" content="VALTIX: camisetas, sudaderas, pantalones, zapatos y accesorios de alta calidad. Envíos 2–5 días en España e internacionales. Pago seguro con Stripe." />
   <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta property="og:title" content="VALTIX | Moda premium que combina contigo" />
-  <meta property="og:description" content="Básicos premium para cada día. Envíos 2–5 días en España y entrega internacional." />
+  <meta property="og:description" content="Básicos premium para cada día con envío rápido. Pago seguro con Stripe." />
   <meta property="og:image" content="https://via.placeholder.com/1200x630" />
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
+  <!-- Breadcrumbs JSON-LD (se actualiza desde app.js) -->
+  <script id="breadcrumbs-jsonld" type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"BreadcrumbList",
+    "itemListElement":[
+      { "@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/" }
+    ]
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
-  <!-- Tu CSS (el último que te pasé) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -46,11 +55,10 @@
     <div class="container hero-inner">
       <div>
         <h1>VALTIX | Moda premium que combina contigo</h1>
-        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios de alta calidad. Envíos 2–5 días (ES) e internacionales.</h2>
+        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. Envíos 2–5 días (ES) e internacionales.</h2>
         <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
       <div class="hero-img" role="region" aria-label="Mensaje destacado">
-        <!-- ⬇⬇⬇ ESTE ID ES CLAVE PARA LA ANIMACIÓN -->
         <div class="promo-box" id="promoBox">💎 Buena calidad en cada prenda</div>
       </div>
     </div>
@@ -60,8 +68,7 @@
   <main class="main">
     <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
-        <h3 id="catalogo-title" class="visually-hidden">Catálogo</h3>
-        <!-- ⬇⬇⬇ ESTE ID ES CLAVE PARA PINTAR LOS PRODUCTOS -->
+        <h3 id="catalogo-title" class="visualmente-oculto">Catálogo</h3>
         <div id="grid" class="grid"></div>
       </div>
     </section>
@@ -79,7 +86,7 @@
     </div>
   </footer>
 
-  <!-- Páginas legales (opcional, pero los IDs deben existir si enlazas) -->
+  <!-- Legales (opcional) -->
   <section id="legal-aviso" class="legal-page" hidden>
     <div class="container legal-inner">
       <h1>Aviso legal</h1>
@@ -99,7 +106,7 @@
     </div>
   </section>
 
-  <!-- Drawer Carrito (IDs imprescindibles) -->
+  <!-- Drawer Carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -114,18 +121,7 @@
     </div>
   </aside>
 
-  <!-- JSON-LD Breadcrumbs (el app.js lo actualiza) -->
-  <script id="breadcrumbs-jsonld" type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"BreadcrumbList",
-    "itemListElement":[
-      {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
-    ]
-  }
-  </script>
-
-  <!-- IMPORTANTÍSIMO: products.js VA ANTES QUE app.js -->
+  <!-- Scripts (orden imprescindible) -->
   <script src="./products.js"></script>
   <script src="./app.js"></script>
 </body>
