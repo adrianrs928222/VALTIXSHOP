@@ -187,20 +187,23 @@ function startPromo(){
   show(); setInterval(show, 9000);
 }
 
-// ===== Modal imagen (abre/cierra perfecto) =====
+// ===== Modal imagen (abre/cierra perfecto también en móvil) =====
 (function setupModal(){
-  const modal = document.getElementById("imgModal");
-  const modalImg = document.getElementById("modalImg");
+  const modal      = document.getElementById("imgModal");
+  const modalImg   = document.getElementById("modalImg");
   const modalClose = document.getElementById("modalClose");
-  const backdrop = modal?.querySelector(".modal-backdrop");
-  const loading  = document.getElementById("modalLoading");
+  const backdrop   = modal?.querySelector(".modal-backdrop");
+  const loading    = document.getElementById("modalLoading");
 
   if (!modal || !modalImg || !backdrop || !modalClose) return;
+
+  let isOpen = false;
 
   window.openZoom = function(src, alt=""){
     modal.classList.add("show");
     modal.setAttribute("aria-hidden","false");
-    lockScroll();
+    document.documentElement.style.overflow = "hidden"; // lock scroll
+    isOpen = true;
 
     if (loading) loading.removeAttribute("aria-hidden");
     modalImg.onload  = ()=> loading && loading.setAttribute("aria-hidden","true");
@@ -209,19 +212,44 @@ function startPromo(){
     modalImg.src = src;
     modalImg.alt = alt;
     document.addEventListener("keydown", onEsc);
+    // Android back button (history)
+    history.pushState({valtixModal:true}, "");
+    window.addEventListener("popstate", onPop, { once:true });
   };
 
   function closeZoom(){
+    if (!isOpen) return;
+    isOpen = false;
     modal.classList.remove("show");
     modal.setAttribute("aria-hidden","true");
     modalImg.removeAttribute("src");
+    document.documentElement.style.overflow = ""; // unlock scroll
     document.removeEventListener("keydown", onEsc);
-    unlockScroll();
+    // Limpia el pushState si estamos cerrando manualmente
+    if (history.state && history.state.valtixModal) history.back();
   }
-  function onEsc(e){ if (e.key === "Escape") closeZoom(); }
 
-  backdrop.addEventListener("click", closeZoom);
-  modalClose.addEventListener("click", closeZoom);
+  function onEsc(e){ if (e.key === "Escape") closeZoom(); }
+  function onPop(){ // botón Atrás de Android/iOS
+    if (isOpen) closeZoom();
+  }
+
+  // Cerrar con clic/tap en fondo o botón ✕ (click + touchstart)
+  const closeHandlers = ["click","touchstart"];
+  closeHandlers.forEach(evt=>{
+    modal.addEventListener(evt, (e)=>{
+      const target = e.target;
+      // Cierra si toca el fondo, el botón ✕ o cualquier elemento con data-close="modal"
+      if (
+        target === backdrop ||
+        target === modalClose ||
+        (target.dataset && target.dataset.close === "modal")
+      ){
+        e.preventDefault();
+        closeZoom();
+      }
+    }, { passive: false });
+  });
 })();
 
 // ===== Init =====
