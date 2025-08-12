@@ -1,101 +1,57 @@
 :root{
-  --bg:#fff; --fg:#0a0a0a; --muted:#6b6b6b; --border:#eaeaea; --shadow:0 12px 30px rgba(0,0,0,.08);
-  --radius:16px; --container:1200px; --accent:#ffd700;
+  --bg:#fff; --fg:#0a0a0a; --muted:#6b6b6b; --border:#eaeaea;
+  --shadow:0 12px 30px rgba(0,0,0,.08);
+  --radius:16px; --container:1200px;
 }
 *{box-sizing:border-box} html,body{height:100%}
 body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);line-height:1.5}
 img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 .container{max-width:var(--container);margin:0 auto;padding:0 16px}
 .section{padding:18px 0 56px}
-.visualmente-oculto{position:absolute!important;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden}
+.visually-hidden{position:absolute!important;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden}
 
-/* Barra envíos gratis (arriba del todo) */
-.envio-bar{
-  background:#000;color:#fff;font-weight:700;text-align:center;
-  padding:8px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
+/* Topbar */
+.topbar{background:#111;color:#fff;text-align:center;padding:6px 10px;font-weight:700;font-size:.9rem}
 
 /* Header */
 .header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--border)}
-.header-inner{display:flex;align-items:center;gap:12px;height:64px;position:relative}
+.header-inner{display:flex;align-items:center;gap:12px;height:64px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800}
 .brand-logo{width:32px;height:32px;border-radius:8px;border:2px solid var(--fg);display:grid;place-items:center;font-weight:800}
 .brand-name{letter-spacing:.4px}
+
+/* Nav + burger */
 .nav{display:flex;gap:10px;flex:1;justify-content:center;overflow:auto;padding:6px 0}
-.nav a{white-space:nowrap;border:1px solid var(--border);padding:6px 12px;border-radius:999px;background:#fff}
+.nav a{white-space:nowrap;border:1px solid var(--border);padding:6px 12px;border-radius:999px}
 .nav a:hover{border-color:var(--fg)}
-.nav a.active{border-color:#111}
-.cart-btn{margin-left:auto;display:flex;align-items:center;gap:8px;border:2px solid #000;background:#000;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:700}
-.cart-count{background:#fff;color:#000;border:1px solid #000;padding:2px 8px;border-radius:999px;font-weight:700;font-size:.85rem}
+.burger{display:none;margin-left:8px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px}
+.burger span{display:block;width:22px;height:2px;background:#111;margin:4px 0;border-radius:2px}
 
-/* Botón hamburguesa */
-.menu-toggle{
-  display:none;background:#fff;border:1px solid var(--border);color:var(--fg);
-  padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700;
-}
-
-/* Menú móvil (<=900px): overlay fijo bajo el header */
-@media (max-width:900px){
-  .menu-toggle{display:block;order:2; z-index:110}
-  .nav{
-    position:fixed; top:64px; left:0; right:0;
-    background:#fff; border-top:1px solid var(--border);
-    box-shadow:0 12px 24px rgba(0,0,0,.12);
-    padding:12px; display:none; flex-direction:column; gap:10px; z-index:100;
-    max-height:calc(100vh - 64px); overflow:auto;
-  }
-  .nav a{border:1px solid var(--border); border-radius:10px; padding:12px 14px; background:#fff; font-weight:700}
-  .nav.show{display:flex}
-}
+.cart-btn{margin-left:auto;display:flex;align-items:center;gap:8px;border:1px solid var(--fg);background:var(--fg);color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:700}
+.cart-count{background:#fff;color:var(--fg);border:1px solid var(--fg);padding:2px 8px;border-radius:999px;font-weight:700;font-size:.85rem}
 
 /* Hero */
-.hero{padding:48px 0 24px}
+.hero{padding:40px 0 18px}
 .hero-inner{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
 .hero h1{font-size:clamp(26px,4vw,42px);line-height:1.14;margin:0 0 8px;font-weight:800}
 .sub{margin:0 0 16px;color:var(--muted);max-width:62ch}
-.cta{display:inline-block;background:#000;color:#fff;border:2px solid #000;padding:12px 18px;border-radius:12px;font-weight:800}
+.cta{display:inline-block;background:var(--fg);color:#fff;border:1px solid var(--fg);padding:12px 18px;border-radius:12px;font-weight:700}
 .cta:hover{filter:brightness(.96)}
+.hero-img{aspect-ratio:4/3;width:100%;background:#f0f1f3;border-radius:18px;display:grid;place-items:center;box-shadow:var(--shadow)}
 
-/* Tarjeta derecha del héroe (contenedor) */
-.hero-img{
-  aspect-ratio:4/3;
-  width:100%;
-  background:#0b0b0b;        /* mantenemos la tarjeta negra */
-  border-radius:18px;
-  display:grid;
-  place-items:center;
-  box-shadow:var(--shadow);
-  padding:20px;              /* espacio interior para que la caja ocupe todo */
-}
-
-/* Caja de mensaje dentro de la tarjeta (NUEVA versión limpia) */
+/* Promo animada (más visible) */
 .promo-box{
-  width:100%;                /* ocupa todo el ancho disponible */
-  background:#f5f6f7;        /* gris muy claro */
-  color:#111;
-  border:none;               /* sin borde amarillo */
-  border-radius:14px;
-  padding:18px 22px;         /* más aire alrededor del texto */
-  box-shadow:0 6px 18px rgba(0,0,0,.08);
-  font-weight:800;
-  font-size:1.1rem;          /* texto más grande */
-  letter-spacing:.2px;
-  text-align:center;
+  background:linear-gradient(180deg,#f6f7f9,#e9ecef);
+  color:#111; font-weight:800; letter-spacing:.2px; text-align:center;
+  padding:16px 18px; border-radius:14px; border:1px solid #d9dde3;
+  max-width:640px; width:92%;
 }
-
-/* Texto animado suave y más lento */
-.promo-text{
-  display:inline-block;
-  animation:promoSoft 10s infinite;
-}
-
-@keyframes promoSoft{
-  0%   {opacity:0; transform:translateY(-6px)}
-  10%  {opacity:1; transform:translateY(0)}
-  40%  {opacity:1; transform:translateY(0)}
-  50%  {opacity:0; transform:translateY(6px)}
-  60%  {opacity:1; transform:translateY(0)}
-  100% {opacity:1; transform:translateY(0)}
+.promo-text{display:inline-block;animation:fadeInOut 8s infinite}
+@keyframes fadeInOut{
+  0%,15%{opacity:0; transform:translateY(-8px)}
+  20%,45%{opacity:1; transform:translateY(0)}
+  50%,65%{opacity:0; transform:translateY(8px)}
+  70%,95%{opacity:1; transform:translateY(0)}
 }
 
 /* Grid productos */
@@ -104,11 +60,12 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 .card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
 .card-img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f6f6f6}
 .card-body{padding:14px}
-.card-title{font-weight:800;margin:0 0 6px}
+.card-title{font-weight:700;margin:0 0 6px}
 .card-price{margin:0 0 10px;color:var(--muted)}
-.btn{width:100%;display:inline-block;text-align:center;cursor:pointer;background:#000;color:#fff;border:2px solid #000;padding:12px;border-radius:12px;font-weight:800}
+.btn{width:100%;display:inline-block;text-align:center;cursor:pointer;background:var(--fg);color:#fff;border:1px solid var(--fg);padding:10px 12px;border-radius:10px;font-weight:700}
 .btn:hover{filter:brightness(.95)}
-.btn-alt{background:#fff;color:#000;border:2px solid #000}
+.btn-alt{background:#fff;color:var(--fg);border:1px solid var(--fg)}
+.card .card-link{color:inherit;text-decoration:none;display:block}
 
 /* Selector de tallas */
 .options{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
@@ -131,26 +88,50 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 .qty{display:flex;align-items:center;gap:8px;margin:6px 0}
 .qty button{width:28px;height:28px;border:1px solid var(--border);background:#fff;cursor:pointer;border-radius:6px}
 .drawer-footer{padding:16px;border-top:1px solid var(--border)}
-.subtotal{display:flex;justify-content:space-between;margin-bottom:10px;font-weight:800}
+.subtotal{display:flex;justify-content:space-between;margin-bottom:10px;font-weight:700}
+
+/* ===== PRODUCT DETAIL ===== */
+.detail[hidden]{display:none}
+.detail-inner{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;padding-top:10px}
+.detail-back{display:inline-block;margin-bottom:8px;border-bottom:1px dashed var(--border)}
+.detail-media{position:relative}
+.detail-media img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:16px;background:#f6f6f6;box-shadow:var(--shadow)}
+.zoom-btn{position:absolute;right:12px;bottom:12px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:8px 10px;cursor:pointer}
+.detail-title{margin:0 0 6px;font-size:clamp(22px,3.6vw,32px);font-weight:800}
+.detail-price{margin:0 0 12px;color:var(--muted);font-weight:700}
+.detail-actions{display:flex;gap:10px;margin-top:8px}
+
+/* ===== MODAL ZOOM ===== */
+.modal{position:fixed;inset:0;display:none;z-index:140}
+.modal.show{display:block}
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.modal-body{position:absolute;inset:0;display:grid;place-items:center;padding:24px}
+.modal-body img{max-width:92vw;max-height:92vh;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.4);transition:transform .2s}
+.modal-body img.zoomed{transform:scale(1.4);cursor:zoom-out}
+.modal-close{position:absolute;top:14px;right:14px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:8px 10px;cursor:pointer}
 
 /* Footer */
 .footer{border-top:1px solid var(--border);padding:18px 0;color:var(--muted);text-align:center}
 .footer .legal-links{display:inline-flex;gap:14px;margin-left:8px}
 .footer .legal-links a{border-bottom:1px dashed var(--border)}
-.footer .legal-links a:hover{border-color:#000}
+.footer .legal-links a:hover{border-color:var(--fg)}
 
-/* Responsive columnas */
+/* Responsive */
 @media (max-width:1024px){
   .hero-inner{grid-template-columns:1fr}
   .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+@media (max-width:840px){
+  .burger{display:inline-block}
+  .nav{position:fixed;left:0;right:0;top:64px;background:#fff;border-bottom:1px solid var(--border);display:none;flex-direction:column;padding:10px 16px;gap:8px;z-index:70}
+  .nav.open{display:flex}
+  .nav a{border-radius:10px}
+}
 @media (max-width:720px){
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media (max-width:520px){
-  .promo-box{ font-size:1rem; padding:16px 18px }
 }
 @media (max-width:440px){
   .grid{grid-template-columns:1fr}
   .cart-btn{padding:8px 10px}
+  .topbar{font-size:.85rem}
 }
