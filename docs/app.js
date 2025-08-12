@@ -10,10 +10,7 @@ let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 // ===== Util =====
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
 function money(n){ return `${Number(n).toFixed(2)} €`; }
-function getActiveCategory(){
-  const h=location.hash||"";
-  return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all";
-}
+function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
 
 // ===== SEO: Breadcrumbs =====
 function getProductById(id){ return (window.products || []).find(p => p.id === id); }
@@ -169,8 +166,8 @@ function renderProductDetail(id){
     history.back();
   };
 
-  // Zoom PRO: abrir modal
-  $("#detail-zoom").onclick = ()=>{
+  // Abrir visor PRO al tocar la imagen
+  $("#detail-img").onclick = ()=>{
     window.__openZoom($("#detail-img").src);
   };
 }
@@ -292,9 +289,6 @@ function startPromo(){
   const backdrop = document.querySelector(".modal-backdrop");
   const canvas = document.querySelector(".modal-canvas");
   const loading = document.getElementById("modalLoading");
-  const btnIn = document.getElementById("zoomIn");
-  const btnOut = document.getElementById("zoomOut");
-  const btnReset = document.getElementById("zoomReset");
 
   let scale=1, minScale=1, maxScale=4;
   let tx=0, ty=0;
@@ -409,11 +403,6 @@ function startPromo(){
     }
     lastTap = now;
   });
-
-  // Controles
-  $("#zoomIn").addEventListener("click", ()=> zoomAt(canvas.clientWidth/2, canvas.clientHeight/2, 1.2));
-  $("#zoomOut").addEventListener("click",()=> zoomAt(canvas.clientWidth/2, canvas.clientHeight/2, 1/1.2));
-  $("#zoomReset").addEventListener("click", resetView);
 
   document.querySelector(".modal-backdrop").addEventListener("click", closeZoom);
   $("#modalClose").addEventListener("click", closeZoom);
