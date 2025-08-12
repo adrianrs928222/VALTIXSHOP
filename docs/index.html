@@ -14,13 +14,6 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- Breadcrumbs (app.js actualiza) -->
-  <script id="breadcrumbs-jsonld" type="application/ld+json">
-  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
-  ]}
-  </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -37,8 +30,8 @@
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
 
-      <!-- Botón hamburguesa (móvil) -->
-      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+      <!-- Botón hamburguesa (solo móvil) -->
+      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
 
       <!-- Menú -->
       <nav id="main-nav" class="nav" aria-label="Categorías">
@@ -121,12 +114,15 @@
         const expanded = btn.getAttribute('aria-expanded') === 'true';
         btn.setAttribute('aria-expanded', String(!expanded));
       });
-      // Cerrar al navegar
       nav.addEventListener('click', e=>{
-        if(e.target.tagName === 'A' && window.innerWidth < 900){
+        if(e.target.tagName === 'A' && window.innerWidth <= 900){
           nav.classList.remove('show');
           btn.setAttribute('aria-expanded','false');
         }
+      });
+      // Cierra si cambias orientación/tamaño
+      window.addEventListener('resize', ()=>{
+        if(window.innerWidth > 900){ nav.classList.remove('show'); btn.setAttribute('aria-expanded','false'); }
       });
     })();
   </script>
