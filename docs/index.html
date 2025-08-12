@@ -14,24 +14,13 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD (breadcrumbs básico; app.js lo puede actualizar si quieres) -->
-  <script id="breadcrumbs-jsonld" type="application/ld+json">
-  {
-    "@context":"https://schema.org",
-    "@type":"BreadcrumbList",
-    "itemListElement":[
-      {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
-    ]
-  }
-  </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <!-- Topbar simple -->
+  <!-- Topbar -->
   <div class="topbar" role="status">🚚 Envíos gratis en pedidos superiores a 60€</div>
 
   <!-- Header -->
@@ -40,18 +29,44 @@
       <a class="brand" href="./" aria-label="Inicio VALTIX">
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
-      <nav class="nav" aria-label="Categorías">
+
+      <!-- Navegación desktop -->
+      <nav id="nav" class="nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
         <a href="#c/pantalones">Pantalones</a>
         <a href="#c/zapatos">Zapatos</a>
         <a href="#c/accesorios">Accesorios</a>
       </nav>
+
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
+
+      <!-- Botón hamburguesa (móvil) -->
+      <button id="burger" class="burger" aria-label="Abrir menú" aria-controls="mobileMenu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
+
+  <!-- Menú móvil Overlay -->
+  <div id="mobileMenu" class="mnav" aria-hidden="true">
+    <div class="mnav-backdrop" data-close="mnav"></div>
+    <nav class="mnav-panel" role="dialog" aria-label="Menú móvil">
+      <div class="mnav-head">
+        <span class="mnav-title">VALTIX</span>
+        <button class="mnav-close" aria-label="Cerrar menú" data-close="mnav">✕</button>
+      </div>
+      <ul class="mnav-list">
+        <li><a href="#c/camisetas" data-link="mnav">Camisetas</a></li>
+        <li><a href="#c/sudaderas" data-link="mnav">Sudaderas</a></li>
+        <li><a href="#c/pantalones" data-link="mnav">Pantalones</a></li>
+        <li><a href="#c/zapatos" data-link="mnav">Zapatos</a></li>
+        <li><a href="#c/accesorios" data-link="mnav">Accesorios</a></li>
+      </ul>
+    </nav>
+  </div>
 
   <!-- Hero -->
   <section class="hero">
@@ -66,7 +81,6 @@
       </div>
 
       <div class="hero-img" role="region" aria-label="Mensaje destacado">
-        <!-- Promo FIX: id + .promo-text -->
         <div class="promo-box" id="promoBox">
           <span class="promo-text"></span>
         </div>
@@ -74,8 +88,8 @@
     </div>
   </section>
 
+  <!-- Catálogo -->
   <main class="main">
-    <!-- Catálogo -->
     <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
         <h3 id="catalogo-title" class="visually-hidden">Catálogo</h3>
@@ -96,7 +110,7 @@
     </div>
   </footer>
 
-  <!-- Drawer Carrito -->
+  <!-- Carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -111,9 +125,9 @@
     </div>
   </aside>
 
-  <!-- MODAL IMG (reutilizado por app.js) -->
+  <!-- MODAL IMAGEN (visor) -->
   <div id="imgModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop"></div>
+    <div class="modal-backdrop" data-close="modal"></div>
     <div class="modal-content" role="dialog" aria-label="Vista ampliada">
       <button id="modalClose" class="modal-close" aria-label="Cerrar">✕</button>
       <div class="modal-stage">
