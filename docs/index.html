@@ -3,22 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
   <title>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</title>
+
   <meta name="description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
   <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta property="og:title" content="VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento" />
-  <meta property="og:description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
-  <meta property="og:image" content="https://via.placeholder.com/1200x630" />
+  <meta property="og:description" content="Moda premium, básicos de calidad y envío rápido. Pago seguro con Stripe." />
+  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/og.jpg" />
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- Breadcrumbs (app.js los actualiza) -->
+  <!-- JSON-LD breadcrumbs (app.js actualiza categoría y/o producto) -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
-  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
-  ]}
+  {
+    "@context":"https://schema.org",
+    "@type":"BreadcrumbList",
+    "itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
+    ]
+  }
   </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,8 +31,9 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <!-- Barra superior -->
-  <div class="envio-bar">🚚 Envíos gratis en pedidos superiores a 60€</div>
+
+  <!-- Topbar -->
+  <div class="topbar" role="status">🚚 Envíos gratis en pedidos superiores a 60€</div>
 
   <!-- Header -->
   <header class="header">
@@ -37,11 +42,7 @@
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
 
-      <!-- Botón hamburguesa (solo móvil) -->
-      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
-
-      <!-- Menú -->
-      <nav id="main-nav" class="nav" aria-label="Categorías">
+      <nav id="nav" class="nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
         <a href="#c/pantalones">Pantalones</a>
@@ -52,6 +53,10 @@
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
+
+      <button id="burger" class="burger" aria-label="Abrir menú" aria-controls="nav" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
@@ -60,23 +65,52 @@
     <div class="container hero-inner">
       <div>
         <h1>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</h1>
-        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. Envíos 2–5 días (ES) e internacionales.</h2>
+        <h2 class="sub">
+          Camisetas, sudaderas, pantalones, zapatos y accesorios de alta calidad. 
+          🌍 Envíos internacionales y en España en 2–5 días hábiles.
+        </h2>
         <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
+
       <div class="hero-img" role="region" aria-label="Mensaje destacado">
         <div class="promo-box" id="promoBox"><span class="promo-text"></span></div>
       </div>
     </div>
   </section>
 
-  <!-- Catálogo -->
   <main class="main">
+
+    <!-- Catálogo -->
     <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
-        <h3 id="catalogo-title" class="visualmente-oculto">Catálogo</h3>
+        <h3 id="catalogo-title" class="visually-hidden">Catálogo</h3>
         <div id="grid" class="grid"></div>
       </div>
     </section>
+
+    <!-- ===== PRODUCT DETAIL ===== -->
+    <section id="product-detail" class="detail" hidden aria-labelledby="detail-title">
+      <div class="container detail-inner">
+        <a href="#" id="detail-back" class="detail-back">← Volver</a>
+
+        <div class="detail-media">
+          <img id="detail-img" alt="" />
+          <button id="detail-zoom" class="zoom-btn" aria-label="Ampliar imagen">🔍</button>
+        </div>
+
+        <div class="detail-info">
+          <h1 id="detail-title" class="detail-title"></h1>
+          <p id="detail-price" class="detail-price"></p>
+
+          <div id="detail-sizes" class="options" role="group" aria-label="Tallas"></div>
+
+          <div class="detail-actions">
+            <button id="detail-add" class="btn">Añadir al carrito</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Footer -->
@@ -86,7 +120,7 @@
       <nav class="legal-links">
         <a href="#info/aviso-legal">Aviso legal</a>
         <a href="#info/politica-compras">Política de compras</a>
-        <a href="#info/privacidad">Política de privacidad</a>
+        <a href="#info/privacidad">Privacidad</a>
       </nav>
     </div>
   </footer>
@@ -106,7 +140,16 @@
     </div>
   </aside>
 
-  <!-- Scripts -->
+  <!-- MODAL ZOOM -->
+  <div id="imgModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-body">
+      <img id="modalImg" alt="Vista ampliada" />
+      <button id="modalClose" class="modal-close" aria-label="Cerrar">✕</button>
+    </div>
+  </div>
+
+  <!-- Scripts (products antes que app) -->
   <script src="./products.js"></script>
   <script src="./app.js"></script>
 </body>
