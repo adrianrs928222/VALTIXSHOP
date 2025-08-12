@@ -9,7 +9,7 @@ window.products = [
     name: "Camiseta Premium Blanca 180g",
     alt: "Camiseta blanca premium 180g para hombre y mujer",
     price: 29.99,
-    image: "img/camiseta-premium-blanca-180g.webp",
+    image: "docs/img/camiseta-premium-blanca-180g.webp",
     sku: "tee_white_180",
     categories: ["camisetas"],
     // Reemplaza por tus variant_id de Printful (ejemplo S–XXL)
