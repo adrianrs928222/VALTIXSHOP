@@ -14,7 +14,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD Breadcrumbs (app.js los actualiza) -->
+  <!-- Breadcrumbs (app.js los actualiza) -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
     {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
@@ -109,34 +109,5 @@
   <!-- Scripts -->
   <script src="./products.js"></script>
   <script src="./app.js"></script>
-
-  <!-- Toggle del menú (asegura funcionamiento aunque app.js no lo gestione) -->
-  <script>
-    (function(){
-      const btn = document.getElementById('menu-toggle');
-      const nav = document.getElementById('main-nav');
-      if(!btn || !nav) return;
-
-      btn.addEventListener('click', ()=>{
-        nav.classList.toggle('show');
-        const expanded = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', String(!expanded));
-      });
-
-      nav.addEventListener('click', e=>{
-        if(e.target.tagName === 'A' && window.innerWidth <= 900){
-          nav.classList.remove('show');
-          btn.setAttribute('aria-expanded','false');
-        }
-      });
-
-      window.addEventListener('resize', ()=>{
-        if(window.innerWidth > 900){
-          nav.classList.remove('show');
-          btn.setAttribute('aria-expanded','false');
-        }
-      });
-    })();
-  </script>
 </body>
 </html>
