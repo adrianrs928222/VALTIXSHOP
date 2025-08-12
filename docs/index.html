@@ -14,6 +14,13 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
+  <!-- JSON-LD Breadcrumbs (app.js los actualiza) -->
+  <script id="breadcrumbs-jsonld" type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
+  ]}
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -66,7 +73,7 @@
   <main class="main">
     <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
-        <h3 id="catalogo-title" class="visually-hidden">Catálogo</h3>
+        <h3 id="catalogo-title" class="visualmente-oculto">Catálogo</h3>
         <div id="grid" class="grid"></div>
       </div>
     </section>
@@ -103,26 +110,31 @@
   <script src="./products.js"></script>
   <script src="./app.js"></script>
 
-  <!-- Toggle del menú (por si tu app.js no lo tiene) -->
+  <!-- Toggle del menú (asegura funcionamiento aunque app.js no lo gestione) -->
   <script>
     (function(){
       const btn = document.getElementById('menu-toggle');
       const nav = document.getElementById('main-nav');
       if(!btn || !nav) return;
+
       btn.addEventListener('click', ()=>{
         nav.classList.toggle('show');
         const expanded = btn.getAttribute('aria-expanded') === 'true';
         btn.setAttribute('aria-expanded', String(!expanded));
       });
+
       nav.addEventListener('click', e=>{
         if(e.target.tagName === 'A' && window.innerWidth <= 900){
           nav.classList.remove('show');
           btn.setAttribute('aria-expanded','false');
         }
       });
-      // Cierra si cambias orientación/tamaño
+
       window.addEventListener('resize', ()=>{
-        if(window.innerWidth > 900){ nav.classList.remove('show'); btn.setAttribute('aria-expanded','false'); }
+        if(window.innerWidth > 900){
+          nav.classList.remove('show');
+          btn.setAttribute('aria-expanded','false');
+        }
       });
     })();
   </script>
