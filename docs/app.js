@@ -5,9 +5,11 @@ const CHECKOUT_PATH = "/create-checkout-session";
 const $ = s => document.querySelector(s);
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-// ===== Util =====
+// ===== Helpers =====
 const money = n => `${Number(n).toFixed(2)} €`;
 const getCat = () => (location.hash.startsWith("#c/") ? decodeURIComponent(location.hash.slice(3)) : "all");
+const lockScroll = () => document.documentElement.style.overflow = "hidden";
+const unlockScroll = () => document.documentElement.style.overflow = "";
 
 // ===== Render productos =====
 function renderProducts(){
@@ -123,9 +125,9 @@ function changeQty(sku, vid, d){
 function clearCart(){ cart = []; saveCart(); }
 function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
 
-// Drawer
-function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); }
-function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); }
+// Drawer carrito
+function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); lockScroll(); }
+function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); unlockScroll(); }
 
 // Checkout Stripe
 async function goCheckout(){
@@ -140,7 +142,36 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ===== Promo (usa correctamente .promo-text) =====
+// ===== Menú móvil =====
+(function setupMobileMenu(){
+  const burger = $("#burger");
+  const mnav   = $("#mobileMenu");
+  if (!burger || !mnav) return;
+
+  function openMenu(){
+    mnav.classList.add("show");
+    mnav.setAttribute("aria-hidden","false");
+    burger.setAttribute("aria-expanded","true");
+    lockScroll();
+  }
+  function closeMenu(){
+    mnav.classList.remove("show");
+    mnav.setAttribute("aria-hidden","true");
+    burger.setAttribute("aria-expanded","false");
+    unlockScroll();
+  }
+
+  burger.addEventListener("click", ()=>{
+    if (mnav.classList.contains("show")) closeMenu(); else openMenu();
+  });
+  mnav.addEventListener("click", (e)=>{
+    if (e.target.dataset.close === "mnav") closeMenu();
+    if (e.target.dataset.link === "mnav") closeMenu(); // al tocar un enlace
+  });
+  document.addEventListener("keydown",(e)=>{ if (e.key==="Escape" && mnav.classList.contains("show")) closeMenu(); });
+})();
+
+// ===== Promo (texto rotando) =====
 function startPromo(){
   const box = $("#promoBox");
   const textEl = box?.querySelector(".promo-text");
@@ -156,24 +187,22 @@ function startPromo(){
   show(); setInterval(show, 9000);
 }
 
-// ===== Modal imagen (reutiliza el HTML existente) =====
-(function setupExistingModal(){
+// ===== Modal imagen (abre/cierra perfecto) =====
+(function setupModal(){
   const modal = document.getElementById("imgModal");
   const modalImg = document.getElementById("modalImg");
   const modalClose = document.getElementById("modalClose");
   const backdrop = modal?.querySelector(".modal-backdrop");
   const loading  = document.getElementById("modalLoading");
 
-  if (!modal || !modalImg || !backdrop || !modalClose) {
-    console.warn("Modal no encontrado. Revisa IDs: #imgModal, #modalImg, #modalClose, .modal-backdrop");
-    return;
-  }
+  if (!modal || !modalImg || !backdrop || !modalClose) return;
 
   window.openZoom = function(src, alt=""){
     modal.classList.add("show");
     modal.setAttribute("aria-hidden","false");
-    if (loading) loading.removeAttribute("aria-hidden"); // muestra loader
+    lockScroll();
 
+    if (loading) loading.removeAttribute("aria-hidden");
     modalImg.onload  = ()=> loading && loading.setAttribute("aria-hidden","true");
     modalImg.onerror = ()=> loading && loading.setAttribute("aria-hidden","true");
 
@@ -185,7 +214,9 @@ function startPromo(){
   function closeZoom(){
     modal.classList.remove("show");
     modal.setAttribute("aria-hidden","true");
+    modalImg.removeAttribute("src");
     document.removeEventListener("keydown", onEsc);
+    unlockScroll();
   }
   function onEsc(e){ if (e.key === "Escape") closeZoom(); }
 
@@ -195,17 +226,15 @@ function startPromo(){
 
 // ===== Init =====
 document.addEventListener("DOMContentLoaded", ()=>{
-  // año footer si lo necesitas
   const y = document.getElementById("year"); if (y) y.textContent = new Date().getFullYear();
 
   renderProducts();
   renderCart();
   startPromo();
 
-  // CTA scroll
+  // CTA
   document.getElementById("goCatalog")?.addEventListener("click",(e)=>{
-    e.preventDefault();
-    document.getElementById("catalogo")?.scrollIntoView({behavior:"smooth"});
+    e.preventDefault(); document.getElementById("catalogo")?.scrollIntoView({behavior:"smooth"});
   });
 
   // Carrito
