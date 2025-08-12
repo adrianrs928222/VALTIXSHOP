@@ -12,7 +12,6 @@ window.products = [
     image: "docs/img/camiseta-premium-blanca-180g.webp",
     sku: "tee_white_180",
     categories: ["camisetas"],
-    // Reemplaza por tus variant_id de Printful (ejemplo S–XXL)
     variant_map: { S: 111111001, M: 111111002, L: 111111003, XL: 111111004, XXL: 111111005 }
   },
 
@@ -20,9 +19,9 @@ window.products = [
   {
     id: "hoodie-black-classic",
     name: "Sudadera Negra Clásica",
-    alt: "Sudadera negra con capucha, interior suave",
+    alt: "Sudadera negra con capucha e interior suave de algodón",
     price: 49.99,
-    image: "img/sudadera-negra-clasica.webp",
+    image: "docs/img/sudadera-negra-clasica.webp",
     sku: "hoodie_black_classic",
     categories: ["sudaderas"],
     variant_map: { S: 222222001, M: 222222002, L: 222222003, XL: 222222004 }
@@ -32,12 +31,11 @@ window.products = [
   {
     id: "pants-black-elegant",
     name: "Pantalón Negro Elegante",
-    alt: "Pantalón negro elegante corte recto",
+    alt: "Pantalón negro elegante de corte recto para ocasiones formales e informales",
     price: 39.99,
-    image: "img/pantalon-negro-elegante.webp",
+    image: "docs/img/pantalon-negro-elegante.webp",
     sku: "pants_black_elegant",
     categories: ["pantalones"],
-    // Si trabajas por tallas numéricas
     variant_map: { "38": 333333031, "40": 333333032, "42": 333333033, "44": 333333034 }
   },
 
@@ -45,9 +43,9 @@ window.products = [
   {
     id: "shoes-black-minimal",
     name: "Zapatillas Minimal Negras",
-    alt: "Zapatillas negras minimalistas suela cómoda",
+    alt: "Zapatillas negras minimalistas con suela cómoda y diseño versátil",
     price: 59.99,
-    image: "img/zapatillas-minimal-negras.webp",
+    image: "docs/img/zapatillas-minimal-negras.webp",
     sku: "shoes_black_minimal",
     categories: ["zapatos"],
     variant_map: { "41": 444444041, "42": 444444042, "43": 444444043, "44": 444444044 }
@@ -57,9 +55,9 @@ window.products = [
   {
     id: "cap-black-valtix",
     name: "Gorra Negra VALTIX",
-    alt: "Gorra negra VALTIX con ajuste trasero",
+    alt: "Gorra negra VALTIX con ajuste trasero y diseño premium",
     price: 19.99,
-    image: "img/gorra-negra-valtix.webp",
+    image: "docs/img/gorra-negra-valtix.webp",
     sku: "cap_black_valtix",
     categories: ["accesorios"],
     variant_map: { "Única": 555555051 }
