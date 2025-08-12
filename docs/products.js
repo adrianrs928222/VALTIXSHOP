@@ -8,7 +8,7 @@ window.products = [
     id: "tee-white-180",
     name: "Camiseta Premium Blanca 180g",
     price: 29.99,
-    image: "https://via.placeholder.com/800x800.png?text=Camiseta+VALTIX+Blanca",
+    image: img/camiseta-Premium-Blanca-180g.webp "https://via.placeholder.com/800x800.png?text=Camiseta+VALTIX+Blanca",
     sku: "tee_white_180",
     categories: ["camisetas"],
     // Tallas S–XXL (ejemplo). Cambia los IDs por los tuyos reales:
