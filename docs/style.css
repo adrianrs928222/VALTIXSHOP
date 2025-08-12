@@ -7,7 +7,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sa
 img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 .container{max-width:var(--container);margin:0 auto;padding:0 16px}
 .section{padding:18px 0 56px}
-.visually-hidden{position:absolute!important;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden}
+.visualmente-oculto{position:absolute!important;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden}
 
 /* Barra envíos gratis */
 .envio-bar{
@@ -35,14 +35,27 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 
 /* Menú móvil (<=900px) */
 @media (max-width:900px){
-  .menu-toggle{display:block;order:2}
+  .menu-toggle{display:block;order:2; z-index:110}
   .nav{
-    position:absolute; top:100%; left:16px; right:16px; margin-top:8px;
-    background:#fff; border:1px solid var(--border);
-    border-radius:14px; box-shadow:var(--shadow);
-    padding:12px; display:none; flex-direction:column; gap:10px; z-index:70;
+    position:fixed;                 /* overlay bajo el header */
+    top:64px; left:0; right:0;
+    background:#fff;
+    border-top:1px solid var(--border);
+    box-shadow:0 12px 24px rgba(0,0,0,.12);
+    padding:12px;
+    display:none;                   /* oculto por defecto */
+    flex-direction:column; gap:10px;
+    z-index:100;
+    max-height:calc(100vh - 64px);
+    overflow:auto;
   }
-  .nav a{border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+  .nav a{
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    background:#fff;
+    font-weight:700;
+  }
   .nav.show{display:flex}
 }
 
