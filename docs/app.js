@@ -11,16 +11,8 @@ let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
-function setActiveNav(){
-  const cat = getActiveCategory();
-  $$("#main-nav a").forEach(a=>{
-    const aCat = a.getAttribute("href").replace("#c/","");
-    if (cat !== "all" && aCat === cat) a.setAttribute("aria-current","page");
-    else a.removeAttribute("aria-current");
-  });
-}
 
-// ===== SEO: Breadcrumbs + Product JSON-LD =====
+// ===== SEO: Breadcrumbs =====
 function updateBreadcrumbsSchema(){
   const el = $("#breadcrumbs-jsonld"); if(!el) return;
   const base = {
@@ -38,22 +30,7 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-function injectProductSchemas(list){
-  document.querySelectorAll('script[data-prod-schema="1"]').forEach(n=>n.remove());
-  list.forEach(p=>{
-    const s=document.createElement("script");
-    s.type="application/ld+json"; s.dataset.prodSchema="1";
-    s.textContent = JSON.stringify({
-      "@context":"https://schema.org","@type":"Product",
-      "name":p.name,"image":[p.image],"sku":p.sku,
-      "brand":{"@type":"Brand","name":"VALTIX"},
-      "offers":{"@type":"Offer","priceCurrency":"EUR","price":Number(p.price).toFixed(2),"availability":"https://schema.org/InStock","url":"https://adrianrs928222.github.io/VALTIXSHOP/"}
-    });
-    document.head.appendChild(s);
-  });
-}
-
-// ===== Render productos (con tallas y badges) =====
+// ===== Render productos (con tallas) =====
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -69,14 +46,12 @@ function renderProducts(){
   list.forEach(p=>{
     const sizes = p.variant_map ? Object.keys(p.variant_map) : [];
     const sizeBtns = sizes.map((sz,idx)=>`<button class="option-btn" data-sz="${sz}" ${idx===0?"aria-pressed='true'":""}>${sz}</button>`).join("");
-    const badge = p.badge ? `<span class="badge ${p.badge==='Más vendido'?'hit':''}">${p.badge}</span>` : "";
 
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
-      <img class="card-img" src="${p.image}" alt="${p.name}" loading="lazy">
+      <img class="card-img" src="${p.image}" alt="${p.name}">
       <div class="card-body">
-        ${badge}
         <h3 class="card-title">${p.name}</h3>
         <p class="card-price">${money(p.price)}</p>
         ${sizes.length?`<div class="options" role="group" aria-label="Tallas">${sizeBtns}</div>`:""}
@@ -96,9 +71,8 @@ function renderProducts(){
       });
     });
 
-    // añadir al carrito
-    const addBtn = card.querySelector(".add-btn");
-    addBtn.addEventListener("click", ()=>{
+    // add to cart
+    card.querySelector(".add-btn").addEventListener("click", ()=>{
       const prod = products.find(x=>x.sku===p.sku);
       if(!prod) return;
       let variant_id = prod.variant_id;
@@ -117,8 +91,8 @@ function renderProducts(){
     grid.appendChild(card);
   });
 
-  injectProductSchemas(list);
-  setActiveNav();
+  updateActiveNavLink();
+  updateBreadcrumbsSchema();
 }
 
 // ===== Carrito =====
@@ -187,6 +161,21 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
+// ===== Promo (móvil: solo envío gratis; desktop: alterna 2 mensajes) =====
+function startPromo(){
+  const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
+  if(window.innerWidth <= 520){
+    textEl.textContent = "🚚 Envíos GRATIS en pedidos superiores a 60€";
+  } else {
+    const msgs=[
+      "Compra hoy y recibe en España o en cualquier parte del mundo 🌍",
+      "🚚 Envíos GRATIS en pedidos superiores a 60€"
+    ];
+    let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
+    show(); setInterval(show,8000);
+  }
+}
+
 // ===== Router (categorías / legales) =====
 function handleHash(){
   const h=location.hash;
@@ -195,52 +184,62 @@ function handleHash(){
     "#info/politica-compras":"#legal-compras",
     "#info/privacidad":"#legal-privacidad"
   };
+  // ocultar páginas legales si aplica (si las tienes en tu HTML)
   Object.values(pages).forEach(sel=>{ const el=document.querySelector(sel); if(el) el.hidden=true; });
 
   if(pages[h]){
     const el=document.querySelector(pages[h]); if(el){ el.hidden=false; window.scrollTo({top:el.offsetTop-60,behavior:"smooth"}); }
     updateBreadcrumbsSchema(); return;
   }
-  renderProducts(); updateBreadcrumbsSchema();
+  renderProducts();
 }
 
-// ===== Promo alternando (sin temporizador de oferta) =====
-function startPromo(){
-  const textEl=$(".promo-text"); if(!textEl) return;
-  const msgs=[
-    "💥 ENVÍO GRATIS en pedidos +60€ • España 2–5 días",
-    "🌍 Entrega internacional 5–10 días • Pago seguro con Stripe"
-  ];
-  let i=0;
-  const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
-  show(); setInterval(show,8000);
+// ===== Menú hamburguesa =====
+function setupHamburger(){
+  const btn = $("#menu-toggle");
+  const nav = $("#main-nav");
+  if(!btn || !nav) return;
+
+  btn.addEventListener("click", ()=>{
+    nav.classList.toggle("show");
+    const expanded = btn.getAttribute("aria-expanded")==="true";
+    btn.setAttribute("aria-expanded", String(!expanded));
+  });
+
+  nav.addEventListener("click", e=>{
+    if(e.target.tagName==="A" && window.innerWidth<=900){
+      nav.classList.remove("show");
+      btn.setAttribute("aria-expanded","false");
+    }
+  });
+
+  window.addEventListener("resize", ()=>{
+    if(window.innerWidth>900){
+      nav.classList.remove("show");
+      btn.setAttribute("aria-expanded","false");
+    }
+  });
 }
 
-// ===== Menú móvil + FAB carrito =====
-function initMobileUI(){
-  const menuBtn = $("#menu-toggle");
-  const mainNav = $("#main-nav");
-  if (menuBtn && mainNav){
-    menuBtn.addEventListener("click", ()=>{
-      const isOpen = mainNav.classList.toggle("show");
-      menuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    });
-    mainNav.querySelectorAll("a").forEach(a=>{
-      a.addEventListener("click", ()=> mainNav.classList.remove("show"));
-    });
-  }
-  $("#fabCart")?.addEventListener("click", openCart);
+// ===== Nav activo =====
+function updateActiveNavLink(){
+  const cat = getActiveCategory();
+  $$("#main-nav a").forEach(a=>{
+    const href = a.getAttribute("href") || "";
+    const match = href.startsWith("#c/") ? href.slice(3) : "";
+    a.classList.toggle("active", cat!=="all" && match===cat);
+  });
 }
 
 // ===== Init =====
 document.addEventListener("DOMContentLoaded", ()=>{
   setYear();
-  initMobileUI();
-  handleHash();      // pinta catálogo o legales según hash
-  renderCart();
+  setupHamburger();   // <— IMPORTANTE para que funcione el menú
   startPromo();
+  handleHash();
+  renderCart();
 
-  // CTA scroll suave a catálogo
+  // CTA scroll suave
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
 
   // Carrito
@@ -250,5 +249,5 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#clearCart")?.addEventListener("click", clearCart);
   $("#checkoutBtn")?.addEventListener("click", goCheckout);
 
-  window.addEventListener("hashchange", handleHash);
+  window.addEventListener("hashchange", ()=>{ handleHash(); updateActiveNavLink(); });
 });
