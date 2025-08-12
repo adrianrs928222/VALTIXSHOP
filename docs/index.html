@@ -14,7 +14,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD Breadcrumbs (app.js los actualiza con categoría / producto) -->
+  <!-- JSON-LD Breadcrumbs -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -82,7 +82,7 @@
     <!-- Catálogo -->
     <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
-        <h3 id="catalogo-title" class="visually-hidden">Catálogo</h3>
+        <h3 id="catalogo-title" class="visualmente-oculto">Catálogo</h3>
         <div id="grid" class="grid"></div>
       </div>
     </section>
@@ -94,7 +94,7 @@
 
         <div class="detail-media">
           <img id="detail-img" alt="" />
-          <button id="detail-zoom" class="zoom-btn" aria-label="Ampliar imagen">🔍</button>
+          <!-- Sin botón de zoom: tocar la imagen abre el visor -->
         </div>
 
         <div class="detail-info">
