@@ -1,5 +1,5 @@
 // ===== Config =====
-const BACKEND_URL = "https://una-tienda1.onrender.com"; // Render
+const BACKEND_URL = "https://una-tienda1.onrender.com";
 const CHECKOUT_PATH = "/create-checkout-session";
 
 const $  = s => document.querySelector(s);
@@ -7,14 +7,17 @@ const $$ = s => document.querySelectorAll(s);
 
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-// ===== Util =====
+// ===== Utils =====
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
 
+// Body scroll lock (para móvil, overlays)
+function lockScroll(){ document.body.classList.add("no-scroll"); }
+function unlockScroll(){ document.body.classList.remove("no-scroll"); }
+
 // ===== SEO: Breadcrumbs =====
 function getProductById(id){ return (window.products || []).find(p => p.id === id); }
-
 function updateBreadcrumbsSchema(){
   const el = $("#breadcrumbs-jsonld"); if(!el) return;
   const base = {
@@ -43,7 +46,7 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-// ===== Render productos (grid) =====
+// ===== Grid productos =====
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -81,7 +84,9 @@ function renderProducts(){
     const btns = card.querySelectorAll(".option-btn");
     btns.forEach(btn=>{
       if(btn.dataset.sz===selectedSize) btn.classList.add("active");
-      btn.addEventListener("click", ()=>{
+      // evitar que el tap en la talla active el enlace padre en móvil
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation(); e.preventDefault();
         btns.forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         selectedSize = btn.dataset.sz;
@@ -111,13 +116,12 @@ function renderProducts(){
   });
 }
 
-// ===== Detalle de producto =====
+// ===== Ficha producto =====
 function renderProductDetail(id){
   const p = getProductById(id);
   const sec = $("#product-detail");
   if(!p || !sec){ location.hash = ""; return; }
 
-  // Oculta catálogo, muestra ficha
   $("#catalogo")?.setAttribute("hidden","true");
   sec.removeAttribute("hidden");
 
@@ -166,7 +170,7 @@ function renderProductDetail(id){
     history.back();
   };
 
-  // Abrir visor PRO al tocar la imagen
+  // Abrir visor tocando la imagen
   $("#detail-img").onclick = ()=>{
     window.__openZoom($("#detail-img").src);
   };
@@ -221,8 +225,8 @@ function renderCart(){
 }
 
 // Drawer
-function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); $("#cartDrawer").setAttribute("aria-hidden","false"); }
-function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); $("#cartDrawer").setAttribute("aria-hidden","true"); }
+function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); $("#cartDrawer").setAttribute("aria-hidden","false"); lockScroll(); }
+function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); $("#cartDrawer").setAttribute("aria-hidden","true"); unlockScroll(); }
 
 // Checkout Stripe
 async function goCheckout(){
@@ -242,34 +246,30 @@ async function goCheckout(){
 function handleHash(){
   const h=location.hash || "";
 
-  // Legales (si las usas en otras secciones)
   if (h.startsWith("#info/")){
     $("#product-detail")?.setAttribute("hidden","true");
     $("#catalogo")?.removeAttribute("hidden");
     renderProducts(); updateBreadcrumbsSchema(); return;
   }
 
-  // Categoría
   if (h.startsWith("#c/")){
     $("#product-detail")?.setAttribute("hidden","true");
     $("#catalogo")?.removeAttribute("hidden");
     renderProducts(); updateBreadcrumbsSchema(); return;
   }
 
-  // Ficha producto
   if (h.startsWith("#p/")){
     const id = decodeURIComponent(h.slice(3));
     renderProductDetail(id);
     updateBreadcrumbsSchema(); return;
   }
 
-  // Home
   $("#product-detail")?.setAttribute("hidden","true");
   $("#catalogo")?.removeAttribute("hidden");
   renderProducts(); updateBreadcrumbsSchema();
 }
 
-// Promo rotatoria
+// Promo
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   const msgs=[
@@ -278,7 +278,7 @@ function startPromo(){
     "💳 Pago seguro con Stripe"
   ];
   let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
-  show(); setInterval(show,8000);
+  show(); setInterval(show,9000);
 }
 
 // ====== ZOOM PRO ======
@@ -299,6 +299,7 @@ function startPromo(){
     modal.classList.add("show");
     modal.setAttribute("aria-hidden","false");
     loading.removeAttribute("aria-hidden");
+    lockScroll();   // 🔒 bloquea scroll body
     // reset
     scale=1; tx=0; ty=0; applyTransform(true);
     modalImg.onload = ()=> loading.setAttribute("aria-hidden","true");
@@ -310,6 +311,7 @@ function startPromo(){
     modal.classList.remove("show");
     modal.setAttribute("aria-hidden","true");
     document.removeEventListener("keydown", onKey);
+    unlockScroll(); // 🔓 desbloquea scroll body
   }
   function onKey(e){
     if (e.key==="Escape") closeZoom();
@@ -374,7 +376,8 @@ function startPromo(){
     lastX = e.clientX; lastY = e.clientY;
     tx += dx; ty += dy;
     applyTransform();
-  });
+  }, { passive:false });
+
   canvas.addEventListener("pointerup", (e)=>{
     pointers.delete(e.pointerId);
     isPointerDown=false; canvas.classList.remove("grabbing");
@@ -383,9 +386,13 @@ function startPromo(){
     pointers.delete(e.pointerId);
     isPointerDown=false; canvas.classList.remove("grabbing");
   });
+
+  // Evitar scroll de página durante gestos en iOS antiguos
+  canvas.addEventListener("touchmove", (e)=>{ e.preventDefault(); }, { passive:false });
+
   function distance(x1,y1,x2,y2){ const dx=x2-x1, dy=y2-y1; return Math.hypot(dx,dy); }
 
-  // Rueda
+  // Rueda (desktop)
   canvas.addEventListener("wheel", (e)=>{
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
@@ -404,14 +411,14 @@ function startPromo(){
     lastTap = now;
   });
 
-  document.querySelector(".modal-backdrop").addEventListener("click", closeZoom);
+  backdrop.addEventListener("click", closeZoom);
   $("#modalClose").addEventListener("click", closeZoom);
 
   // Exponer global
   window.__openZoom = openZoom;
 })();
 
-// Promo rotatoria
+// Promo
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   const msgs=[
@@ -420,7 +427,7 @@ function startPromo(){
     "💳 Pago seguro con Stripe"
   ];
   let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
-  show(); setInterval(show,8000);
+  show(); setInterval(show,9000);
 }
 
 // Init
@@ -440,15 +447,16 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#clearCart")?.addEventListener("click", clearCart);
   $("#checkoutBtn")?.addEventListener("click", goCheckout);
 
-  // Burger
+  // Burger (panel móvil)
   const burger = $("#burger"), nav=$("#nav");
   if (burger && nav){
     burger.addEventListener("click", ()=>{
       const open = nav.classList.toggle("open");
       burger.setAttribute("aria-expanded", open ? "true":"false");
+      open ? lockScroll() : unlockScroll();
     });
     nav.querySelectorAll("a").forEach(a=> a.addEventListener("click", ()=> {
-      nav.classList.remove("open"); burger.setAttribute("aria-expanded","false");
+      nav.classList.remove("open"); burger.setAttribute("aria-expanded","false"); unlockScroll();
     }));
   }
 
