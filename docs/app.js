@@ -1,5 +1,5 @@
 // ===== Config =====
-const BACKEND_URL = "https://una-tienda1.onrender.com"; // tu Render
+const BACKEND_URL = "https://una-tienda1.onrender.com"; // Render
 const CHECKOUT_PATH = "/create-checkout-session";
 
 const $  = s => document.querySelector(s);
@@ -16,6 +16,8 @@ function getActiveCategory(){
 }
 
 // ===== SEO: Breadcrumbs =====
+function getProductById(id){ return (window.products || []).find(p => p.id === id); }
+
 function updateBreadcrumbsSchema(){
   const el = $("#breadcrumbs-jsonld"); if(!el) return;
   const base = {
@@ -113,8 +115,6 @@ function renderProducts(){
 }
 
 // ===== Detalle de producto =====
-function getProductById(id){ return (window.products || []).find(p => p.id === id); }
-
 function renderProductDetail(id){
   const p = getProductById(id);
   const sec = $("#product-detail");
@@ -169,23 +169,10 @@ function renderProductDetail(id){
     history.back();
   };
 
-  // Zoom
-  const modal = $("#imgModal");
-  const modalImg = $("#modalImg");
-  const openZoom = ()=>{
-    modal.classList.add("show");
-    modal.setAttribute("aria-hidden","false");
-    modalImg.src = p.image;
+  // Zoom PRO: abrir modal
+  $("#detail-zoom").onclick = ()=>{
+    window.__openZoom($("#detail-img").src);
   };
-  const closeZoom = ()=>{
-    modal.classList.remove("show");
-    modal.setAttribute("aria-hidden","true");
-    modalImg.classList.remove("zoomed");
-  };
-  $("#detail-zoom").onclick = openZoom;
-  $(".modal-backdrop").onclick = closeZoom;
-  $("#modalClose").onclick = closeZoom;
-  modalImg.onclick = ()=> modalImg.classList.toggle("zoomed");
 }
 
 // ===== Carrito =====
@@ -258,7 +245,7 @@ async function goCheckout(){
 function handleHash(){
   const h=location.hash || "";
 
-  // Legales (si las usas, puedes mostrarlas aquí)
+  // Legales (si las usas en otras secciones)
   if (h.startsWith("#info/")){
     $("#product-detail")?.setAttribute("hidden","true");
     $("#catalogo")?.removeAttribute("hidden");
@@ -285,7 +272,157 @@ function handleHash(){
   renderProducts(); updateBreadcrumbsSchema();
 }
 
-// Promo
+// Promo rotatoria
+function startPromo(){
+  const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
+  const msgs=[
+    "✨ Calidad premium en cada prenda",
+    "🚚 Envío gratuito en pedidos superiores a 60€",
+    "💳 Pago seguro con Stripe"
+  ];
+  let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
+  show(); setInterval(show,8000);
+}
+
+// ====== ZOOM PRO ======
+(function(){
+  const modal = document.getElementById("imgModal");
+  const modalImg = document.getElementById("modalImg");
+  const modalClose = document.getElementById("modalClose");
+  const backdrop = document.querySelector(".modal-backdrop");
+  const canvas = document.querySelector(".modal-canvas");
+  const loading = document.getElementById("modalLoading");
+  const btnIn = document.getElementById("zoomIn");
+  const btnOut = document.getElementById("zoomOut");
+  const btnReset = document.getElementById("zoomReset");
+
+  let scale=1, minScale=1, maxScale=4;
+  let tx=0, ty=0;
+  let isPointerDown=false, lastX=0, lastY=0;
+  let pointers=new Map();
+
+  function openZoom(src){
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden","false");
+    loading.removeAttribute("aria-hidden");
+    // reset
+    scale=1; tx=0; ty=0; applyTransform(true);
+    modalImg.onload = ()=> loading.setAttribute("aria-hidden","true");
+    modalImg.onerror = ()=> loading.setAttribute("aria-hidden","true");
+    modalImg.src = src;
+    document.addEventListener("keydown", onKey);
+  }
+  function closeZoom(){
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden","true");
+    document.removeEventListener("keydown", onKey);
+  }
+  function onKey(e){
+    if (e.key==="Escape") closeZoom();
+    if (e.key==="+" || e.key==="=") zoomAt(canvas.clientWidth/2, canvas.clientHeight/2, 1.2);
+    if (e.key==="-" || e.key==="_") zoomAt(canvas.clientWidth/2, canvas.clientHeight/2, 1/1.2);
+    if (e.key==="0") resetView();
+  }
+
+  function applyTransform(){
+    const bounds = getBounds();
+    tx = Math.min(bounds.maxX, Math.max(bounds.minX, tx));
+    ty = Math.min(bounds.maxY, Math.max(bounds.minY, ty));
+    modalImg.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(${scale})`;
+  }
+  function getBounds(){
+    const cw = canvas.clientWidth, ch = canvas.clientHeight;
+    const extraX = (cw * scale - cw)/2;
+    const extraY = (ch * scale - ch)/2;
+    return { minX: -extraX, maxX: extraX, minY: -extraY, maxY: extraY };
+  }
+  function zoomAt(cx, cy, factor){
+    const prevScale = scale;
+    scale = Math.min(maxScale, Math.max(minScale, scale * factor));
+    const s = scale / prevScale;
+    const rect = canvas.getBoundingClientRect();
+    const dx = cx - rect.left - rect.width/2 - tx;
+    const dy = cy - rect.top  - rect.height/2 - ty;
+    tx -= dx * (s - 1);
+    ty -= dy * (s - 1);
+    applyTransform();
+  }
+  function resetView(){ scale=1; tx=0; ty=0; applyTransform(true); }
+
+  // Pointer + pinch
+  canvas.addEventListener("pointerdown", (e)=>{
+    canvas.setPointerCapture(e.pointerId);
+    isPointerDown = true; lastX = e.clientX; lastY = e.clientY;
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    canvas.classList.add("grabbing");
+  });
+  canvas.addEventListener("pointermove", (e)=>{
+    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+    // Pinch (2 dedos)
+    if (pointers.size === 2){
+      const [p1, p2] = [...pointers.values()];
+      if (!p1 || !p2) return;
+      const prevDist = distance(p1.prevX ?? p1.x, p1.prevY ?? p1.y, p2.prevX ?? p2.x, p2.prevY ?? p2.y);
+      const currDist = distance(p1.x, p1.y, p2.x, p2.y);
+      if (prevDist){
+        const factor = currDist/prevDist;
+        zoomAt((p1.x+p2.x)/2, (p1.y+p2.y)/2, factor);
+      }
+      p1.prevX = p1.x; p1.prevY = p1.y; p2.prevX = p2.x; p2.prevY = p2.y;
+      return;
+    }
+
+    // Drag (1 dedo/ratón)
+    if(!isPointerDown || pointers.size>1) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    tx += dx; ty += dy;
+    applyTransform();
+  });
+  canvas.addEventListener("pointerup", (e)=>{
+    pointers.delete(e.pointerId);
+    isPointerDown=false; canvas.classList.remove("grabbing");
+  });
+  canvas.addEventListener("pointercancel", (e)=>{
+    pointers.delete(e.pointerId);
+    isPointerDown=false; canvas.classList.remove("grabbing");
+  });
+  function distance(x1,y1,x2,y2){ const dx=x2-x1, dy=y2-y1; return Math.hypot(dx,dy); }
+
+  // Rueda
+  canvas.addEventListener("wheel", (e)=>{
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    zoomAt(e.clientX, e.clientY, factor);
+  }, { passive:false });
+
+  // Doble click/tap
+  let lastTap=0;
+  canvas.addEventListener("click", (e)=>{
+    const now = Date.now();
+    if (now - lastTap < 300){
+      const targetScale = (scale===1) ? 2 : 1;
+      const factor = targetScale/scale;
+      zoomAt(e.clientX, e.clientY, factor);
+    }
+    lastTap = now;
+  });
+
+  // Controles
+  $("#zoomIn").addEventListener("click", ()=> zoomAt(canvas.clientWidth/2, canvas.clientHeight/2, 1.2));
+  $("#zoomOut").addEventListener("click",()=> zoomAt(canvas.clientWidth/2, canvas.clientHeight/2, 1/1.2));
+  $("#zoomReset").addEventListener("click", resetView);
+
+  document.querySelector(".modal-backdrop").addEventListener("click", closeZoom);
+  $("#modalClose").addEventListener("click", closeZoom);
+
+  // Exponer global
+  window.__openZoom = openZoom;
+})();
+
+// Promo rotatoria
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   const msgs=[
@@ -321,7 +458,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const open = nav.classList.toggle("open");
       burger.setAttribute("aria-expanded", open ? "true":"false");
     });
-    // cerrar al pulsar un enlace
     nav.querySelectorAll("a").forEach(a=> a.addEventListener("click", ()=> {
       nav.classList.remove("open"); burger.setAttribute("aria-expanded","false");
     }));
