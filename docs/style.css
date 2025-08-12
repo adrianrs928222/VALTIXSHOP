@@ -16,21 +16,34 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 }
 
 /* Header */
-.header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--border)}
+.header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--border)}
 .header-inner{display:flex;align-items:center;gap:12px;height:64px;position:relative}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800}
 .brand-logo{width:32px;height:32px;border-radius:8px;border:2px solid var(--fg);display:grid;place-items:center;font-weight:800}
 .brand-name{letter-spacing:.4px}
 .nav{display:flex;gap:10px;flex:1;justify-content:center;overflow:auto;padding:6px 0}
-.nav a{white-space:nowrap;border:1px solid var(--border);padding:6px 12px;border-radius:999px}
+.nav a{white-space:nowrap;border:1px solid var(--border);padding:6px 12px;border-radius:999px;background:#fff}
 .nav a:hover{border-color:var(--fg)}
 .cart-btn{margin-left:auto;display:flex;align-items:center;gap:8px;border:2px solid #000;background:#000;color:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:700}
 .cart-count{background:#fff;color:#000;border:1px solid #000;padding:2px 8px;border-radius:999px;font-weight:700;font-size:.85rem}
 
-/* Menú hamburguesa */
+/* Botón hamburguesa */
 .menu-toggle{
-  display:none;background:none;border:1px solid var(--border);color:var(--fg);
+  display:none;background:#fff;border:1px solid var(--border);color:var(--fg);
   padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700;
+}
+
+/* Menú móvil (<=900px) */
+@media (max-width:900px){
+  .menu-toggle{display:block;order:2}
+  .nav{
+    position:absolute; top:100%; left:16px; right:16px; margin-top:8px;
+    background:#fff; border:1px solid var(--border);
+    border-radius:14px; box-shadow:var(--shadow);
+    padding:12px; display:none; flex-direction:column; gap:10px; z-index:70;
+  }
+  .nav a{border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+  .nav.show{display:flex}
 }
 
 /* Hero */
@@ -98,21 +111,10 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 .footer .legal-links a{border-bottom:1px dashed var(--border)}
 .footer .legal-links a:hover{border-color:#000}
 
-/* Responsive */
+/* Responsive columnas */
 @media (max-width:1024px){
   .hero-inner{grid-template-columns:1fr}
   .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-}
-@media (max-width:900px){
-  .menu-toggle{display:block;order:2}
-  .nav{
-    position:absolute; top:100%; right:16px; left:16px; margin-top:8px;
-    background:#fff; border:1px solid var(--border);
-    border-radius:14px; box-shadow:var(--shadow);
-    padding:12px; display:none; flex-direction:column; gap:10px; z-index:60;
-  }
-  .nav a{border-radius:10px;border:1px solid var(--border);padding:10px 12px}
-  .nav.show{display:flex}
 }
 @media (max-width:720px){
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
