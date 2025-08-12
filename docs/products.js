@@ -1,87 +1,67 @@
 // products.js
-// VALTIX — 1 producto por categoría con tallas (variant_map)
-// ⚠️ Sustituye cada número de variant_id por tu ID real de Printful.
+// 👉 Coloca tus imágenes en: /docs/img/ (GitHub Pages)
+// 👉 Si usas otro nombre/carpeta, cambia el campo `image` de cada producto.
 
 window.products = [
   // CAMISETAS
   {
     id: "tee-white-180",
     name: "Camiseta Premium Blanca 180g",
+    alt: "Camiseta blanca premium 180g para hombre y mujer",
     price: 29.99,
-    image: img/camiseta-premium-blanca-180g.webp "https://via.placeholder.com/800x800.png?text=Camiseta+VALTIX+Blanca",
+    image: "img/camiseta-premium-blanca-180g.webp",
     sku: "tee_white_180",
     categories: ["camisetas"],
-    // Tallas S–XXL (ejemplo). Cambia los IDs por los tuyos reales:
-    variant_map: {
-      "S":   1111111001,
-      "M":   1111111002,
-      "L":   1111111003,
-      "XL":  1111111004,
-      "XXL": 1111111005
-    }
+    // Reemplaza por tus variant_id de Printful (ejemplo S–XXL)
+    variant_map: { S: 111111001, M: 111111002, L: 111111003, XL: 111111004, XXL: 111111005 }
   },
 
   // SUDADERAS
   {
     id: "hoodie-black-classic",
     name: "Sudadera Negra Clásica",
+    alt: "Sudadera negra con capucha, interior suave",
     price: 49.99,
-    image: "https://via.placeholder.com/800x800.png?text=Sudadera+VALTIX+Negra",
+    image: "img/sudadera-negra-clasica.webp",
     sku: "hoodie_black_classic",
     categories: ["sudaderas"],
-    variant_map: {
-      "S":  2222222001,
-      "M":  2222222002,
-      "L":  2222222003,
-      "XL": 2222222004
-    }
+    variant_map: { S: 222222001, M: 222222002, L: 222222003, XL: 222222004 }
   },
 
   // PANTALONES
   {
     id: "pants-black-elegant",
     name: "Pantalón Negro Elegante",
+    alt: "Pantalón negro elegante corte recto",
     price: 39.99,
-    image: "https://via.placeholder.com/800x800.png?text=Pantalon+VALTIX+Negro",
+    image: "img/pantalon-negro-elegante.webp",
     sku: "pants_black_elegant",
     categories: ["pantalones"],
-    // Si tus pantalones usan letras, deja S–XL; si usan tallas numéricas, cámbialas (por ejemplo 30/32/34…)
-    variant_map: {
-      "S":  3333333001,
-      "M":  3333333002,
-      "L":  3333333003,
-      "XL": 3333333004
-    }
+    // Si trabajas por tallas numéricas
+    variant_map: { "38": 333333031, "40": 333333032, "42": 333333033, "44": 333333034 }
   },
 
   // ZAPATOS
   {
-    id: "sneaker-black-min",
+    id: "shoes-black-minimal",
     name: "Zapatillas Minimal Negras",
+    alt: "Zapatillas negras minimalistas suela cómoda",
     price: 59.99,
-    image: "https://via.placeholder.com/800x800.png?text=Zapatillas+VALTIX+Negras",
-    sku: "sneaker_black_min",
+    image: "img/zapatillas-minimal-negras.webp",
+    sku: "shoes_black_minimal",
     categories: ["zapatos"],
-    // Tallas EU de ejemplo:
-    variant_map: {
-      "EU40": 4444444040,
-      "EU41": 4444444041,
-      "EU42": 4444444042,
-      "EU43": 4444444043
-    }
+    variant_map: { "41": 444444041, "42": 444444042, "43": 444444043, "44": 444444044 }
   },
 
   // ACCESORIOS
   {
-    id: "cap-logo-black",
-    name: "Gorra VALTIX Logo",
+    id: "cap-black-valtix",
+    name: "Gorra Negra VALTIX",
+    alt: "Gorra negra VALTIX con ajuste trasero",
     price: 19.99,
-    image: "https://via.placeholder.com/800x800.png?text=Gorra+VALTIX",
-    sku: "cap_valtix_logo_black",
+    image: "img/gorra-negra-valtix.webp",
+    sku: "cap_black_valtix",
     categories: ["accesorios"],
-    // Talla única en accesorios:
-    variant_map: {
-      "Única": 5555555001
-    }
+    variant_map: { "Única": 555555051 }
   }
 ];
