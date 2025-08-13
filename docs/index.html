@@ -70,4 +70,25 @@
       </div>
     </section>
   </main>  <!-- Footer -->  <footer class="footer">
-    <div class="container
+    <div class="container footer-inner">
+      <div>© <span id="year"></span> VALTIX</div>
+      <nav class="legal-links">
+        <a href="#info/aviso-legal">Aviso legal</a>
+        <a href="#info/politica-compras">Política de compras</a>
+        <a href="#info/privacidad">Política de privacidad</a>
+      </nav>
+    </div>
+  </footer>  <!-- Drawer Carrito -->  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
+    <div class="drawer-header">
+      <h3>Tu carrito</h3>
+      <button id="closeCart" aria-label="Cerrar carrito">✕</button>
+    </div>
+    <div id="cartItems" class="drawer-body"></div>
+    <div class="drawer-footer">
+      <div class="subtotal"><span>Subtotal</span><strong id="subtotal">0,00 €</strong></div>
+      <button id="clearCart" class="btn btn-alt">Vaciar carrito</button>
+      <button id="checkoutBtn" class="btn">Pagar</button>
+    </div>
+  </aside>  <!-- Scripts -->  <script src="./products.js"></script>  <script src="./app.js"></script></body>
+</html>
