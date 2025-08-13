@@ -1,117 +1,79 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</title>
-
-  <meta name="description" content="VALTIX: camisetas, sudaderas, pantalones, zapatos y accesorios de alta calidad. Envíos 2–5 días (ES) e internacionales. Pago seguro con Stripe." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VALTIX | Estilo que evoluciona contigo – Moda premium internacional</title>
+  <meta name="description" content="VALTIX: moda premium global. Camisetas, sudaderas, pantalones, zapatos y accesorios para todas las tallas. Envíos 2–5 días en España y al mundo. Compra segura con Stripe." />
   <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <meta property="og:title" content="VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento" />
-  <meta property="og:description" content="Básicos premium para cada día con envío rápido. Pago seguro con Stripe." />
-  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/og.jpg" />
+  <meta property="og:title" content="VALTIX | Estilo que evoluciona contigo" />
+  <meta property="og:description" content="Básicos premium para tu día a día. Descubre tallas, estilo, envíos rápidos y compra segura." />
+  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/docs/img/meta-image.webp" />
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="theme-color" content="#000000" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <meta name="theme-color" content="#000000" />  <!-- JSON-LD SEO global -->  <script id="breadcrumbs-jsonld" type="application/ld+json">
+    {
+      "@context":"https://schema.org",
+      "@type":"BreadcrumbList",
+      "itemListElement":[
+        {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
+      ]
+    }
+  </script>  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <!-- Topbar -->
-  <div class="topbar" role="status">🚚 Envíos gratis en pedidos superiores a 60€</div>
-
-  <!-- Header -->
-  <header class="header">
+  <!-- Promo superior -->
+  <div class="promo-bar" role="banner">
+    <p>🚚 Envío GRATIS en pedidos superiores a 60€</p>
+  </div>  <!-- Header -->  <header class="header">
     <div class="container header-inner">
       <a class="brand" href="./" aria-label="Inicio VALTIX">
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
-
-      <!-- Navegación desktop -->
-      <nav id="nav" class="nav" aria-label="Categorías">
-        <a href="#c/camisetas">Camisetas</a>
-        <a href="#c/sudaderas">Sudaderas</a>
-        <a href="#c/pantalones">Pantalones</a>
-        <a href="#c/zapatos">Zapatos</a>
-        <a href="#c/accesorios">Accesorios</a>
+      <nav class="nav" aria-label="Categorías">
+        <button id="menuToggle" class="menu-toggle" aria-label="Abrir menú">☰</button>
+        <div id="navMenu" class="nav-links">
+          <a href="#c/camisetas">Camisetas</a>
+          <a href="#c/sudaderas">Sudaderas</a>
+          <a href="#c/pantalones">Pantalones</a>
+          <a href="#c/zapatos">Zapatos</a>
+          <a href="#c/accesorios">Accesorios</a>
+        </div>
       </nav>
-
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
-
-      <!-- Botón hamburguesa (móvil) -->
-      <button id="burger" class="burger" aria-label="Abrir menú" aria-controls="mobileMenu" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
     </div>
-  </header>
-
-  <!-- Menú móvil Overlay -->
-  <div id="mobileMenu" class="mnav" aria-hidden="true">
-    <div class="mnav-backdrop" data-close="mnav"></div>
-    <nav class="mnav-panel" role="dialog" aria-label="Menú móvil">
-      <div class="mnav-head">
-        <span class="mnav-title">VALTIX</span>
-        <button class="mnav-close" aria-label="Cerrar menú" data-close="mnav">✕</button>
-      </div>
-      <ul class="mnav-list">
-        <li><a href="#c/camisetas" data-link="mnav">Camisetas</a></li>
-        <li><a href="#c/sudaderas" data-link="mnav">Sudaderas</a></li>
-        <li><a href="#c/pantalones" data-link="mnav">Pantalones</a></li>
-        <li><a href="#c/zapatos" data-link="mnav">Zapatos</a></li>
-        <li><a href="#c/accesorios" data-link="mnav">Accesorios</a></li>
-      </ul>
-    </nav>
-  </div>
-
-  <!-- Hero -->
-  <section class="hero">
+  </header>  <!-- Hero -->  <section class="hero">
     <div class="container hero-inner">
       <div>
-        <h1>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</h1>
-        <h2 class="sub">
-          Camisetas, sudaderas, pantalones, zapatos y accesorios de alta calidad.
-          🌍 Envíos internacionales y en España en 2–5 días hábiles.
-        </h2>
+        <h1>VALTIX | Estilo que evoluciona contigo</h1>
+        <h2 class="sub">Ropa premium, tallas reales, envío mundial. Camisetas, sudaderas, pantalones, zapatos y accesorios.</h2>
         <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
-
-      <div class="hero-img" role="region" aria-label="Mensaje destacado">
-        <div class="promo-box" id="promoBox">
-          <span class="promo-text"></span>
-        </div>
+      <div class="hero-img">
+        <div class="promo-box"><span class="promo-text"></span></div>
       </div>
     </div>
-  </section>
-
-  <!-- Catálogo -->
-  <main class="main">
+  </section>  <!-- Catálogo -->  <main class="main">
     <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
         <h3 id="catalogo-title" class="visually-hidden">Catálogo</h3>
         <div id="grid" class="grid"></div>
       </div>
     </section>
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer">
+  </main>  <!-- Footer -->  <footer class="footer">
     <div class="container footer-inner">
       <div>© <span id="year"></span> VALTIX</div>
       <nav class="legal-links">
         <a href="#info/aviso-legal">Aviso legal</a>
         <a href="#info/politica-compras">Política de compras</a>
-        <a href="#info/privacidad">Privacidad</a>
+        <a href="#info/privacidad">Política de privacidad</a>
       </nav>
     </div>
-  </footer>
-
-  <!-- Carrito -->
-  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  </footer>  <!-- Carrito -->  <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
       <h3>Tu carrito</h3>
@@ -123,22 +85,5 @@
       <button id="clearCart" class="btn btn-alt">Vaciar carrito</button>
       <button id="checkoutBtn" class="btn">Pagar</button>
     </div>
-  </aside>
-
-  <!-- MODAL IMAGEN (visor) -->
-  <div id="imgModal" class="modal" aria-hidden="true">
-    <div class="modal-backdrop" data-close="modal"></div>
-    <div class="modal-content" role="dialog" aria-label="Vista ampliada">
-      <button id="modalClose" class="modal-close" aria-label="Cerrar" data-close="modal">✕</button>
-      <div class="modal-stage">
-        <img id="modalImg" alt="">
-        <div id="modalLoading" class="modal-loading" aria-hidden="true"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="./products.js"></script>
-  <script src="./app.js"></script>
-</body>
+  </aside>  <!-- Scripts -->  <script src="./products.js"></script>  <script src="./app.js"></script></body>
 </html>
