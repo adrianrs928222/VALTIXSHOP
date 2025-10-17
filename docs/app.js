@@ -30,7 +30,7 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-// ===== Carga de productos desde backend =====
+// ===== Carga de productos =====
 async function loadProducts(){
   try{
     const res = await fetch(`${BACKEND_URL}/api/printful/products`);
@@ -46,13 +46,19 @@ async function loadProducts(){
 }
 
 // ===== Disponibilidad (Printful) =====
-let availability = {}; 
+let availability = {};
 
 function collectVariantIds() {
   const ids = [];
   if (Array.isArray(window.products)) {
     window.products.forEach(p => {
       if (p?.variant_id) ids.push(String(p.variant_id));
+      // incluir todas las tallas de todos los colores
+      if (p?.colors) {
+        Object.values(p.colors).forEach(c => {
+          Object.values(c.sizes || {}).forEach(v => ids.push(String(v)));
+        });
+      }
       if (p?.variant_map) Object.values(p.variant_map).forEach(v => ids.push(String(v)));
     });
   }
@@ -89,10 +95,10 @@ async function refreshAvailability() {
 
 function getStockFlag(variant_id) {
   const v = availability?.[String(variant_id)];
-  return v;
+  return v; // true | false | null
 }
 
-// ===== Render productos (con tallas y stock) =====
+// ===== Render productos (color + talla) =====
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -106,38 +112,69 @@ function renderProducts(){
   const list=(cat==="all") ? products : products.filter(p=>Array.isArray(p.categories)&&p.categories.includes(cat));
 
   list.forEach(p=>{
-    const sizes = p.variant_map ? Object.keys(p.variant_map) : [];
-    const sizeBtns = sizes.map((sz,idx)=>`<button class="option-btn" data-sz="${sz}" ${idx===0?"aria-pressed='true'":""}>${sz}</button>`).join("");
+    // datos de colores
+    const colors = p.colors || {};
+    const colorNames = Object.keys(colors);
+    let selectedColor = colorNames[0] || null;
 
+    // datos de tallas según color
+    const sizeKeys = (selectedColor && colors[selectedColor]?.sizes) ? Object.keys(colors[selectedColor].sizes) : Object.keys(p.variant_map || {});
+    let selectedSize = sizeKeys[0] || null;
+
+    // Componente
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
-      <img class="card-img" src="${p.image}" alt="${p.name}">
+      <img class="card-img" src="${ colors[selectedColor]?.image || p.image }" alt="${p.name}">
       <div class="card-body">
         <h3 class="card-title">${p.name}</h3>
         <p class="card-price">${money(p.price)}</p>
         <div class="stock-line"><span class="stock-badge" data-stock>Consultando…</span></div>
-        ${sizes.length?`<div class="options" role="group" aria-label="Tallas">${sizeBtns}</div>`:""}
+
+        ${colorNames.length ? `
+          <div class="options" role="group" aria-label="Colores">
+            ${colorNames.map((cn,idx)=>`
+              <button class="option-btn color-btn ${idx===0?"active":""}" data-color="${cn}">${cn}</button>
+            `).join("")}
+          </div>` : ""}
+
+        <div class="options" role="group" aria-label="Tallas" data-sizes></div>
+
         <button class="btn add-btn" data-sku="${p.sku}">Añadir al carrito</button>
       </div>
     `;
 
-    let selectedSize = sizes.length ? sizes[0] : null;
-    const btns = card.querySelectorAll(".option-btn");
-    btns.forEach(btn=>{
-      if(btn.dataset.sz===selectedSize) btn.classList.add("active");
-      btn.addEventListener("click", ()=>{
-        btns.forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active");
-        selectedSize = btn.dataset.sz;
-        updateStockBadge();
+    const imgEl = card.querySelector(".card-img");
+    const sizesWrap = card.querySelector("[data-sizes]");
+
+    function renderSizes(){
+      const currentSizes = (selectedColor && colors[selectedColor]?.sizes)
+        ? Object.keys(colors[selectedColor].sizes)
+        : Object.keys(p.variant_map || {});
+      if (currentSizes.length === 0) { sizesWrap.innerHTML = ""; return; }
+      selectedSize = currentSizes[0];
+      sizesWrap.innerHTML = currentSizes.map((sz,idx)=>`
+        <button class="option-btn ${idx===0?"active":""}" data-sz="${sz}">${sz}</button>
+      `).join("");
+
+      sizesWrap.querySelectorAll(".option-btn").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          sizesWrap.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("active"));
+          btn.classList.add("active");
+          selectedSize = btn.dataset.sz;
+          updateStockBadge();
+        });
       });
-    });
+    }
 
     function currentVariantId(){
+      if (selectedColor && colors[selectedColor]?.sizes?.[selectedSize]) {
+        return colors[selectedColor].sizes[selectedSize];
+      }
       if (p.variant_map && selectedSize && p.variant_map[selectedSize]) return p.variant_map[selectedSize];
       return p.variant_id || null;
     }
+
     function updateStockBadge(){
       const badge = card.querySelector("[data-stock]");
       const vid = currentVariantId();
@@ -154,21 +191,35 @@ function renderProducts(){
         badge.classList.add("unknown");
       }
     }
+
+    // listeners de color
+    card.querySelectorAll(".color-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        card.querySelectorAll(".color-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedColor = btn.dataset.color;
+        imgEl.src = colors[selectedColor]?.image || p.image;
+        renderSizes();
+        updateStockBadge();
+      });
+    });
+
+    // inicial
+    renderSizes();
     updateStockBadge();
 
+    // add to cart
     card.querySelector(".add-btn").addEventListener("click", ()=>{
-      const prod = products.find(x=>x.sku===p.sku);
-      if(!prod) return;
-      let variant_id = prod.variant_id;
-      if (prod.variant_map && selectedSize && prod.variant_map[selectedSize]){
-        variant_id = prod.variant_map[selectedSize];
-      }
+      const vid = currentVariantId();
+      if (!vid) return;
+      const colorLabel = selectedColor ? ` ${selectedColor}` : "";
+      const sizeLabel = selectedSize ? ` — ${selectedSize}` : "";
       addToCart({
-        sku: prod.sku + (selectedSize?`_${selectedSize}`:""),
-        name: `${prod.name}${selectedSize?` — ${selectedSize}`:""}`,
-        price: prod.price,
-        image: prod.image,
-        variant_id
+        sku: p.sku + (selectedColor?`_${selectedColor}`:"") + (selectedSize?`_${selectedSize}`:""),
+        name: `${p.name}${colorLabel}${sizeLabel}`,
+        price: p.price,
+        image: colors[selectedColor]?.image || p.image,
+        variant_id: vid
       });
     });
 
@@ -245,7 +296,7 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ===== Promo =====
+// ===== Promo / Router / Nav =====
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   if(window.innerWidth <= 520){
@@ -260,7 +311,6 @@ function startPromo(){
   }
 }
 
-// ===== Router =====
 function handleHash(){
   const h=location.hash;
   const pages={
@@ -277,7 +327,6 @@ function handleHash(){
   renderProducts();
 }
 
-// ===== Menú =====
 function setupHamburger(){
   const btn = $("#menu-toggle");
   const nav = $("#main-nav");
@@ -304,7 +353,6 @@ function setupHamburger(){
   });
 }
 
-// ===== Nav activo =====
 function updateActiveNavLink(){
   const cat = getActiveCategory();
   $$("#main-nav a").forEach(a=>{
@@ -319,7 +367,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   setYear();
   setupHamburger();
   startPromo();
-  await loadProducts(); 
+  await loadProducts();
   renderCart();
 
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
