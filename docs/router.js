@@ -5,45 +5,57 @@ const router = express.Router();
 
 const PRINTFUL_API = "https://api.printful.com";
 const PF_HEADERS = {
-  "Authorization": `Bearer ${process.env.PRINTFUL_API_KEY}`,
-  "Content-Type": "application/json"
+  Authorization: `Bearer ${process.env.PRINTFUL_API_KEY || ""}`,
+  "Content-Type": "application/json",
 };
 
+/* ========== Helpers ========== */
 async function pfGet(path) {
-  const res = await fetch(`${PRINTFUL_API}${path}`, { headers: PF_HEADERS });
+  const url = `${PRINTFUL_API}${path}`;
+  const res = await fetch(url, { headers: PF_HEADERS });
+
+  let payload = null;
+  try { payload = await res.json(); } catch { /* ignore */ }
+
   if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`Printful ${path} -> ${res.status} ${txt}`);
+    const msg = payload?.error || payload || (await res.text().catch(() => ""));
+    throw new Error(`Printful GET ${path} -> ${res.status} ${JSON.stringify(msg)}`);
   }
-  return res.json();
+  return payload;
 }
 
 async function fetchAllSyncedProducts() {
   const limit = 100;
   let offset = 0;
-  let all = [];
+  const all = [];
   while (true) {
     const data = await pfGet(`/store/products?limit=${limit}&offset=${offset}`);
     const items = data?.result || [];
-    all = all.concat(items);
+    all.push(...items);
     if (items.length < limit) break;
     offset += limit;
   }
   return all;
 }
 
-async function mapWithLimit(items, limit, fn) {
-  const ret = [];
-  let i = 0;
-  async function worker() {
-    while (i < items.length) {
-      const idx = i++;
-      ret[idx] = await fn(items[idx], idx);
-    }
-  }
-  const workers = Array.from({ length: Math.min(limit, items.length) }, worker);
-  await Promise.all(workers);
-  return ret;
+function pickImage(sp, variants) {
+  return (
+    sp?.thumbnail_url ||
+    variants?.[0]?.files?.[0]?.preview_url ||
+    variants?.[0]?.files?.[0]?.thumbnail_url ||
+    variants?.[0]?.files?.[0]?.url ||
+    "https://via.placeholder.com/800x800.png?text=VALTIX"
+  );
+}
+
+function detectCategories(name = "") {
+  const n = name.toLowerCase();
+  if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
+  if (/(hoodie|sudadera)/i.test(n)) return ["sudaderas"];
+  if (/(pant|pantal[oó]n|leggings|jogger)/i.test(n)) return ["pantalones"];
+  if (/(shoe|sneaker|zapatilla|bota)/i.test(n)) return ["zapatos"];
+  if (/(cap|gorra|beanie|gorro)/i.test(n)) return ["accesorios"];
+  return ["otros"];
 }
 
 function normalizeProduct(detail) {
@@ -55,56 +67,59 @@ function normalizeProduct(detail) {
     .filter(n => !Number.isNaN(n));
   const price = prices.length ? Math.min(...prices) : undefined;
 
-  const image =
-    sp?.thumbnail_url ||
-    variants[0]?.files?.[0]?.preview_url ||
-    variants[0]?.files?.[0]?.thumbnail_url ||
-    variants[0]?.files?.[0]?.url ||
-    "https://via.placeholder.com/800x800.png?text=VALTIX";
-
-  const sku = sp?.external_id || sp?.id?.toString() || `pf_${Date.now()}`;
-
-  const nameLower = (sp?.name || "").toLowerCase();
-  let categories = ["otros"];
-  if (/(tee|t-shirt|camiseta)/i.test(nameLower)) categories = ["camisetas"];
-  else if (/(hoodie|sudadera)/i.test(nameLower)) categories = ["sudaderas"];
-  else if (/(pant|pantal[oó]n|leggings|jogger)/i.test(nameLower)) categories = ["pantalones"];
-  else if (/(shoe|sneaker|zapatilla|bota)/i.test(nameLower)) categories = ["zapatos"];
-  else if (/(cap|gorra|beanie|gorro)/i.test(nameLower)) categories = ["accesorios"];
-
   const variant_map = {};
   for (const v of variants) {
-    const rawName = v?.name || "";
+    const raw = v?.name || "";
     let size = null;
-    if (rawName.includes("/")) size = rawName.split("/").pop().trim();
+    if (raw.includes("/")) size = raw.split("/").pop().trim();
     if (!size && v?.product?.size) size = String(v.product.size).trim();
     if (!size) size = `VAR_${v.variant_id}`;
     variant_map[size] = v.variant_id;
   }
 
   return {
-    id: (sp?.id && String(sp.id)) || sku,
+    id: (sp?.id && String(sp.id)) || (sp?.external_id || `pf_${Date.now()}`),
     name: sp?.name || "Producto Printful",
     price: typeof price === "number" ? Number(price.toFixed(2)) : undefined,
-    image,
-    sku,
-    categories,
-    variant_map
+    image: pickImage(sp, variants),
+    sku: sp?.external_id || String(sp?.id || ""),
+    categories: detectCategories(sp?.name || ""),
+    variant_map,
   };
 }
 
+/* ========== Endpoints ========== */
+
+// Productos normalizados para el frontend
 router.get("/api/printful/products", async (req, res) => {
   try {
-    const list = await fetchAllSyncedProducts();
-    if (!list.length) return res.json({ products: [] });
+    if (!process.env.PRINTFUL_API_KEY) {
+      return res.status(500).json({ error: "PRINTFUL_API_KEY no configurada en el servidor" });
+    }
 
-    const details = await mapWithLimit(list, 5, async (p) => pfGet(`/store/products/${p.id}`));
+    const list = await fetchAllSyncedProducts(); // [{id, name, ...}]
+    if (!list.length) {
+      return res.json({ products: [], note: "No hay productos 'añadidos a tienda' en Printful." });
+    }
+
+    // Descargar detalle de cada producto con sus variantes
+    const details = await Promise.all(list.map(p => pfGet(`/store/products/${p.id}`)));
     const products = details.map(normalizeProduct);
 
     res.json({ products });
   } catch (err) {
     console.error("PF /products error:", err.message);
-    res.status(500).json({ error: "No se pudo obtener productos de Printful" });
+    res.status(500).json({ error: String(err.message) });
+  }
+});
+
+// (Opcional) Ver crudo lo que devuelve Printful para debug
+router.get("/api/printful/raw-list", async (req, res) => {
+  try {
+    const data = await pfGet(`/store/products?limit=50&offset=0`);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
   }
 });
 
