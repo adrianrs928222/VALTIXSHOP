@@ -1,6 +1,6 @@
 // ===== Config =====
 const BACKEND_URL = "https://una-tienda1.onrender.com";
-const CHECKOUT_PATH = "/create-checkout-session";
+const CHECKOUT_PATH = "/checkout";
 
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -30,7 +30,55 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-// ===== Render productos (con tallas) =====
+// ===== Disponibilidad (Printful) =====
+let availability = {}; // { [variant_id]: true | false | null }
+
+function collectVariantIds() {
+  const ids = [];
+  if (Array.isArray(window.products)) {
+    window.products.forEach(p => {
+      if (p?.variant_id) ids.push(String(p.variant_id));
+      if (p?.variant_map) Object.values(p.variant_map).forEach(v => ids.push(String(v)));
+    });
+  }
+  return [...new Set(ids)];
+}
+
+async function fetchAvailability() {
+  const variant_ids = collectVariantIds();
+  if (!variant_ids.length) return;
+  try {
+    const r = await fetch(`${BACKEND_URL}/availability`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ variant_ids })
+    });
+    const data = await r.json();
+    if (data?.ok) availability = data.availability || {};
+  } catch (e) { console.error("fetchAvailability error:", e); }
+}
+
+async function refreshAvailability() {
+  const variant_ids = collectVariantIds();
+  if (!variant_ids.length) return;
+  try {
+    const r = await fetch(`${BACKEND_URL}/refresh-availability`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ variant_ids })
+    });
+    const data = await r.json();
+    if (data?.ok) availability = data.availability || {};
+  } catch (e) { console.error("refreshAvailability error:", e); }
+}
+
+function getStockFlag(variant_id) {
+  const v = availability?.[String(variant_id)];
+  // true => en stock; false => sin stock; null/undefined => desconocido
+  return v;
+}
+
+// ===== Render productos (con tallas y stock) =====
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -54,6 +102,7 @@ function renderProducts(){
       <div class="card-body">
         <h3 class="card-title">${p.name}</h3>
         <p class="card-price">${money(p.price)}</p>
+        <div class="stock-line"><span class="stock-badge" data-stock>Consultando…</span></div>
         ${sizes.length?`<div class="options" role="group" aria-label="Tallas">${sizeBtns}</div>`:""}
         <button class="btn add-btn" data-sku="${p.sku}">Añadir al carrito</button>
       </div>
@@ -68,8 +117,31 @@ function renderProducts(){
         btns.forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         selectedSize = btn.dataset.sz;
+        updateStockBadge();
       });
     });
+
+    function currentVariantId(){
+      if (p.variant_map && selectedSize && p.variant_map[selectedSize]) return p.variant_map[selectedSize];
+      return p.variant_id || null;
+    }
+    function updateStockBadge(){
+      const badge = card.querySelector("[data-stock]");
+      const vid = currentVariantId();
+      const flag = vid ? getStockFlag(vid) : null;
+      badge.classList.remove("ok","no","unknown");
+      if (flag === true){
+        badge.textContent = "En stock";
+        badge.classList.add("ok");
+      } else if (flag === false){
+        badge.textContent = "Sin stock";
+        badge.classList.add("no");
+      } else {
+        badge.textContent = "Consultando…";
+        badge.classList.add("unknown");
+      }
+    }
+    updateStockBadge();
 
     // add to cart
     card.querySelector(".add-btn").addEventListener("click", ()=>{
@@ -232,11 +304,13 @@ function updateActiveNavLink(){
 }
 
 // ===== Init =====
-document.addEventListener("DOMContentLoaded", ()=>{
+document.addEventListener("DOMContentLoaded", async ()=>{
   setYear();
-  setupHamburger();   // <— IMPORTANTE para que funcione el menú
+  setupHamburger();   // menú móvil
   startPromo();
-  handleHash();
+
+  await fetchAvailability(); // primero obtenemos disponibilidad
+  handleHash();              // pinta catálogo ya con disponibilidad
   renderCart();
 
   // CTA scroll suave
@@ -250,4 +324,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#checkoutBtn")?.addEventListener("click", goCheckout);
 
   window.addEventListener("hashchange", ()=>{ handleHash(); updateActiveNavLink(); });
+
+  // Refresh disponibilidad cada 12h (43200000 ms)
+  setInterval(async ()=>{
+    await refreshAvailability();
+    renderProducts();
+  }, 43200000);
 });
