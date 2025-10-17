@@ -1,6 +1,6 @@
 // ===== Config =====
 const BACKEND_URL = "https://una-tienda1.onrender.com";
-const CHECKOUT_PATH = "/create-checkout-session";
+const CHECKOUT_PATH = "/checkout"; // ✅ corregido (antes: /create-checkout-session)
 
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -75,14 +75,16 @@ function renderProducts(){
     card.querySelector(".add-btn").addEventListener("click", ()=>{
       const prod = products.find(x=>x.sku===p.sku);
       if(!prod) return;
-      let variant_id = prod.variant_id;
+
+      let variant_id = prod.variant_id || null;
       if (prod.variant_map && selectedSize && prod.variant_map[selectedSize]){
-        variant_id = prod.variant_map[selectedSize]; // talla -> variant_id (Printful)
+        variant_id = String(prod.variant_map[selectedSize]); // ✅ aseguramos string
       }
+
       addToCart({
         sku: prod.sku + (selectedSize?`_${selectedSize}`:""),
         name: `${prod.name}${selectedSize?` — ${selectedSize}`:""}`,
-        price: prod.price,
+        price: Number(prod.price),
         image: prod.image,
         variant_id
       });
@@ -150,18 +152,30 @@ function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDra
 // ===== Checkout (Stripe) =====
 async function goCheckout(){
   if(!cart.length) return alert("Tu carrito está vacío.");
-  const items = cart.map(i=>({ variant_id:i.variant_id, quantity:i.qty, sku:i.sku, name:i.name, price:Number(i.price) }));
+  const items = cart.map(i=>({
+    variant_id: String(i.variant_id),   // ✅ clave para Printful
+    quantity: Number(i.qty),
+    sku: i.sku,
+    name: i.name,
+    price: Number(i.price)
+  }));
+
   try{
     const res = await fetch(`${BACKEND_URL}${CHECKOUT_PATH}`, {
-      method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ items })
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ items })
     });
     const data = await res.json();
     if(data?.url) window.location.href = data.url;
     else alert("No se pudo iniciar el pago. Intenta más tarde.");
-  }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
+  }catch(e){
+    console.error(e);
+    alert("Error de conexión con el servidor.");
+  }
 }
 
-// ===== Promo (móvil: solo envío gratis; desktop: alterna 2 mensajes) =====
+// ===== Promo =====
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   if(window.innerWidth <= 520){
@@ -184,7 +198,6 @@ function handleHash(){
     "#info/politica-compras":"#legal-compras",
     "#info/privacidad":"#legal-privacidad"
   };
-  // ocultar páginas legales si aplica (si las tienes en tu HTML)
   Object.values(pages).forEach(sel=>{ const el=document.querySelector(sel); if(el) el.hidden=true; });
 
   if(pages[h]){
@@ -234,15 +247,13 @@ function updateActiveNavLink(){
 // ===== Init =====
 document.addEventListener("DOMContentLoaded", ()=>{
   setYear();
-  setupHamburger();   // <— IMPORTANTE para que funcione el menú
+  setupHamburger();
   startPromo();
   handleHash();
   renderCart();
 
-  // CTA scroll suave
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
 
-  // Carrito
   $("#openCart")?.addEventListener("click", openCart);
   $("#closeCart")?.addEventListener("click", closeCart);
   $("#drawerBackdrop")?.addEventListener("click", closeCart);
