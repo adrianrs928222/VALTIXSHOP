@@ -30,8 +30,23 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
+// ===== Carga de productos desde backend =====
+async function loadProducts(){
+  try{
+    const res = await fetch(`${BACKEND_URL}/api/printful/products`);
+    const { products } = await res.json();
+    window.products = products || [];
+    console.log("✅ Productos cargados:", products.length);
+    await fetchAvailability();
+    handleHash();
+  }catch(e){
+    console.error("❌ Error al cargar productos:", e);
+    document.getElementById("grid").innerHTML = "<p>Error al cargar productos.</p>";
+  }
+}
+
 // ===== Disponibilidad (Printful) =====
-let availability = {}; // { [variant_id]: true | false | null }
+let availability = {}; 
 
 function collectVariantIds() {
   const ids = [];
@@ -74,7 +89,6 @@ async function refreshAvailability() {
 
 function getStockFlag(variant_id) {
   const v = availability?.[String(variant_id)];
-  // true => en stock; false => sin stock; null/undefined => desconocido
   return v;
 }
 
@@ -84,7 +98,7 @@ function renderProducts(){
   grid.innerHTML="";
 
   if(!Array.isArray(window.products) || !products.length){
-    grid.innerHTML=`<p style="color:#777">Aún no hay productos. Añádelos en <code>products.js</code>.</p>`;
+    grid.innerHTML=`<p style="color:#777">Aún no hay productos en Printful.</p>`;
     return;
   }
 
@@ -108,7 +122,6 @@ function renderProducts(){
       </div>
     `;
 
-    // selección de talla
     let selectedSize = sizes.length ? sizes[0] : null;
     const btns = card.querySelectorAll(".option-btn");
     btns.forEach(btn=>{
@@ -143,13 +156,12 @@ function renderProducts(){
     }
     updateStockBadge();
 
-    // add to cart
     card.querySelector(".add-btn").addEventListener("click", ()=>{
       const prod = products.find(x=>x.sku===p.sku);
       if(!prod) return;
       let variant_id = prod.variant_id;
       if (prod.variant_map && selectedSize && prod.variant_map[selectedSize]){
-        variant_id = prod.variant_map[selectedSize]; // talla -> variant_id (Printful)
+        variant_id = prod.variant_map[selectedSize];
       }
       addToCart({
         sku: prod.sku + (selectedSize?`_${selectedSize}`:""),
@@ -233,7 +245,7 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ===== Promo (móvil: solo envío gratis; desktop: alterna 2 mensajes) =====
+// ===== Promo =====
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   if(window.innerWidth <= 520){
@@ -248,7 +260,7 @@ function startPromo(){
   }
 }
 
-// ===== Router (categorías / legales) =====
+// ===== Router =====
 function handleHash(){
   const h=location.hash;
   const pages={
@@ -256,7 +268,6 @@ function handleHash(){
     "#info/politica-compras":"#legal-compras",
     "#info/privacidad":"#legal-privacidad"
   };
-  // ocultar páginas legales si aplica (si las tienes en tu HTML)
   Object.values(pages).forEach(sel=>{ const el=document.querySelector(sel); if(el) el.hidden=true; });
 
   if(pages[h]){
@@ -266,7 +277,7 @@ function handleHash(){
   renderProducts();
 }
 
-// ===== Menú hamburguesa =====
+// ===== Menú =====
 function setupHamburger(){
   const btn = $("#menu-toggle");
   const nav = $("#main-nav");
@@ -306,17 +317,12 @@ function updateActiveNavLink(){
 // ===== Init =====
 document.addEventListener("DOMContentLoaded", async ()=>{
   setYear();
-  setupHamburger();   // menú móvil
+  setupHamburger();
   startPromo();
-
-  await fetchAvailability(); // primero obtenemos disponibilidad
-  handleHash();              // pinta catálogo ya con disponibilidad
+  await loadProducts(); 
   renderCart();
 
-  // CTA scroll suave
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
-
-  // Carrito
   $("#openCart")?.addEventListener("click", openCart);
   $("#closeCart")?.addEventListener("click", closeCart);
   $("#drawerBackdrop")?.addEventListener("click", closeCart);
@@ -325,7 +331,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   window.addEventListener("hashchange", ()=>{ handleHash(); updateActiveNavLink(); });
 
-  // Refresh disponibilidad cada 12h (43200000 ms)
   setInterval(async ()=>{
     await refreshAvailability();
     renderProducts();
