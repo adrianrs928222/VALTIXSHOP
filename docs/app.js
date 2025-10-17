@@ -32,7 +32,7 @@ function updateBreadcrumbsSchema(){
 
 // ===== Disponibilidad (API backend) =====
 async function fetchAvailabilityForMap(variantMap) {
-  const ids = Object.values(variantMap || {}).map(String);
+  const ids = Object.values(variantMap || {}).map(String).filter(Boolean);
   if (!ids.length) return {};
   try {
     const r = await fetch(`${BACKEND_URL}/availability`, {
@@ -48,7 +48,8 @@ async function fetchAvailabilityForMap(variantMap) {
 }
 
 async function verifyCartAvailability(cartItems){
-  const ids = cartItems.map(i => String(i.variant_id));
+  const ids = cartItems.map(i => i.variant_id).filter(Boolean).map(String);
+  if (!ids.length) return []; // si no hay variant_ids válidos, evita llamada inútil
   const r = await fetch(`${BACKEND_URL}/availability`, {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
@@ -57,7 +58,9 @@ async function verifyCartAvailability(cartItems){
   const data = await r.json();
   const bad = [];
   for (const it of cartItems) {
-    const st = data?.availability?.[String(it.variant_id)];
+    const vid = String(it.variant_id || "");
+    if (!vid) continue;
+    const st = data?.availability?.[vid];
     if (st === false) bad.push(it.name);
   }
   return bad;
@@ -168,7 +171,7 @@ function subtotal(){ return cart.reduce((s,i)=> s + (Number(i.price)*i.qty), 0);
 
 function renderCart(){
   const count = cart.reduce((s,i)=>s+i.qty,0);
-  const countEl=$("#cartCount"); if(countEl) textContent=count;
+  const countEl=$("#cartCount"); if(countEl) countEl.textContent = String(count);
   const box=$("#cartItems"); if(!box) return;
 
   box.innerHTML="";
@@ -196,18 +199,18 @@ function renderCart(){
       box.appendChild(row);
     });
   }
-  $("#subtotal").textContent = money(subtotal());
+  const subt=$("#subtotal"); if (subt) subt.textContent = money(subtotal());
 }
 
 // ===== Drawer =====
-function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); $("#cartDrawer").setAttribute("aria-hidden","false"); }
-function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); $("#cartDrawer").setAttribute("aria-hidden","true"); }
+function openCart(){ $("#drawerBackdrop")?.classList.add("show"); $("#cartDrawer")?.classList.add("open"); $("#cartDrawer")?.setAttribute("aria-hidden","false"); }
+function closeCart(){ $("#drawerBackdrop")?.classList.remove("show"); $("#cartDrawer")?.classList.remove("open"); $("#cartDrawer")?.setAttribute("aria-hidden","true"); }
 
 // ===== Checkout (Stripe) =====
 async function goCheckout(){
   if(!cart.length) return alert("Tu carrito está vacío.");
   const items = cart.map(i=>({
-    variant_id: String(i.variant_id),
+    variant_id: i.variant_id ? String(i.variant_id) : null,
     quantity: Number(i.qty),
     sku: i.sku,
     name: i.name,
@@ -228,7 +231,6 @@ async function goCheckout(){
       body: JSON.stringify({ items })
     });
     const data = await res.json();
-    console.log("checkout resp:", data);
     if(data?.url) window.location.href = data.url;
     else alert("No se pudo iniciar el pago. Intenta más tarde.");
   }catch(e){
@@ -295,7 +297,7 @@ function updateActiveNavLink(){
 document.addEventListener("DOMContentLoaded", ()=>{
   setYear();
   setupHamburger();
-  handleHash();
+  handleHash();         // <- esto ya renderiza productos o legales
   renderCart();
 
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
