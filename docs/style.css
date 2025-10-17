@@ -92,6 +92,16 @@ img{max-width:100%;display:block} a{text-decoration:none;color:inherit}
 .option-btn:hover{border-color:#bbb}
 .option-btn.active{background:#111;color:#fff;border-color:#111;transform:translateY(-1px)}
 
+/* Badge de stock */
+.stock-line{margin:6px 0 10px}
+.stock-badge{
+  display:inline-block; padding:4px 8px; border-radius:999px; font-weight:800; font-size:.85rem;
+  border:1px solid var(--border); background:#fff; color:var(--muted);
+}
+.stock-badge.ok{ color:#0f5132; background:#d1e7dd; border-color:#badbcc; }     /* En stock */
+.stock-badge.no{ color:#842029; background:#f8d7da; border-color:#f5c2c7; }     /* Sin stock */
+.stock-badge.unknown{ color:#664d03; background:#fff3cd; border-color:#ffecb5; }/* Consultando… */
+
 /* Drawer / Carrito */
 .drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);display:none;z-index:80}
 .drawer-backdrop.show{display:block}
