@@ -1,5 +1,5 @@
 // ===== Config =====
-const BACKEND_URL = "https://una-tienda1.onrender.com";
+const BACKEND_URL = "https://valtixshop.onrender.com";
 const CHECKOUT_PATH = "/checkout";
 
 const $  = s => document.querySelector(s);
