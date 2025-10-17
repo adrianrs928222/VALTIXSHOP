@@ -6,15 +6,70 @@ import bodyParser from "body-parser";
 
 const app = express();
 
-// ========== CORS ==========
+// ====== CORS ======
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://adrianrs928222.github.io";
 app.use(cors({ origin: ALLOWED_ORIGIN }));
 
-// ========== STRIPE ==========
+// ====== STRIPE ======
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
-// ========== WEBHOOK (debe ir ANTES de express.json) ==========
+// ====== DISPONIBILIDAD (cache en memoria) ======
+const availabilityCache = {
+  // "variant_id": true|false|null
+  data: {},
+  updatedAt: null
+};
+
+function isUnavailableMessage(msg = "") {
+  const m = String(msg).toLowerCase();
+  return /unavailable|discontinued|invalid variant|out of stock|not available/.test(m);
+}
+
+async function probeVariantsAvailability(variantIds = []) {
+  if (!variantIds.length) return {};
+
+  const payload = {
+    recipient: {
+      name: "VALTIX Probe",
+      address1: "Test 1",
+      city: "Madrid",
+      country_code: "ES",
+      zip: "28001",
+    },
+    items: variantIds.map(v => ({
+      variant_id: String(v),
+      quantity: 1,
+      name: "Availability Probe"
+    })),
+    confirm: false // NO fabrica
+  };
+
+  const r = await fetch("https://api.printful.com/orders", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await r.json();
+
+  if (r.ok) {
+    const out = {};
+    for (const v of variantIds) out[String(v)] = true;
+    return out;
+  }
+
+  const out = {};
+  const msg = data?.error?.message || "";
+  const flag = isUnavailableMessage(msg) ? false : null;
+  for (const v of variantIds) out[String(v)] = flag;
+  return out;
+}
+
+// ====== WEBHOOK (ANTES de express.json) ======
 app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"];
   let event;
@@ -28,13 +83,10 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     try {
-      // Recuperar carrito desde metadata (con variant_id incluido)
       const cart = session.metadata?.cart ? JSON.parse(session.metadata.cart) : [];
-
       const cd = session.customer_details || {};
       const address = cd.address || {};
 
-      // Construir items para Printful usando variant_id DIRECTO del frontend
       const items = cart
         .map(i => ({
           variant_id: String(i.variant_id),
@@ -57,7 +109,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
           zip: address.postal_code || "00000"
         },
         items,
-        confirm: true // MODO REAL: crea pedido definitivo y lo pone en producción
+        confirm: true // MODO REAL
       };
 
       const r = await fetch("https://api.printful.com/orders", {
@@ -83,23 +135,23 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
   res.json({ received: true });
 });
 
-// ========== JSON BODY (después del webhook) ==========
+// ====== JSON BODY (después del webhook) ======
 app.use(express.json());
 
+// ====== HEALTH ======
 app.get("/health", (_, res) => res.json({ ok: true }));
 
-// ========== CHECKOUT ==========
+// ====== CHECKOUT ======
 app.post("/checkout", async (req, res) => {
   try {
     const items = Array.isArray(req.body.items) ? req.body.items : [];
 
-    // Guardamos en metadata TODO lo necesario para el webhook (incl. variant_id)
     const cartMetadata = items.map(i => ({
       sku: i.sku,
       name: i.name,
       quantity: Number(i.quantity || i.qty || 1),
       price: Number(i.price),
-      variant_id: i.variant_id ? String(i.variant_id) : "" // CLAVE
+      variant_id: i.variant_id ? String(i.variant_id) : ""
     }));
 
     const session = await stripe.checkout.sessions.create({
@@ -123,6 +175,71 @@ app.post("/checkout", async (req, res) => {
   } catch (err) {
     console.error("Checkout error:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ====== DISPONIBILIDAD: on-demand ======
+app.post("/availability", async (req, res) => {
+  try {
+    const { variant_ids = [] } = req.body;
+    if (!Array.isArray(variant_ids) || !variant_ids.length) {
+      return res.status(400).json({ ok:false, error:"variant_ids requerido" });
+    }
+
+    const fromCache = {};
+    const missing = [];
+    for (const v of variant_ids) {
+      const key = String(v);
+      if (key in availabilityCache.data) fromCache[key] = availabilityCache.data[key];
+      else missing.push(key);
+    }
+
+    let fresh = {};
+    if (missing.length) {
+      fresh = await probeVariantsAvailability(missing);
+      Object.assign(availabilityCache.data, fresh);
+      availabilityCache.updatedAt = new Date().toISOString();
+    }
+
+    return res.json({
+      ok: true,
+      updatedAt: availabilityCache.updatedAt,
+      availability: { ...fromCache, ...fresh }
+    });
+  } catch (e) {
+    console.error("availability error:", e);
+    return res.status(500).json({ ok:false, error:String(e) });
+  }
+});
+
+// ====== DISPONIBILIDAD: refresh (cron) ======
+app.post("/refresh-availability", async (req, res) => {
+  try {
+    const { variant_ids = [] } = req.body;
+
+    const ids = Array.from(new Set(
+      (Array.isArray(variant_ids) && variant_ids.length ? variant_ids : Object.keys(availabilityCache.data))
+        .map(String)
+    ));
+
+    if (!ids.length) {
+      return res.json({ ok:true, message:"No hay variant_ids que refrescar aún." });
+    }
+
+    const chunkSize = 20;
+    const result = {};
+    for (let i=0; i<ids.length; i+=chunkSize) {
+      const slice = ids.slice(i, i+chunkSize);
+      const part = await probeVariantsAvailability(slice);
+      Object.assign(result, part);
+      Object.assign(availabilityCache.data, part);
+      availabilityCache.updatedAt = new Date().toISOString();
+    }
+
+    return res.json({ ok:true, updatedAt: availabilityCache.updatedAt, availability: result });
+  } catch (e) {
+    console.error("refresh-availability error:", e);
+    return res.status(500).json({ ok:false, error:String(e) });
   }
 });
 
