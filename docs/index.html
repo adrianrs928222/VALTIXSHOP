@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
   <title>VALTIX | Estilo que evoluciona – Moda premium para cada día y cada momento</title>
   <meta name="description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
   <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
@@ -13,34 +12,21 @@
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
-
-  <!-- Breadcrumbs (app.js los actualiza) -->
-  <script id="breadcrumbs-jsonld" type="application/ld+json">
-  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
-  ]}
-  </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
 </head>
+
 <body>
-  <!-- Barra superior -->
   <div class="envio-bar">🚚 Envíos gratis en pedidos superiores a 60€</div>
 
-  <!-- Header -->
   <header class="header">
     <div class="container header-inner">
       <a class="brand" href="./" aria-label="Inicio VALTIX">
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
-
-      <!-- Botón hamburguesa (solo móvil) -->
       <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
-
-      <!-- Menú -->
       <nav id="main-nav" class="nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
@@ -48,14 +34,12 @@
         <a href="#c/zapatos">Zapatos</a>
         <a href="#c/accesorios">Accesorios</a>
       </nav>
-
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
     </div>
   </header>
 
-  <!-- Hero -->
   <section class="hero">
     <div class="container hero-inner">
       <div>
@@ -69,7 +53,6 @@
     </div>
   </section>
 
-  <!-- Catálogo -->
   <main class="main">
     <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
@@ -79,7 +62,6 @@
     </section>
   </main>
 
-  <!-- Footer -->
   <footer class="footer">
     <div class="container footer-inner">
       <div>© <span id="year"></span> VALTIX</div>
@@ -91,7 +73,6 @@
     </div>
   </footer>
 
-  <!-- Drawer Carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -106,8 +87,62 @@
     </div>
   </aside>
 
-  <!-- Scripts -->
-  <script src="./products.js"></script>
-  <script src="./app.js"></script>
+  <script>
+  const API_URL = "https://valtixshop.onrender.com/api/printful/products";
+
+  async function loadProducts() {
+    try {
+      const res = await fetch(API_URL);
+      const { products } = await res.json();
+      renderProducts(products);
+    } catch (e) {
+      document.getElementById("grid").innerHTML = "<p>Error al cargar productos.</p>";
+      console.error(e);
+    }
+  }
+
+  function renderProducts(products) {
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+
+    products.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const img = document.createElement("img");
+      img.src = p.image;
+      card.appendChild(img);
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = p.name;
+      card.appendChild(name);
+
+      const price = document.createElement("div");
+      price.className = "price";
+      price.textContent = `${p.price?.toFixed(2) || 0} €`;
+      card.appendChild(price);
+
+      const sizes = Object.keys(p.variant_map || {});
+      if (sizes.length > 0) {
+        const select = document.createElement("select");
+        select.innerHTML = sizes.map(s => `<option value="${p.variant_map[s]}">${s}</option>`).join("");
+        card.appendChild(select);
+      }
+
+      const btn = document.createElement("button");
+      btn.textContent = "Añadir al carrito";
+      btn.onclick = () => {
+        const variant_id = card.querySelector("select")?.value;
+        alert(`Producto: ${p.name}\nTalla ID: ${variant_id}\nPrecio: ${p.price} €`);
+      };
+      card.appendChild(btn);
+
+      grid.appendChild(card);
+    });
+  }
+
+  loadProducts();
+  </script>
 </body>
 </html>
