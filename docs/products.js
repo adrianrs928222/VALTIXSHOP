@@ -1,10 +1,9 @@
-// products.js
 // VALTIX — 1 producto por categoría con tallas (variant_map)
-// ✅ IMPORTANTE: los variant_id deben ir en STRING.
-// ⚠️ CAMBIAR los que estén marcados como EJEMPLO por tus IDs reales de Printful.
+// ✅ Los variant_id deben ir en STRING.
+// ⚠️ Cambia los que están marcados como EJEMPLO por tus IDs reales de Printful.
 
 window.products = [
-  // CAMISETAS (EJEMPLO: sustituye por tus IDs reales)
+  // CAMISETAS (EJEMPLO)
   {
     id: "tee-white-180",
     name: "Camiseta Premium Blanca 180g",
@@ -21,12 +20,12 @@ window.products = [
     }
   },
 
-  // SUDADERAS (REAL: IDs de Printful ya configurados)
+  // SUDADERAS (REAL)
   {
     id: "hoodie-black-classic",
     name: "Sudadera Negra Logo Amarillo",
     price: 49.99,
-    image: "https://i.postimg.cc/k5ZGwR5W/producto1.png",
+    image: "https://via.placeholder.com/800x800.png?text=Sudadera+VALTIX+Negra",
     sku: "Sudadera Negra Logo Amarillo",
     categories: ["sudaderas"],
     variant_map: {
@@ -34,7 +33,7 @@ window.products = [
       "M":  "68f207f9445a96",
       "L":  "68f207f9445b22",
       "XL": "68f207f9445ba2"
-      // añade "2XL": "xxxxxxxxxxxxxx" si la tienes
+      // "2XL": "xxxxxxxxxxxxxx"
     }
   },
 
