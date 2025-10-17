@@ -3,16 +3,12 @@ import cors from "cors";
 import Stripe from "stripe";
 import fetch from "node-fetch";
 import bodyParser from "body-parser";
+import router from "./router.js"; // 👈 Importa tus rutas Printful
 
 const app = express();
 
 /* ========================= CORS ========================= */
-const envOrigins = (process.env.ALLOWED_ORIGIN || "")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
-
-const fallbackOrigins = [
+const ALLOWED_ORIGINS = [
   "https://adrianrs928222.github.io",
   "https://valtixshop.onrender.com",
   "http://localhost:5500",
@@ -20,8 +16,6 @@ const fallbackOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:3000"
 ];
-
-const ALLOWED_ORIGINS = Array.from(new Set([...fallbackOrigins, ...envOrigins]));
 
 app.use(cors({
   origin(origin, cb) {
@@ -33,7 +27,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature"]
 }));
 
-// Cabeceras extra + preflight universal
+// Preflight y cabeceras extra
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
@@ -52,19 +46,13 @@ const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
 const stripe = STRIPE_KEY ? new Stripe(STRIPE_KEY) : null;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 
-/* ============ Cache de disponibilidad (Printful) ============ */
+/* ============ Printful disponibilidad (cache y key) ============ */
 const availabilityCache = { data: {}, updatedAt: null };
 const PRINTFUL_KEY = process.env.PRINTFUL_API_KEY || "";
 
 const isUnavailableMessage = (msg = "") =>
   /unavailable|discontinued|invalid variant|out of stock|not available/i.test(String(msg));
 
-/**
- * Estrategia práctica: probamos un pedido "falso" (confirm:false) para cada variant_id.
- * - Si responde OK -> lo consideramos en stock (true).
- * - Si devuelve error claro de no disponible -> false.
- * - Si no hay clave o respuesta ambigua -> null.
- */
 async function probeVariantsAvailability(variantIds = []) {
   if (!variantIds.length) return {};
   if (!PRINTFUL_KEY) {
@@ -84,7 +72,6 @@ async function probeVariantsAvailability(variantIds = []) {
       body: JSON.stringify(payload)
     });
 
-    // Si OK, asumimos stock para todos los enviados
     if (r.ok) {
       const out = {};
       for (const v of variantIds) out[String(v)] = true;
@@ -106,10 +93,7 @@ async function probeVariantsAvailability(variantIds = []) {
 
 /* ============== Webhook Stripe (RAW antes de json) ============== */
 app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, res) => {
-  if (!stripe || !WEBHOOK_SECRET) {
-    // Si no está configurado, no rompemos OK (útil en desarrollo)
-    return res.json({ received: true, disabled: true });
-  }
+  if (!stripe || !WEBHOOK_SECRET) return res.json({ received: true, disabled: true });
 
   const sig = req.headers["stripe-signature"];
   let event;
@@ -135,10 +119,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
         }))
         .filter(it => !!it.variant_id);
 
-      if (!items.length) {
-        console.error("No hay items válidos con variant_id para Printful.");
-        return res.json({ received: true });
-      }
+      if (!items.length) return res.json({ received: true });
 
       const payload = {
         recipient: {
@@ -149,12 +130,10 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
           zip: address.postal_code || "00000"
         },
         items,
-        confirm: true // modo real
+        confirm: true
       };
 
-      if (!PRINTFUL_KEY) {
-        console.warn("PRINTFUL_API_KEY no configurada; no se crea pedido.");
-      } else {
+      if (PRINTFUL_KEY) {
         const r = await fetch("https://api.printful.com/orders", {
           method: "POST",
           headers: { Authorization: `Bearer ${PRINTFUL_KEY}`, "Content-Type": "application/json" },
@@ -162,7 +141,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
         });
         const data = await r.json().catch(() => ({}));
         if (!r.ok) console.error("Printful error:", data);
-        else console.log("✅ Printful pedido creado:", data?.result?.id || data);
+        else console.log("✅ Pedido Printful creado:", data?.result?.id || data);
       }
     } catch (e) {
       console.error("Printful create order error:", e);
@@ -172,7 +151,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
   res.json({ received: true });
 });
 
-/* ============== JSON body DESPUÉS del webhook ============== */
+/* ============== JSON body después del webhook ============== */
 app.use(express.json());
 
 /* ================= Health ================= */
@@ -218,13 +197,12 @@ app.post("/checkout", async (req, res) => {
   }
 });
 
-/* ============== Disponibilidad on-demand ============== */
+/* ============== Disponibilidad ============== */
 app.post("/availability", async (req, res) => {
   try {
     const { variant_ids = [] } = req.body || {};
-    if (!Array.isArray(variant_ids) || !variant_ids.length) {
+    if (!Array.isArray(variant_ids) || !variant_ids.length)
       return res.status(400).json({ ok: false, error: "variant_ids requerido" });
-    }
 
     const fromCache = {};
     const missing = [];
@@ -248,29 +226,8 @@ app.post("/availability", async (req, res) => {
   }
 });
 
-/* ============== Refresh disponibilidad (manual/cron) ============== */
-app.post("/refresh-availability", async (req, res) => {
-  try {
-    const { variant_ids = [] } = req.body || {};
-    const ids = Array.from(new Set((variant_ids.length ? variant_ids : Object.keys(availabilityCache.data)).map(String)));
-    if (!ids.length) return res.json({ ok: true, message: "No hay variant_ids que refrescar aún." });
-
-    const chunkSize = 20;
-    const result = {};
-    for (let i = 0; i < ids.length; i += chunkSize) {
-      const slice = ids.slice(i, i + chunkSize);
-      const part = await probeVariantsAvailability(slice);
-      Object.assign(result, part);
-    }
-    Object.assign(availabilityCache.data, result);
-    availabilityCache.updatedAt = new Date().toISOString();
-
-    res.json({ ok: true, updatedAt: availabilityCache.updatedAt, availability: result });
-  } catch (e) {
-    console.error("refresh-availability error:", e);
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
+/* ============== RUTAS PRINTFUL ============== */
+app.use(router);
 
 /* ===================== Arranque ===================== */
 const PORT = process.env.PORT || 10000;
