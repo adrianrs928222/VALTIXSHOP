@@ -26,7 +26,7 @@ window.products = [
     id: "hoodie-black-classic",
     name: "Sudadera Negra Logo Amarillo",
     price: 49.99,
-    image: "https://via.placeholder.com/800x800.png?text=Sudadera+VALTIX+Negra",
+    image: "./img/producto1.png",
     sku: "Sudadera Negra Logo Amarillo",
     categories: ["sudaderas"],
     variant_map: {
