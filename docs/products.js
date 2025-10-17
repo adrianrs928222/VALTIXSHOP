@@ -1,9 +1,9 @@
+// products.js
 // VALTIX — 1 producto por categoría con tallas (variant_map)
-// ✅ Los variant_id deben ir en STRING.
-// ⚠️ Cambia los que están marcados como EJEMPLO por tus IDs reales de Printful.
+// ⚠️ Sustituye cada número de variant_id por tu ID real de Printful.
 
 window.products = [
-  // CAMISETAS (EJEMPLO)
+  // CAMISETAS
   {
     id: "tee-white-180",
     name: "Camiseta Premium Blanca 180g",
@@ -11,33 +11,33 @@ window.products = [
     image: "https://via.placeholder.com/800x800.png?text=Camiseta+VALTIX+Blanca",
     sku: "tee_white_180",
     categories: ["camisetas"],
+    // Tallas S–XXL (ejemplo). Cambia los IDs por los tuyos reales:
     variant_map: {
-      "S":   "1111111001", // ⚠️ EJEMPLO
-      "M":   "1111111002", // ⚠️ EJEMPLO
-      "L":   "1111111003", // ⚠️ EJEMPLO
-      "XL":  "1111111004", // ⚠️ EJEMPLO
-      "XXL": "1111111005"  // ⚠️ EJEMPLO
+      "S":   1111111001,
+      "M":   1111111002,
+      "L":   1111111003,
+      "XL":  1111111004,
+      "XXL": 1111111005
     }
   },
 
-  // SUDADERAS (REAL)
+  // SUDADERAS
   {
     id: "hoodie-black-classic",
-    name: "Sudadera Negra Logo Amarillo",
+    name: "Sudadera Negra Clásica",
     price: 49.99,
-    image: "https://via.placeholder.com/800x800.png?text=Sudadera+VALTIX+Negra",
-    sku: "Sudadera Negra Logo Amarillo",
+    image: "https://i.postimg.cc/k5ZGwR5W/producto1.png",
+    sku: "hoodie_black_classic",
     categories: ["sudaderas"],
     variant_map: {
-      "S":  "68f207f94459f3",
-      "M":  "68f207f9445a96",
-      "L":  "68f207f9445b22",
-      "XL": "68f207f9445ba2"
-      // "2XL": "xxxxxxxxxxxxxx"
+      "S":  2222222001,
+      "M":  2222222002,
+      "L":  2222222003,
+      "XL": 2222222004
     }
   },
 
-  // PANTALONES (EJEMPLO)
+  // PANTALONES
   {
     id: "pants-black-elegant",
     name: "Pantalón Negro Elegante",
@@ -45,15 +45,16 @@ window.products = [
     image: "https://via.placeholder.com/800x800.png?text=Pantalon+VALTIX+Negro",
     sku: "pants_black_elegant",
     categories: ["pantalones"],
+    // Si tus pantalones usan letras, deja S–XL; si usan tallas numéricas, cámbialas (por ejemplo 30/32/34…)
     variant_map: {
-      "S":  "3333333001", // ⚠️ EJEMPLO
-      "M":  "3333333002", // ⚠️ EJEMPLO
-      "L":  "3333333003", // ⚠️ EJEMPLO
-      "XL": "3333333004"  // ⚠️ EJEMPLO
+      "S":  3333333001,
+      "M":  3333333002,
+      "L":  3333333003,
+      "XL": 3333333004
     }
   },
 
-  // ZAPATOS (EJEMPLO)
+  // ZAPATOS
   {
     id: "sneaker-black-min",
     name: "Zapatillas Minimal Negras",
@@ -61,15 +62,16 @@ window.products = [
     image: "https://via.placeholder.com/800x800.png?text=Zapatillas+VALTIX+Negras",
     sku: "sneaker_black_min",
     categories: ["zapatos"],
+    // Tallas EU de ejemplo:
     variant_map: {
-      "EU40": "4444444040", // ⚠️ EJEMPLO
-      "EU41": "4444444041", // ⚠️ EJEMPLO
-      "EU42": "4444444042", // ⚠️ EJEMPLO
-      "EU43": "4444444043"  // ⚠️ EJEMPLO
+      "EU40": 4444444040,
+      "EU41": 4444444041,
+      "EU42": 4444444042,
+      "EU43": 4444444043
     }
   },
 
-  // ACCESORIOS (EJEMPLO)
+  // ACCESORIOS
   {
     id: "cap-logo-black",
     name: "Gorra VALTIX Logo",
@@ -77,8 +79,9 @@ window.products = [
     image: "https://via.placeholder.com/800x800.png?text=Gorra+VALTIX",
     sku: "cap_valtix_logo_black",
     categories: ["accesorios"],
+    // Talla única en accesorios:
     variant_map: {
-      "Única": "5555555001" // ⚠️ EJEMPLO
+      "Única": 5555555001
     }
   }
 ];
