@@ -12,6 +12,14 @@
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
+
+  <!-- JSON-LD para breadcrumbs (lo actualizará app.js) -->
+  <script id="breadcrumbs-jsonld" type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
+  ]}
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -87,62 +95,7 @@
     </div>
   </aside>
 
-  <script>
-  const API_URL = "https://valtixshop.onrender.com/api/printful/products";
-
-  async function loadProducts() {
-    try {
-      const res = await fetch(API_URL);
-      const { products } = await res.json();
-      renderProducts(products);
-    } catch (e) {
-      document.getElementById("grid").innerHTML = "<p>Error al cargar productos.</p>";
-      console.error(e);
-    }
-  }
-
-  function renderProducts(products) {
-    const grid = document.getElementById("grid");
-    grid.innerHTML = "";
-
-    products.forEach(p => {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      const img = document.createElement("img");
-      img.src = p.image;
-      card.appendChild(img);
-
-      const name = document.createElement("div");
-      name.className = "name";
-      name.textContent = p.name;
-      card.appendChild(name);
-
-      const price = document.createElement("div");
-      price.className = "price";
-      price.textContent = `${p.price?.toFixed(2) || 0} €`;
-      card.appendChild(price);
-
-      const sizes = Object.keys(p.variant_map || {});
-      if (sizes.length > 0) {
-        const select = document.createElement("select");
-        select.innerHTML = sizes.map(s => `<option value="${p.variant_map[s]}">${s}</option>`).join("");
-        card.appendChild(select);
-      }
-
-      const btn = document.createElement("button");
-      btn.textContent = "Añadir al carrito";
-      btn.onclick = () => {
-        const variant_id = card.querySelector("select")?.value;
-        alert(`Producto: ${p.name}\nTalla ID: ${variant_id}\nPrecio: ${p.price} €`);
-      };
-      card.appendChild(btn);
-
-      grid.appendChild(card);
-    });
-  }
-
-  loadProducts();
-  </script>
+  <!-- Carga solo app.js (no incluir products.js) -->
+  <script src="./app.js"></script>
 </body>
 </html>
