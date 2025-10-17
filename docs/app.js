@@ -1,6 +1,6 @@
 // ===== Config =====
 const BACKEND_URL = "https://una-tienda1.onrender.com";
-const CHECKOUT_PATH = "/checkout"; // ✅ corregido (antes: /create-checkout-session)
+const CHECKOUT_PATH = "/checkout";
 
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -28,6 +28,39 @@ function updateBreadcrumbsSchema(){
     });
   }
   el.textContent = JSON.stringify(base);
+}
+
+// ===== Disponibilidad (API backend) =====
+async function fetchAvailabilityForMap(variantMap) {
+  const ids = Object.values(variantMap || {}).map(String);
+  if (!ids.length) return {};
+  try {
+    const r = await fetch(`${BACKEND_URL}/availability`, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ variant_ids: ids })
+    });
+    const data = await r.json();
+    return data?.availability || {};
+  } catch {
+    return {};
+  }
+}
+
+async function verifyCartAvailability(cartItems){
+  const ids = cartItems.map(i => String(i.variant_id));
+  const r = await fetch(`${BACKEND_URL}/availability`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ variant_ids: ids })
+  });
+  const data = await r.json();
+  const bad = [];
+  for (const it of cartItems) {
+    const st = data?.availability?.[String(it.variant_id)];
+    if (st === false) bad.push(it.name);
+  }
+  return bad;
 }
 
 // ===== Render productos (con tallas) =====
@@ -71,6 +104,27 @@ function renderProducts(){
       });
     });
 
+    // autodesactivar tallas sin stock
+    if (sizes.length && p.variant_map) {
+      fetchAvailabilityForMap(p.variant_map).then(avMap => {
+        sizes.forEach(sz => {
+          const vid = String(p.variant_map[sz]);
+          const isAvailable = avMap[vid];
+          const btn = card.querySelector(`.option-btn[data-sz="${sz}"]`);
+          if (!btn) return;
+          if (isAvailable === false) {
+            btn.disabled = true;
+            btn.title = "Sin stock temporalmente";
+            btn.classList.add("disabled");
+            if (selectedSize === sz) {
+              const firstEnabled = [...card.querySelectorAll(".option-btn")].find(b => !b.disabled);
+              if (firstEnabled) firstEnabled.click();
+            }
+          }
+        });
+      });
+    }
+
     // add to cart
     card.querySelector(".add-btn").addEventListener("click", ()=>{
       const prod = products.find(x=>x.sku===p.sku);
@@ -78,7 +132,7 @@ function renderProducts(){
 
       let variant_id = prod.variant_id || null;
       if (prod.variant_map && selectedSize && prod.variant_map[selectedSize]){
-        variant_id = String(prod.variant_map[selectedSize]); // ✅ aseguramos string
+        variant_id = String(prod.variant_map[selectedSize]);
       }
 
       addToCart({
@@ -153,12 +207,19 @@ function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDra
 async function goCheckout(){
   if(!cart.length) return alert("Tu carrito está vacío.");
   const items = cart.map(i=>({
-    variant_id: String(i.variant_id),   // ✅ clave para Printful
+    variant_id: String(i.variant_id),
     quantity: Number(i.qty),
     sku: i.sku,
     name: i.name,
     price: Number(i.price)
   }));
+
+  // Doble verificación: no cobrar si algo está sin stock
+  const agotados = await verifyCartAvailability(items);
+  if (agotados.length) {
+    alert("Estas tallas están sin stock ahora mismo:\n- " + agotados.join("\n- "));
+    return;
+  }
 
   try{
     const res = await fetch(`${BACKEND_URL}${CHECKOUT_PATH}`, {
@@ -172,21 +233,6 @@ async function goCheckout(){
   }catch(e){
     console.error(e);
     alert("Error de conexión con el servidor.");
-  }
-}
-
-// ===== Promo =====
-function startPromo(){
-  const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
-  if(window.innerWidth <= 520){
-    textEl.textContent = "🚚 Envíos GRATIS en pedidos superiores a 60€";
-  } else {
-    const msgs=[
-      "Compra hoy y recibe en España o en cualquier parte del mundo 🌍",
-      "🚚 Envíos GRATIS en pedidos superiores a 60€"
-    ];
-    let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
-    show(); setInterval(show,8000);
   }
 }
 
@@ -248,9 +294,23 @@ function updateActiveNavLink(){
 document.addEventListener("DOMContentLoaded", ()=>{
   setYear();
   setupHamburger();
-  startPromo();
   handleHash();
   renderCart();
+
+  // Promo opcional
+  const box=$("#promoBox"); const textEl=$(".promo-text");
+  if(box && textEl){
+    if(window.innerWidth <= 520){
+      textEl.textContent = "🚚 Envíos GRATIS en pedidos superiores a 60€";
+    } else {
+      const msgs=[
+        "Compra hoy y recibe en España o en cualquier parte del mundo 🌍",
+        "🚚 Envíos GRATIS en pedidos superiores a 60€"
+      ];
+      let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
+      show(); setInterval(show,8000);
+    }
+  }
 
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
 
