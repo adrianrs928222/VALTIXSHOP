@@ -168,7 +168,7 @@ function subtotal(){ return cart.reduce((s,i)=> s + (Number(i.price)*i.qty), 0);
 
 function renderCart(){
   const count = cart.reduce((s,i)=>s+i.qty,0);
-  const countEl=$("#cartCount"); if(countEl) countEl.textContent=count;
+  const countEl=$("#cartCount"); if(countEl) textContent=count;
   const box=$("#cartItems"); if(!box) return;
 
   box.innerHTML="";
@@ -228,6 +228,7 @@ async function goCheckout(){
       body: JSON.stringify({ items })
     });
     const data = await res.json();
+    console.log("checkout resp:", data);
     if(data?.url) window.location.href = data.url;
     else alert("No se pudo iniciar el pago. Intenta más tarde.");
   }catch(e){
@@ -296,21 +297,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
   setupHamburger();
   handleHash();
   renderCart();
-
-  // Promo opcional
-  const box=$("#promoBox"); const textEl=$(".promo-text");
-  if(box && textEl){
-    if(window.innerWidth <= 520){
-      textEl.textContent = "🚚 Envíos GRATIS en pedidos superiores a 60€";
-    } else {
-      const msgs=[
-        "Compra hoy y recibe en España o en cualquier parte del mundo 🌍",
-        "🚚 Envíos GRATIS en pedidos superiores a 60€"
-      ];
-      let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
-      show(); setInterval(show,8000);
-    }
-  }
 
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
 
