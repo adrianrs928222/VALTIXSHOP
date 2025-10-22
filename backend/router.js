@@ -1,4 +1,3 @@
-// backend/router.js
 import express from "express";
 import fetch from "node-fetch";
 
@@ -51,78 +50,85 @@ function detectCategories(name = "") {
 
 function firstPreview(files = []) {
   return (
-    files?.[0]?.preview_url ||
-    files?.[0]?.thumbnail_url ||
-    files?.[0]?.url ||
+    files?.find(f => f.preview_url)?.preview_url ||
+    files?.find(f => f.thumbnail_url)?.thumbnail_url ||
+    files?.find(f => f.url)?.url ||
     null
   );
 }
 
-/* ========== Normalizador con COLORES + TALLAS ========== */
+/* ========== Normalizador con COLORES + TALLAS + IMAGENES PERSONALIZADAS ========== */
 function normalizeProduct(detail) {
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
 
-  // precio mínimo visible
+  // Precio base (mínimo entre variantes)
   const prices = variants
     .map(v => parseFloat(v.retail_price))
     .filter(n => !Number.isNaN(n));
-  const price = prices.length ? Math.min(...prices) : undefined;
+  const price = prices.length ? Math.min(...prices) : 0;
 
-  // Agrupar por color -> cada color tendrá su imagen y su mapa de tallas
-  const colors = {}; // { "Black": { image, sizes: {S: 123, M: 124, ...} } }
+  // --- Agrupar por color ---
+  const colors = {};
   for (const v of variants) {
-    const raw = v?.name || "";
     const product = v?.product || {};
+    const raw = v?.name || "";
 
-    // color detectado
-    let color =
-      (product.color_name || product.color || "").toString().trim();
+    // Detectar color real de Printful
+    let color = (product.color_name || product.color || "").trim();
     if (!color && raw.includes("/")) color = raw.split("/")[0].trim();
-    if (!color) color = "Default";
+    if (!color) color = "Color único";
 
-    // talla detectada
-    let size = (product.size || "").toString().trim();
+    // Detectar talla
+    let size = (product.size || "").trim();
     if (!size && raw.includes("/")) size = raw.split("/").pop().trim();
     if (!size) size = `VAR_${v.variant_id}`;
 
     if (!colors[color]) colors[color] = { image: null, sizes: {} };
 
-    // imagen para el color (primera que encontremos)
+    // Imagen del color: preferencia -> variant.files.preview_url -> thumbnail_url -> personalizada
+    const variantImage =
+      v?.files?.find(f => f.preview_url)?.preview_url ||
+      v?.files?.find(f => f.thumbnail_url)?.thumbnail_url ||
+      product.image ||
+      sp?.thumbnail_url ||
+      null;
+
+    // Imagen personalizada por defecto si no existe
     if (!colors[color].image) {
-      colors[color].image = firstPreview(v.files) || sp?.thumbnail_url || null;
+      colors[color].image =
+        variantImage ||
+        "https://i.postimg.cc/k5ZGwR5W/producto1.png"; // 🖼️ imagen personalizada fallback
     }
 
-    // asignar talla -> variant_id
     colors[color].sizes[size] = v.variant_id;
   }
 
-  // imagen de portada (primer color disponible)
+  // Imagen principal (primer color)
   const firstColor = Object.keys(colors)[0];
   const cover =
     (firstColor && colors[firstColor]?.image) ||
     sp?.thumbnail_url ||
-    firstPreview(variants?.[0]?.files) ||
-    "https://via.placeholder.com/800x800.png?text=VALTIX";
+    "https://i.postimg.cc/k5ZGwR5W/producto1.png"; // 🖼️ fallback global
 
-  // Para compatibilidad: un variant_map simple (primer color)
   const variant_map =
     firstColor ? { ...colors[firstColor].sizes } : {};
 
   return {
-    id: (sp?.id && String(sp.id)) || (sp?.external_id || `pf_${Date.now()}`),
+    id: String(sp?.id || sp?.external_id || `pf_${Date.now()}`),
     name: sp?.name || "Producto Printful",
-    price: typeof price === "number" ? Number(price.toFixed(2)) : undefined,
+    price: Number(price.toFixed(2)),
     image: cover,
     sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
-    // NUEVO
-    colors,        // { "Black": { image, sizes { S: 111, M: 112 } }, ... }
-    variant_map,   // compat
+    colors,       // Colores reales de Printful
+    variant_map   // Compatibilidad con app.js
   };
 }
 
 /* ========== Endpoints ========== */
+
+// Obtener todos los productos sincronizados de Printful
 router.get("/api/printful/products", async (req, res) => {
   try {
     if (!process.env.PRINTFUL_API_KEY) {
@@ -144,10 +150,14 @@ router.get("/api/printful/products", async (req, res) => {
   }
 });
 
-// Debug crudo opcional
+// Endpoint de depuración cruda (lista sin procesar)
 router.get("/api/printful/raw-list", async (req, res) => {
-  try { res.json(await pfGet(`/store/products?limit=50&offset=0`)); }
-  catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  try {
+    const data = await pfGet(`/store/products?limit=50&offset=0`);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
 });
 
 export default router;
