@@ -1,6 +1,7 @@
 // app.js
-// VALTIX — Catálogo + carrito + Stripe (AUTO-SYNC con Printful desde backend)
+// VALTIX — Frontend catálogo + carrito + Stripe (sincronizado con backend Printful)
 
+// ===== Config =====
 const BACKEND_URL = "https://valtixshop.onrender.com";
 const CHECKOUT_PATH = "/checkout";
 
@@ -8,7 +9,7 @@ const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-// ========= Utils =========
+// ===== Utils =====
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
@@ -30,7 +31,7 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-// Mapea nombre de color → HEX para swatches
+// Paleta para normalizar nombres de color → HEX (swatches)
 function swatchHex(name){
   const m = {
     negro:"#000000", black:"#000000", "black heather":"#1f1f1f",
@@ -49,10 +50,10 @@ function swatchHex(name){
   return null;
 }
 
-// ========= Data (AUTO-SYNC) =========
+// ===== Data (AUTO-SYNC) =====
 async function fetchProducts() {
   try {
-    const res = await fetch(`${BACKEND_URL}/api/printful/products`, { headers: { "Accept":"application/json" }});
+    const res = await fetch(`${BACKEND_URL}/api/printful/products`, { headers: { Accept: "application/json" }});
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const { products } = await res.json();
     window.products = Array.isArray(products) ? products : [];
@@ -62,7 +63,7 @@ async function fetchProducts() {
   }
 }
 
-// ========= Render catálogo =========
+// ===== Render catálogo =====
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -146,6 +147,7 @@ function renderProducts(){
       return p.variant_id || null;
     }
 
+    // Cambiar color + fotos
     card.querySelectorAll(".color-circle").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         card.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
@@ -159,6 +161,7 @@ function renderProducts(){
 
     renderSizes();
 
+    // Añadir al carrito
     card.querySelector(".add-btn").addEventListener("click", ()=>{
       const vid = currentVariantId();
       if (!vid) return;
@@ -181,7 +184,7 @@ function renderProducts(){
   updateBreadcrumbsSchema();
 }
 
-// ========= Carrito =========
+// ===== Carrito =====
 function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
 function addToCart(item){
   const idx = cart.findIndex(i=>i.sku===item.sku && i.variant_id===item.variant_id);
@@ -229,11 +232,11 @@ function renderCart(){
   $("#subtotal").textContent = money(subtotal());
 }
 
-// ========= Drawer =========
+// ===== Drawer =====
 function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); $("#cartDrawer").setAttribute("aria-hidden","false"); renderCart(); }
 function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); $("#cartDrawer").setAttribute("aria-hidden","true"); }
 
-// ========= Checkout =========
+// ===== Checkout (Stripe) =====
 async function goCheckout(){
   if(!cart.length) return alert("Tu carrito está vacío.");
   const items = cart.map(i=>({ variant_id:i.variant_id, quantity:i.qty, sku:i.sku, name:i.name, price:Number(i.price) }));
@@ -247,7 +250,7 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ========= Navegación =========
+// ===== Promo / Nav =====
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   const msgs=[
@@ -296,14 +299,13 @@ function updateActiveNavLink(){
   });
 }
 
-// ========= Init =========
+// ===== Init =====
 document.addEventListener("DOMContentLoaded", async ()=>{
   setYear();
   setupHamburger();
   startPromo();
 
-  // 🔁 Carga real desde backend (AUTO-SYNC)
-  await fetchProducts();
+  await fetchProducts();   // ← sincroniza con backend/Printful
   renderProducts();
 
   renderCart();
