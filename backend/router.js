@@ -1,4 +1,3 @@
-// router.js
 import express from "express";
 import fetch from "node-fetch";
 
@@ -10,17 +9,19 @@ const PF_HEADERS = {
   "Content-Type": "application/json",
 };
 
-/* ========= Cache simple (1h) ========= */
-const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1 hora
+/* ========== Cache ========== */
 let productCache = { time: 0, data: [] };
+const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1 hora
 
-/* ========= Helpers ========= */
+/* ========== Helpers ========== */
 async function pfGet(path) {
   const url = `${PRINTFUL_API}${path}`;
   const res = await fetch(url, { headers: PF_HEADERS });
 
   let payload = null;
-  try { payload = await res.json(); } catch {}
+  try {
+    payload = await res.json();
+  } catch {}
 
   if (!res.ok) {
     const msg = payload?.error || payload || (await res.text().catch(() => ""));
@@ -53,69 +54,53 @@ function detectCategories(name = "") {
   return ["otros"];
 }
 
-/* ========= Normalizador robusto (colores + tallas + imagen por color) ========= */
+/* ========== Normalizador ========== */
 function normalizeProduct(detail) {
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
 
-  // Precio mínimo entre variantes
-  const prices = variants.map(v => parseFloat(v.retail_price)).filter(n => !Number.isNaN(n));
+  // Precio base
+  const prices = variants
+    .map(v => parseFloat(v.retail_price))
+    .filter(n => !Number.isNaN(n));
   const price = prices.length ? Math.min(...prices) : 0;
 
-  // Normalizador de nombre de color
-  const normColor = (raw = "") => {
-    const base = String(raw).trim().toLowerCase().replace(/\s+/g, " ");
-    if (!base) return "";
-    if (/black heather|heather black/.test(base)) return "Black";
-    if (/athletic heather|dark heather/.test(base)) return "Gray";
-    return base.replace(/\b\w/g, c => c.toUpperCase());
-  };
-
+  // Agrupar por color
   const colors = {};
-
   for (const v of variants) {
     const product = v?.product || {};
-    const rawName = v?.name || "";
+    const raw = v?.name || "";
 
-    // Color desde color_name, color o parte izquierda de "Color/Size"
-    let color =
-      normColor(product.color_name) ||
-      normColor(product.color) ||
-      normColor(rawName.split("/")[0]) ||
-      "Color único";
+    let color = (product.color_name || product.color || "").trim();
+    if (!color && raw.includes("/")) color = raw.split("/")[0].trim();
+    if (!color) color = "Color único";
 
-    // Talla desde product.size o parte derecha de "Color/Size"
-    let size =
-      String(product.size || "").trim() ||
-      String(rawName.includes("/") ? rawName.split("/").pop() : "").trim() ||
-      `VAR_${v.variant_id}`;
+    let size = (product.size || "").trim();
+    if (!size && raw.includes("/")) size = raw.split("/").pop().trim();
+    if (!size) size = `VAR_${v.variant_id}`;
 
     if (!colors[color]) colors[color] = { image: null, sizes: {} };
 
-    // Imagen priorizada por archivos mockup/preview de la variante
-    const fromFiles =
+    const variantImage =
       v?.files?.find(f => f.preview_url)?.preview_url ||
       v?.files?.find(f => f.thumbnail_url)?.thumbnail_url ||
-      v?.files?.find(f => f.url)?.url ||
-      null;
+      product.image ||
+      sp?.thumbnail_url ||
+      "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
-    const variantImage = fromFiles || product.image || sp?.thumbnail_url || null;
-
-    if (!colors[color].image && variantImage) {
-      colors[color].image = variantImage; // garantizamos una imagen por color
-    }
+    if (!colors[color].image) colors[color].image = variantImage;
 
     colors[color].sizes[size] = v.variant_id;
   }
 
-  // Portada segura
   const firstColor = Object.keys(colors)[0];
   const cover =
     (firstColor && colors[firstColor]?.image) ||
     sp?.thumbnail_url ||
     "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
-  const variant_map = firstColor ? { ...colors[firstColor].sizes } : {};
+  const variant_map =
+    firstColor ? { ...colors[firstColor].sizes } : {};
 
   return {
     id: String(sp?.id || sp?.external_id || `pf_${Date.now()}`),
@@ -129,17 +114,20 @@ function normalizeProduct(detail) {
   };
 }
 
-/* ========= Endpoints ========= */
+/* ========== Endpoints ========== */
 
-// Catálogo normalizado con caché (1h)
+// 🛍️ Productos Printful (con refresco manual y caché)
 router.get("/api/printful/products", async (req, res) => {
   try {
     if (!process.env.PRINTFUL_API_KEY) {
       return res.status(500).json({ error: "PRINTFUL_API_KEY no configurada en el servidor" });
     }
 
+    res.setHeader("Cache-Control", "no-store");
     const now = Date.now();
-    if (now - productCache.time < PRODUCT_CACHE_TTL && productCache.data.length) {
+    const force = String(req.query.refresh || "") === "1";
+
+    if (!force && now - productCache.time < PRODUCT_CACHE_TTL && productCache.data.length) {
       return res.json({ products: productCache.data, cached: true });
     }
 
@@ -153,14 +141,20 @@ router.get("/api/printful/products", async (req, res) => {
     const products = details.map(normalizeProduct);
 
     productCache = { time: now, data: products };
-    res.json({ products, cached: false });
+    res.json({ products, cached: false, refreshed: force });
   } catch (err) {
     console.error("PF /products error:", err.message);
     res.status(500).json({ error: String(err.message) });
   }
 });
 
-// Lista cruda (debug)
+// 🔄 Endpoint para borrar caché manualmente
+router.post("/api/printful/refresh", (req, res) => {
+  productCache = { time: 0, data: [] };
+  res.json({ ok: true, msg: "Caché invalidada correctamente" });
+});
+
+// 🧪 Lista cruda de Printful (debug)
 router.get("/api/printful/raw-list", async (req, res) => {
   try {
     const data = await pfGet(`/store/products?limit=50&offset=0`);
