@@ -1,277 +1,186 @@
-const BACKEND_URL = "https://valtixshop.onrender.com";
-const CHECKOUT_PATH = "/checkout";
+// ========== VALTIX | App principal ==========
 
+// Utilidades básicas
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+// Estado global
+let allProducts = [];
+let cart = [];
 
-function setYear() {
-  const y = $("#year");
-  if (y) y.textContent = new Date().getFullYear();
-}
-
-function money(n) {
-  return `${Number(n).toFixed(2)} €`;
-}
-
-function getActiveCategory() {
-  const h = location.hash || "";
-  return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all";
-}
-
-// ======= SEO =======
-function updateBreadcrumbsSchema() {
-  const el = $("#breadcrumbs-jsonld");
-  if (!el) return;
-  const base = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Inicio",
-        "item": "https://adrianrs928222.github.io/VALTIXSHOP/"
-      }
-    ]
-  };
-  const cat = getActiveCategory();
-  if (cat !== "all") {
-    base.itemListElement.push({
-      "@type": "ListItem",
-      "position": 2,
-      "name": cat.charAt(0).toUpperCase() + cat.slice(1),
-      "item": `https://adrianrs928222.github.io/VALTIXSHOP/#c/${encodeURIComponent(cat)}`
-    });
-  }
-  el.textContent = JSON.stringify(base);
-}
-
-// ======= Load Products =======
+// Cargar productos desde backend (Render)
 async function loadProducts() {
-  const grid = $("#grid");
   try {
-    const res = await fetch(`${BACKEND_URL}/api/printful/products`);
-    const { products } = await res.json();
-    window.products = products || [];
+    const res = await fetch("https://valtixshop.onrender.com/api/printful/products");
+    const data = await res.json();
+    allProducts = data.products || [];
     renderProducts();
-  } catch (e) {
-    console.error("❌ Error al cargar productos:", e);
-    if (grid) grid.innerHTML = "<p>Error al cargar productos.</p>";
+  } catch (err) {
+    console.error("❌ Error al cargar productos:", err);
+    $("#grid").innerHTML = `<p style="color:red;font-weight:700">Error al cargar productos</p>`;
   }
 }
 
-// ======= Render Products =======
+// Renderizar catálogo
 function renderProducts() {
   const grid = $("#grid");
-  if (!grid) return;
   grid.innerHTML = "";
 
-  if (!Array.isArray(window.products) || !products.length) {
-    grid.innerHTML = `<p style="color:#777">Aún no hay productos disponibles.</p>`;
-    return;
-  }
-
   const cat = getActiveCategory();
-  const list = cat === "all" ? products : products.filter(p => p.categories.includes(cat));
+  const filtered = cat === "all"
+    ? allProducts
+    : allProducts.filter(p => p.categories?.includes(cat));
 
-  list.forEach(p => {
-    const colorNames = Object.keys(p.colors || {});
-    let selectedColor = colorNames[0] || null;
-
-    const currentSizes = selectedColor ? Object.keys(p.colors[selectedColor].sizes) : [];
-    let selectedSize = currentSizes[0] || null;
-
+  filtered.forEach(p => {
     const card = document.createElement("div");
     card.className = "card";
-    card.innerHTML = `
-      <img class="card-img" src="${p.colors[selectedColor]?.image || p.image}" alt="${p.name}">
-      <div class="card-body">
-        <h3 class="card-title">${p.name}</h3>
-        <p class="card-price">${money(p.price)}</p>
-        <div class="stock-line"><span class="stock-badge ok">En stock</span></div>
 
-        <div class="options color-selector" role="group" aria-label="Colores"></div>
-        <div class="options sizes" role="group" aria-label="Tallas"></div>
-        <button class="btn add-btn" data-sku="${p.sku}">Añadir al carrito</button>
-      </div>
+    // Imagen principal (primer color)
+    const firstColorKey = Object.keys(p.colors || {})[0];
+    const firstColor = p.colors?.[firstColorKey];
+    const imgURL = firstColor?.image || p.image;
+
+    const img = document.createElement("img");
+    img.src = imgURL;
+    img.alt = p.name;
+    img.className = "card-img";
+
+    // Nombre y precio
+    const body = document.createElement("div");
+    body.className = "card-body";
+    body.innerHTML = `
+      <h4 class="card-title">${p.name}</h4>
+      <div class="card-price">${p.price.toFixed(2)} €</div>
     `;
 
-    const imgEl = card.querySelector(".card-img");
-    const colorWrap = card.querySelector(".color-selector");
-    const sizeWrap = card.querySelector(".sizes");
-
-    // Render colores con HEX
-    colorWrap.innerHTML = colorNames.map((cn, idx) => {
-      const hex = p.colors[cn]?.hex || "#ccc";
-      return `
-        <button 
-          class="color-circle ${idx === 0 ? "active" : ""}"
-          title="${cn}"
-          data-color="${cn}"
-          style="background-color:${hex};"
-        ></button>`;
-    }).join("");
-
-    // Render tallas
-    function renderSizes() {
-      const sizes = Object.keys(p.colors[selectedColor]?.sizes || {});
-      selectedSize = sizes[0] || null;
-      sizeWrap.innerHTML = sizes.map((sz, idx) => `
-        <button class="option-btn ${idx === 0 ? "active" : ""}" data-sz="${sz}">${sz}</button>
-      `).join("");
-      sizeWrap.querySelectorAll(".option-btn").forEach(btn => {
+    // Selector de colores (si hay)
+    const colors = Object.entries(p.colors || {});
+    if (colors.length > 1) {
+      const colorSel = document.createElement("div");
+      colorSel.className = "color-selector";
+      colors.forEach(([name, info]) => {
+        const btn = document.createElement("button");
+        btn.className = "color-circle";
+        btn.style.backgroundColor = info.hex;
+        btn.title = name;
         btn.addEventListener("click", () => {
-          sizeWrap.querySelectorAll(".option-btn").forEach(b => b.classList.remove("active"));
+          img.src = info.image || imgURL;
+          $$(".color-circle").forEach(c => c.classList.remove("active"));
           btn.classList.add("active");
-          selectedSize = btn.dataset.sz;
         });
+        colorSel.appendChild(btn);
       });
+      body.appendChild(colorSel);
     }
-    renderSizes();
 
-    // Cambiar imagen al seleccionar color
-    colorWrap.querySelectorAll(".color-circle").forEach(btn => {
-      btn.addEventListener("click", () => {
-        colorWrap.querySelectorAll(".color-circle").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        selectedColor = btn.dataset.color;
-        imgEl.src = p.colors[selectedColor]?.image || p.image;
-        renderSizes();
-      });
-    });
+    // Botón añadir
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.textContent = "Ver producto";
+    btn.onclick = () => openProductModal(p);
+    body.appendChild(btn);
 
-    // Añadir al carrito
-    card.querySelector(".add-btn").addEventListener("click", () => {
-      const vid = p.colors[selectedColor]?.sizes[selectedSize];
-      if (!vid) return;
-      addToCart({
-        sku: `${p.sku}_${selectedColor}_${selectedSize}`,
-        name: `${p.name} ${selectedColor} ${selectedSize}`,
-        price: p.price,
-        image: p.colors[selectedColor]?.image || p.image,
-        variant_id: vid
-      });
-      openCart();
-    });
-
+    card.appendChild(img);
+    card.appendChild(body);
     grid.appendChild(card);
   });
 
   updateActiveNavLink();
-  updateBreadcrumbsSchema();
 }
 
-// ======= Carrito =======
-function saveCart() {
-  localStorage.setItem("cart", JSON.stringify(cart));
-  renderCart();
+// Obtener categoría actual de la URL
+function getActiveCategory() {
+  const hash = location.hash;
+  if (hash.startsWith("#c/")) return hash.replace("#c/", "");
+  return "all";
 }
 
-function addToCart(item) {
-  const idx = cart.findIndex(i => i.sku === item.sku && i.variant_id === item.variant_id);
-  if (idx >= 0) cart[idx].qty += 1;
-  else cart.push({ ...item, qty: 1 });
-  saveCart();
+// ======= Menú activo (FIX incluido) =======
+function updateActiveNavLink() {
+  const cat = getActiveCategory();
+  $$("#main-nav a").forEach(a => {
+    const href = a.getAttribute("href") || "";
+    const match = href.startsWith("#c/") ? href.slice(3) : "";
+    a.classList.toggle("active", cat !== "all" && match === cat);
+  });
 }
 
-function changeQty(sku, vid, delta) {
-  const it = cart.find(i => i.sku === sku && i.variant_id === vid);
-  if (!it) return;
-  it.qty += delta;
-  if (it.qty <= 0) cart = cart.filter(i => !(i.sku === sku && i.variant_id === vid));
-  saveCart();
+// Abrir modal de producto (simplificado)
+function openProductModal(p) {
+  const colorKeys = Object.keys(p.colors || {});
+  const firstColor = p.colors?.[colorKeys[0]];
+  const image = firstColor?.image || p.image;
+
+  $("#grid").innerHTML = `
+    <div class="card">
+      <img src="${image}" alt="${p.name}" class="card-img" />
+      <div class="card-body">
+        <h3>${p.name}</h3>
+        <p>${p.price.toFixed(2)} €</p>
+        <p><span class="stock-badge ok">En stock</span></p>
+
+        <div class="options" id="sizeOpts"></div>
+        <button class="btn" id="addCart">Añadir al carrito</button>
+      </div>
+    </div>
+  `;
+
+  const sizeBox = $("#sizeOpts");
+  Object.keys(firstColor?.sizes || {}).forEach(sz => {
+    const b = document.createElement("button");
+    b.className = "option-btn";
+    b.textContent = sz;
+    b.onclick = () => {
+      $$(".option-btn").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      $("#addCart").onclick = () => addToCart(p, sz);
+    };
+    sizeBox.appendChild(b);
+  });
 }
 
-function clearCart() { cart = []; saveCart(); }
+// Añadir al carrito
+function addToCart(p, size) {
+  const item = { ...p, size };
+  cart.push(item);
+  updateCartCount();
+  alert(`✅ Añadido: ${p.name} (${size})`);
+}
 
-function subtotal() { return cart.reduce((s, i) => s + Number(i.price) * i.qty, 0); }
+// Actualizar contador del carrito
+function updateCartCount() {
+  $("#cartCount").textContent = cart.length;
+}
 
-function renderCart() {
-  const count = cart.reduce((s, i) => s + i.qty, 0);
-  const countEl = $("#cartCount");
-  if (countEl) countEl.textContent = count;
-  const box = $("#cartItems");
-  if (!box) return;
-
-  box.innerHTML = "";
-  if (!cart.length) {
-    box.innerHTML = `<p style="color:#666">Tu carrito está vacío.</p>`;
-  } else {
-    cart.forEach(i => {
-      const row = document.createElement("div");
-      row.className = "drawer-item";
-      row.innerHTML = `
-        <img src="${i.image}" alt="${i.name}">
-        <div style="flex:1">
-          <div style="font-weight:700">${i.name}</div>
-          <div class="qty">
-            <button aria-label="Quitar">-</button>
-            <span>${i.qty}</span>
-            <button aria-label="Añadir">+</button>
-          </div>
-          <div style="color:#666">${money(i.price)}</div>
-        </div>
-      `;
-      const [minus, , plus] = row.querySelectorAll(".qty button, .qty span");
-      minus.addEventListener("click", () => changeQty(i.sku, i.variant_id, -1));
-      plus.addEventListener("click", () => changeQty(i.sku, i.variant_id, 1));
-      box.appendChild(row);
-    });
+// ======= Promo box =======
+function startPromo() {
+  const promos = [
+    "✨ Nueva colección otoño 2025",
+    "🚀 Envíos gratis desde 60 €",
+    "🌍 Envíos internacionales disponibles"
+  ];
+  const promoBox = $("#promoBox");
+  const promoText = $("#promoBox .promo-text");
+  let i = 0;
+  function next() {
+    promoText.textContent = promos[i % promos.length];
+    i++;
   }
-  $("#subtotal").textContent = money(subtotal());
+  next();
+  setInterval(next, 6000);
 }
 
-// ======= Drawer =======
-function openCart() {
-  $("#drawerBackdrop").classList.add("show");
-  $("#cartDrawer").classList.add("open");
-  $("#cartDrawer").setAttribute("aria-hidden", "false");
-  renderCart();
-}
-function closeCart() {
-  $("#drawerBackdrop").classList.remove("show");
-  $("#cartDrawer").classList.remove("open");
-  $("#cartDrawer").setAttribute("aria-hidden", "true");
-}
+// ======= Eventos globales =======
+document.addEventListener("DOMContentLoaded", () => {
+  loadProducts();
+  startPromo();
 
-// ======= Checkout =======
-async function goCheckout() {
-  if (!cart.length) return alert("Tu carrito está vacío.");
-  const items = cart.map(i => ({
-    variant_id: i.variant_id,
-    quantity: i.qty,
-    sku: i.sku,
-    name: i.name,
-    price: Number(i.price)
-  }));
-  try {
-    const res = await fetch(`${BACKEND_URL}${CHECKOUT_PATH}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items })
-    });
-    const data = await res.json();
-    if (data?.url) window.location.href = data.url;
-    else alert("No se pudo iniciar el pago.");
-  } catch (e) {
-    console.error(e);
-    alert("Error de conexión con el servidor.");
-  }
-}
+  $("#year").textContent = new Date().getFullYear();
 
-// ======= Nav & Init =======
-document.addEventListener("DOMContentLoaded", async () => {
-  setYear();
-  await loadProducts();
-  renderCart();
-
-  $("#openCart")?.addEventListener("click", openCart);
-  $("#closeCart")?.addEventListener("click", closeCart);
-  $("#drawerBackdrop")?.addEventListener("click", closeCart);
-  $("#clearCart")?.addEventListener("click", clearCart);
-  $("#checkoutBtn")?.addEventListener("click", goCheckout);
+  // Menú móvil
+  $("#menu-toggle").addEventListener("click", () => {
+    $("#main-nav").classList.toggle("show");
+  });
 
   window.addEventListener("hashchange", renderProducts);
 });
