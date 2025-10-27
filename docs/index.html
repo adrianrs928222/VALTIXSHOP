@@ -13,7 +13,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD para breadcrumbs (lo actualizará app.js) -->
+  <!-- JSON-LD para breadcrumbs (app.js lo actualiza en listado y detalle) -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
     {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
@@ -34,9 +34,7 @@
       <a class="brand" href="./" aria-label="Inicio VALTIX">
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
-
       <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
-
       <nav id="main-nav" class="nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
@@ -44,7 +42,6 @@
         <a href="#c/zapatos">Zapatos</a>
         <a href="#c/accesorios">Accesorios</a>
       </nav>
-
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
@@ -99,7 +96,50 @@
     </div>
   </aside>
 
-  <!-- Carga solo app.js (sin products.js) -->
+  <!-- Vista de producto (overlay profesional) -->
+  <div id="pdOverlay" class="pd-overlay" aria-hidden="true">
+    <div class="pd-panel" role="dialog" aria-modal="true" aria-labelledby="pdTitle">
+      <button class="pd-close" id="pdClose" aria-label="Cerrar">✕</button>
+      <div class="pd-grid">
+        <!-- Galería -->
+        <div class="pd-media">
+          <img id="pdMain" class="pd-main" src="" alt="">
+          <div id="pdThumbs" class="pd-thumbs"></div>
+        </div>
+        <!-- Info -->
+        <div class="pd-info">
+          <h2 id="pdTitle" class="pd-title"></h2>
+          <div class="pd-price" id="pdPrice"></div>
+          <div class="pd-stock"><span class="stock-badge ok">En stock</span></div>
+
+          <div class="pd-block">
+            <div class="pd-label">Color</div>
+            <div id="pdColors" class="color-selector"></div>
+          </div>
+
+          <div class="pd-block">
+            <div class="pd-label">Talla</div>
+            <div id="pdSizes" class="options"></div>
+          </div>
+
+          <div class="pd-cta">
+            <button id="pdAdd" class="btn">Añadir al carrito</button>
+          </div>
+
+          <div class="pd-meta">
+            <ul>
+              <li>Pago seguro con Stripe</li>
+              <li>Envío 2–5 días en España</li>
+              <li>Devoluciones fáciles</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App -->
   <script src="./app.js?v=pro-detail" defer></script>
 </body>
 </html>
