@@ -9,15 +9,13 @@ const PF_HEADERS = {
   "Content-Type": "application/json",
 };
 
-// Cache en memoria
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
-/* ================= Helpers ================= */
+/* ============ Helpers ============ */
 async function pfGet(path) {
   const r = await fetch(`${PRINTFUL_API}${path}`, { headers: PF_HEADERS });
-  let json = null;
-  try { json = await r.json(); } catch {}
+  let json = null; try { json = await r.json(); } catch {}
   if (!r.ok) {
     const msg = json?.error || json || (await r.text().catch(()=>"" ));
     throw new Error(`Printful GET ${path} -> ${r.status} ${JSON.stringify(msg)}`);
@@ -65,16 +63,16 @@ function colorHexFromName(name=""){
     orange:"#ff7f00","rust":"#b7410e","gold":"#ffd700","yellow":"#ffea00","mustard":"#e1ad01",
     purple:"#800080","violet":"#8a2be2","lavender":"#b57edc","magenta":"#ff00ff","pink":"#ffc0cb",
     brown:"#5c4033","chocolate":"#7b3f00","khaki":"#bdb76b",
-    // español comunes
+    // ES
     negro:"#000000", blanco:"#ffffff", gris:"#808080", azul:"#0057ff", rojo:"#ff0000",
     verde:"#008000", amarillo:"#ffea00", naranja:"#ff7f00", morado:"#800080", rosa:"#ffc0cb",
     burdeos:"#800020", beige:"#f5f5dc", marrón:"#5c4033", caqui:"#bdb76b", oro:"#ffd700",
-    adobe:"#A6654E", "french navy":"#031A44", "heather grey":"#B3B7BD"
+    adobe:"#a6654e", "french navy":"#031a44", "heather grey":"#b3b7bd"
   };
   return map[k] || null;
 }
 
-// Normaliza 1 detalle de Printful
+/* ============ Normalizador ============ */
 function normalizeDetail(detail){
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
@@ -83,33 +81,48 @@ function normalizeDetail(detail){
   const price = prices.length ? Math.min(...prices) : 0;
 
   const colors = {};
+
   for (const v of variants){
     const product = v?.product || {};
     const raw = String(v?.name || "").trim();
 
-    let colorName = product.color_name || product.color || "";
-    if (!colorName && raw.includes("/")) colorName = raw.split("/")[0].split("-").pop().trim();
-    if (!colorName && raw.includes("-")) colorName = raw.split("-").pop().trim();
+    // --- EXTRAER color y talla del nombre tipo: "Nombre / Color / Talla"
+    let colorName = "";
+    let size = "";
+
+    if (raw.includes("/")) {
+      const segs = raw.split("/").map(s=>s.trim()).filter(Boolean);
+      // .../Color/Talla  -> color = penúltimo, talla = último
+      if (segs.length >= 2) {
+        size = segs[segs.length - 1];
+        colorName = segs[segs.length - 2];
+      }
+      // si por algún motivo solo hay 1 barra, intenta product.size
+      if (!size) size = product.size || "";
+    }
+
+    // fallbacks por si algún producto viene distinto
+    if (!colorName) colorName = product.color_name || product.color || "";
     if (!colorName) colorName = "Color Único";
     colorName = capWords(colorName);
 
+    if (!size) size = product.size || `VAR_${v.variant_id}`;
+
+    // HEX
     let hex = product.hex_code || v?.color_code || v?.color_hex || null;
     if (hex && /^#?[0-9A-Fa-f]{3,6}$/.test(hex)) hex = hex.startsWith("#") ? hex : `#${hex}`;
     if (!hex) hex = colorHexFromName(colorName);
 
-    let size = product.size || "";
-    if (!size && raw.includes("/")) size = raw.split("/").pop().trim();
-    if (!size) size = `VAR_${v.variant_id}`;
-
-    const img =
+    // Imagen por variante (preferencias)
+    const vImg =
       (v?.files||[]).find(f=>f.type==="preview" && f.preview_url)?.preview_url ||
       (v?.files||[]).find(f=>f.preview_url)?.preview_url ||
       (v?.files||[]).find(f=>f.thumbnail_url)?.thumbnail_url ||
       (v?.files||[]).find(f=>f.url)?.url ||
       product.image || sp?.thumbnail_url || null;
 
-    if (!colors[colorName]) colors[colorName] = { hex, image: img, sizes:{} };
-    if (!colors[colorName].image && img) colors[colorName].image = img;
+    if (!colors[colorName]) colors[colorName] = { hex, image: vImg, sizes: {} };
+    if (!colors[colorName].image && vImg) colors[colorName].image = vImg;
     colors[colorName].sizes[size] = v.variant_id;
   }
 
@@ -133,7 +146,7 @@ function normalizeDetail(detail){
   };
 }
 
-// Fusiona productos por nombre (si tienes colores como productos separados)
+/* ============ Fusión por nombre (si colores están como productos separados) ============ */
 function mergeByName(list){
   const map = new Map();
   for (const p of list){
@@ -154,7 +167,7 @@ function mergeByName(list){
   return Array.from(map.values());
 }
 
-/* ================= Endpoints ================= */
+/* ============ Endpoints ============ */
 router.get("/api/printful/products", async (req,res)=>{
   try{
     if (!process.env.PRINTFUL_API_KEY) {
@@ -186,6 +199,14 @@ router.get("/api/printful/products", async (req,res)=>{
   }
 });
 
+// Depuración sencilla: /api/printful/debug?name=Valtix%20V
+router.get("/api/printful/debug", (req,res)=>{
+  const q = String(req.query.name||"").trim().toLowerCase();
+  const matches = (productCache.data||[]).filter(p=>p.name.toLowerCase().includes(q));
+  res.json({ query:q, matches });
+});
+
+// Invalida caché manualmente
 router.post("/api/printful/refresh",(req,res)=>{
   productCache = { time:0, data:[] };
   res.json({ ok:true, msg:"Caché invalidada" });
