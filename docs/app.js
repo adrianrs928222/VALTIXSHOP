@@ -1,7 +1,6 @@
 // app.js
-// VALTIX — Frontend catálogo + carrito + Stripe
+// VALTIX — Catálogo + carrito + Stripe (AUTO-SYNC con Printful desde backend)
 
-// ===== Config =====
 const BACKEND_URL = "https://valtixshop.onrender.com";
 const CHECKOUT_PATH = "/checkout";
 
@@ -9,7 +8,7 @@ const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-// ===== Utils =====
+// ========= Utils =========
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
@@ -24,16 +23,14 @@ function updateBreadcrumbsSchema(){
   const cat = getActiveCategory();
   if (cat!=="all"){
     base.itemListElement.push({
-      "@type":"ListItem",
-      "position":2,
-      "name":cat.charAt(0).toUpperCase()+cat.slice(1),
+      "@type":"ListItem","position":2,"name":cat.charAt(0).toUpperCase()+cat.slice(1),
       "item":`https://adrianrs928222.github.io/VALTIXSHOP/#c/${encodeURIComponent(cat)}`
     });
   }
   el.textContent = JSON.stringify(base);
 }
 
-// Paleta para normalizar nombres de color → HEX (para swatches)
+// Mapea nombre de color → HEX para swatches
 function swatchHex(name){
   const m = {
     negro:"#000000", black:"#000000", "black heather":"#1f1f1f",
@@ -52,7 +49,20 @@ function swatchHex(name){
   return null;
 }
 
-// ===== Render catálogo =====
+// ========= Data (AUTO-SYNC) =========
+async function fetchProducts() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/printful/products`, { headers: { "Accept":"application/json" }});
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { products } = await res.json();
+    window.products = Array.isArray(products) ? products : [];
+  } catch (e) {
+    console.error("❌ No se pudieron obtener productos del backend:", e);
+    window.products = [];
+  }
+}
+
+// ========= Render catálogo =========
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -136,7 +146,6 @@ function renderProducts(){
       return p.variant_id || null;
     }
 
-    // Cambiar color + fotos
     card.querySelectorAll(".color-circle").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         card.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
@@ -150,7 +159,6 @@ function renderProducts(){
 
     renderSizes();
 
-    // Añadir al carrito
     card.querySelector(".add-btn").addEventListener("click", ()=>{
       const vid = currentVariantId();
       if (!vid) return;
@@ -173,7 +181,7 @@ function renderProducts(){
   updateBreadcrumbsSchema();
 }
 
-// ===== Carrito =====
+// ========= Carrito =========
 function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
 function addToCart(item){
   const idx = cart.findIndex(i=>i.sku===item.sku && i.variant_id===item.variant_id);
@@ -221,11 +229,11 @@ function renderCart(){
   $("#subtotal").textContent = money(subtotal());
 }
 
-// ===== Drawer =====
+// ========= Drawer =========
 function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); $("#cartDrawer").setAttribute("aria-hidden","false"); renderCart(); }
 function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); $("#cartDrawer").setAttribute("aria-hidden","true"); }
 
-// ===== Checkout (Stripe) =====
+// ========= Checkout =========
 async function goCheckout(){
   if(!cart.length) return alert("Tu carrito está vacío.");
   const items = cart.map(i=>({ variant_id:i.variant_id, quantity:i.qty, sku:i.sku, name:i.name, price:Number(i.price) }));
@@ -239,7 +247,7 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ===== Promo / Nav =====
+// ========= Navegación =========
 function startPromo(){
   const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
   const msgs=[
@@ -288,12 +296,16 @@ function updateActiveNavLink(){
   });
 }
 
-// ===== Init =====
-document.addEventListener("DOMContentLoaded", ()=>{
+// ========= Init =========
+document.addEventListener("DOMContentLoaded", async ()=>{
   setYear();
   setupHamburger();
   startPromo();
-  renderProducts();     // window.products llegará desde products.js
+
+  // 🔁 Carga real desde backend (AUTO-SYNC)
+  await fetchProducts();
+  renderProducts();
+
   renderCart();
 
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
