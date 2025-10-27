@@ -2,51 +2,42 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <title>VALTIX | Moda premium para cada día y cada momento</title>
-  <meta name="description" content="Descubre VALTIX: moda premium con camisetas, sudaderas, pantalones, zapatos y accesorios. Envío rápido, pago seguro con Stripe y producción Printful." />
-
-  <!-- SEO + Redes -->
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VALTIX | Estilo que evoluciona – Moda premium para cada día y cada momento</title>
+  <meta name="description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
   <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <meta property="og:title" content="VALTIX | Tu estilo, tu historia – Moda premium" />
-  <meta property="og:description" content="Diseños exclusivos de VALTIX. Ropa de calidad con envío internacional y pago seguro con Stripe." />
-  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/preview.jpg" />
+  <meta property="og:title" content="VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento" />
+  <meta property="og:description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
+  <meta property="og:image" content="https://via.placeholder.com/1200x630" />
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD: breadcrumbs dinámicos -->
+  <!-- JSON-LD para breadcrumbs (lo actualiza app.js) -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
     {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
   ]}
   </script>
 
-  <!-- Fuentes y estilos -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="./img/favicon.png" />
 </head>
 
 <body>
-  <!-- Barra superior -->
-  <div class="envio-bar">🚚 Envíos gratis en pedidos superiores a 60 €</div>
+  <div class="envio-bar">🚚 Envíos gratis en pedidos superiores a 60€</div>
 
-  <!-- Header -->
   <header class="header">
     <div class="container header-inner">
       <a class="brand" href="./" aria-label="Inicio VALTIX">
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
 
-      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
 
-      <nav id="main-nav" class="nav" aria-label="Categorías principales">
+      <nav id="main-nav" class="nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
         <a href="#c/pantalones">Pantalones</a>
@@ -54,42 +45,38 @@
         <a href="#c/accesorios">Accesorios</a>
       </nav>
 
-      <button id="openCart" class="cart-btn" aria-haspopup="dialog" aria-label="Abrir carrito">
-        🛒 <span id="cartCount" class="cart-count">0</span>
+      <button id="openCart" class="cart-btn" aria-haspopup="dialog">
+        Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
     </div>
   </header>
 
-  <!-- Hero principal -->
   <section class="hero">
     <div class="container hero-inner">
-      <div class="hero-text">
-        <h1>VALTIX – Moda premium que evoluciona contigo</h1>
-        <p class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios diseñados para el día a día. Producción bajo demanda con Printful, envío en 2–5 días (España) e internacional.</p>
+      <div>
+        <h1>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</h1>
+        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. Envíos 2–5 días (ES) e internacionales.</h2>
         <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
-
-      <div class="hero-img" role="region" aria-label="Imagen promocional">
+      <div class="hero-img" role="region" aria-label="Mensaje destacado">
         <div class="promo-box" id="promoBox"><span class="promo-text"></span></div>
       </div>
     </div>
   </section>
 
-  <!-- Catálogo -->
   <main class="main">
-    <section id="catalogo" class="section" aria-labelledby="catalogo-title">
+    <section class="section" id="catalogo" aria-labelledby="catalogo-title">
       <div class="container">
-        <h2 id="catalogo-title" class="visualmente-oculto">Catálogo de productos VALTIX</h2>
+        <h3 id="catalogo-title" class="visualmente-oculto">Catálogo</h3>
         <div id="grid" class="grid"></div>
       </div>
     </section>
   </main>
 
-  <!-- Footer -->
   <footer class="footer">
     <div class="container footer-inner">
       <div>© <span id="year"></span> VALTIX</div>
-      <nav class="legal-links" aria-label="Enlaces legales">
+      <nav class="legal-links" aria-label="Información legal">
         <a href="#info/aviso-legal">Aviso legal</a>
         <a href="#info/politica-compras">Política de compras</a>
         <a href="#info/privacidad">Política de privacidad</a>
@@ -97,28 +84,22 @@
     </div>
   </footer>
 
-  <!-- Carrito lateral -->
-  <div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
-
+  <!-- Drawer Carrito -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
       <h3>Tu carrito</h3>
       <button id="closeCart" aria-label="Cerrar carrito">✕</button>
     </div>
-
     <div id="cartItems" class="drawer-body"></div>
-
     <div class="drawer-footer">
-      <div class="subtotal">
-        <span>Subtotal</span>
-        <strong id="subtotal">0,00 €</strong>
-      </div>
+      <div class="subtotal"><span>Subtotal</span><strong id="subtotal">0,00 €</strong></div>
       <button id="clearCart" class="btn btn-alt">Vaciar carrito</button>
       <button id="checkoutBtn" class="btn">Pagar</button>
     </div>
   </aside>
 
-  <!-- Scripts -->
-  <script src="./app.js" defer></script>
+  <!-- Solo app.js (sin products.js) -->
+  <script src="./app.js?v=hex1"></script>
 </body>
 </html>
