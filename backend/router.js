@@ -1,4 +1,3 @@
-// router.js
 import express from "express";
 import fetch from "node-fetch";
 
@@ -10,17 +9,19 @@ const PF_HEADERS = {
   "Content-Type": "application/json",
 };
 
-/* ===== Caché (1h) ===== */
+/* ========== Cache ========== */
 let productCache = { time: 0, data: [] };
-const PRODUCT_CACHE_TTL = 60 * 60 * 1000;
+const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1 hora
 
-/* ===== Helpers ===== */
+/* ========== Helpers ========== */
 async function pfGet(path) {
   const url = `${PRINTFUL_API}${path}`;
   const res = await fetch(url, { headers: PF_HEADERS });
 
   let payload = null;
-  try { payload = await res.json(); } catch {}
+  try {
+    payload = await res.json();
+  } catch {}
 
   if (!res.ok) {
     const msg = payload?.error || payload || (await res.text().catch(() => ""));
@@ -53,87 +54,56 @@ function detectCategories(name = "") {
   return ["otros"];
 }
 
-/* ===== Color → HEX (normalizado) ===== */
-function colorHex(name = "") {
-  const k = String(name).trim().toLowerCase().replace(/\s+/g, " ");
-  const map = {
-    black:"#000000","black heather":"#1f1f1f","charcoal":"#36454f","dark gray":"#555555",
-    gray:"#808080","athletic heather":"#a7a7a7","silver":"#c0c0c0","ash":"#b2b2b2",
-    white:"#ffffff","ivory":"#fffff0","cream":"#fffdd0","beige":"#f5f5dc","sand":"#c2b280",
-    navy:"#001f3f","midnight navy":"#001a33","blue":"#0057ff","royal":"#4169e1",
-    "light blue":"#87cefa","sky blue":"#87ceeb","cyan":"#00ffff","teal":"#008080",
-    green:"#008000","forest":"#0b3d02","olive":"#556b2f","mint":"#98ff98",
-    red:"#ff0000","maroon":"#800000","burgundy":"#800020","wine":"#722f37",
-    orange:"#ff7f00","rust":"#b7410e","gold":"#ffd700","yellow":"#ffea00","mustard":"#e1ad01",
-    purple:"#800080","violet":"#8a2be2","lavender":"#b57edc","magenta":"#ff00ff","pink":"#ffc0cb",
-    brown:"#5c4033","chocolate":"#7b3f00","khaki":"#bdb76b",
-    // ES
-    negro:"#000000", blanco:"#ffffff", gris:"#808080", azul:"#0057ff", rojo:"#ff0000",
-    verde:"#008000", amarillo:"#ffea00", naranja:"#ff7f00", morado:"#800080", rosa:"#ffc0cb",
-    burdeos:"#800020", beige:"#f5f5dc", marrón:"#5c4033", caqui:"#bdb76b", oro:"#ffd700"
-  };
-  const normalized = k.replace(/\(.*?\)/g, "").replace(/\bheather\b/g, "heather").trim();
-  return map[normalized] || null;
-}
-
-/* ===== Normalizador (colores con HEX + tallas; imágenes principales) ===== */
+/* ========== Normalizador ========== */
 function normalizeProduct(detail) {
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
 
+  // Precio base
   const prices = variants.map(v => parseFloat(v.retail_price)).filter(n => !Number.isNaN(n));
   const price = prices.length ? Math.min(...prices) : 0;
 
-  const cap = s => String(s || "").toLowerCase().replace(/\s+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-
-  const extractColor = (v) => {
-    const product = v?.product || {};
-    const raw = String(v?.name || "").trim();
-
-    if (product.color_name) return cap(product.color_name);
-    if (product.color) return cap(product.color);
-
-    if (raw.includes("/")) {
-      const left = raw.split("/")[0].trim();
-      const maybeColor = left.split("-").pop().trim();
-      if (maybeColor && maybeColor.length <= 24) return cap(maybeColor);
-      return cap(left);
-    }
-    if (raw.includes("-")) {
-      const maybe = raw.split("-").pop().trim();
-      if (maybe && maybe.length <= 24) return cap(maybe);
-    }
-    return "Color Único";
-  };
-
-  const extractSize = (v) => {
-    const product = v?.product || {};
-    const raw = String(v?.name || "").trim();
-    if (product.size) return String(product.size).trim();
-    if (raw.includes("/")) return raw.split("/").pop().trim();
-    return `VAR_${v.variant_id}`;
-  };
-
+  // Agrupar por color
   const colors = {};
-
   for (const v of variants) {
-    const colorName = extractColor(v);
-    const size = extractSize(v);
+    const product = v?.product || {};
+    const raw = v?.name || "";
 
-    if (!colors[colorName]) colors[colorName] = { hex: colorHex(colorName), sizes: {} };
+    let color = (product.color_name || product.color || "").trim();
+    if (!color && raw.includes("/")) color = raw.split("/")[0].trim();
+    if (!color) color = "Color único";
 
-    colors[colorName].sizes[size] = v.variant_id;
+    let size = (product.size || "").trim();
+    if (!size && raw.includes("/")) size = raw.split("/").pop().trim();
+    if (!size) size = `VAR_${v.variant_id}`;
+
+    // extraer HEX si existe
+    let hex = null;
+    const hexMatch = product.hex_code || v?.color_code || v?.color_hex;
+    if (hexMatch && /^#?[0-9A-Fa-f]{3,6}$/.test(hexMatch)) {
+      hex = hexMatch.startsWith("#") ? hexMatch : `#${hexMatch}`;
+    }
+
+    // extraer imagen
+    const variantImage =
+      v?.files?.find(f => f.preview_url)?.preview_url ||
+      v?.files?.find(f => f.thumbnail_url)?.thumbnail_url ||
+      product.image ||
+      sp?.thumbnail_url ||
+      "https://i.postimg.cc/k5ZGwR5W/producto1.png";
+
+    if (!colors[color]) {
+      colors[color] = { hex, image: variantImage, sizes: {} };
+    }
+    colors[color].sizes[size] = v.variant_id;
   }
 
-  // portada (no depende de color; si no hay, usa fallback)
+  const firstColor = Object.keys(colors)[0];
   const cover =
+    (firstColor && colors[firstColor]?.image) ||
     sp?.thumbnail_url ||
-    variants.find(v =>
-      v?.files?.some(f => f.preview_url || f.thumbnail_url || f.url)
-    )?.files?.find(f => f.preview_url)?.preview_url ||
     "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
-  const firstColor = Object.keys(colors)[0];
   const variant_map = firstColor ? { ...colors[firstColor].sizes } : {};
 
   return {
@@ -143,14 +113,14 @@ function normalizeProduct(detail) {
     image: cover,
     sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
-    colors,      // { <Color>: { hex, sizes: { <Talla>: <variant_id> } } }
+    colors,
     variant_map,
   };
 }
 
-/* ===== Endpoints ===== */
+/* ========== Endpoints ========== */
 
-// Productos (caché + ?refresh=1) solo-HEX para swatches; sincronizado con Printful
+// 🛍️ Productos Printful (con refresco manual y caché)
 router.get("/api/printful/products", async (req, res) => {
   try {
     if (!process.env.PRINTFUL_API_KEY) {
@@ -182,20 +152,10 @@ router.get("/api/printful/products", async (req, res) => {
   }
 });
 
-// Invalida caché manualmente (opcional)
+// 🔄 Endpoint para borrar caché manualmente
 router.post("/api/printful/refresh", (req, res) => {
   productCache = { time: 0, data: [] };
-  res.json({ ok: true, msg: "Caché invalidada" });
-});
-
-// Lista cruda (debug)
-router.get("/api/printful/raw-list", async (req, res) => {
-  try {
-    const data = await pfGet(`/store/products?limit=50&offset=0`);
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: String(e.message || e) });
-  }
+  res.json({ ok: true, msg: "Caché invalidada correctamente" });
 });
 
 export default router;
