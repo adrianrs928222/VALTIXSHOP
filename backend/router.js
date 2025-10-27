@@ -1,3 +1,4 @@
+// router.js
 import express from "express";
 import fetch from "node-fetch";
 
@@ -12,7 +13,7 @@ const PF_HEADERS = {
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
-// ====== Colores (HEX exacto y etiqueta ES) ======
+// ====== Colores (HEX y etiqueta ES) ======
 const COLOR_MAP = {
   "Adobe":        { hex:"#A6654E", es:"Adobe" },
   "Black":        { hex:"#000000", es:"Negro" },
@@ -37,6 +38,15 @@ const COLOR_MAP = {
   "Brown":        { hex:"#5C4033", es:"Marrón" },
 };
 
+// ====== Override manual de categorías por NOMBRE (normalizado) ======
+const CATEGORY_OVERRIDE = {
+  // "Sudadera Negra Logo Amarillo": ["sudaderas"],
+  // "Hoodie Unisex Premium": ["sudaderas"],
+  // "Camiseta Algodón 180g": ["camisetas"],
+  // Añade aquí tus productos exactos (tal como aparecen en tu tienda) → categorías
+};
+
+// ====== Helpers ======
 function colorInfo(name=""){
   const key = String(name).trim();
   if (COLOR_MAP[key]) return COLOR_MAP[key];
@@ -59,7 +69,6 @@ function colorInfo(name=""){
   for (const f of fam) if (f.re.test(k)) return { hex:f.hex, es:f.es };
   return { hex:"#dddddd", es:key || "Color" };
 }
-
 function capWords(s){
   return String(s||"").toLowerCase().replace(/\s+/g," ").replace(/\b\w/g,c=>c.toUpperCase());
 }
@@ -71,7 +80,6 @@ function slug(s){
     .normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
 }
-
 function detectCategories(name=""){
   const n = String(name).toLowerCase();
   if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
@@ -176,13 +184,17 @@ async function normalizeDetail(detail){
     ];
   }
 
+  // ===== Categorías: override manual o detección automática =====
+  const productNameNorm = normName(sp?.name || "");
+  const categories = CATEGORY_OVERRIDE[productNameNorm] || detectCategories(sp?.name || "");
+
   return {
     id: String(sp?.id || sp?.external_id || `pf_${Date.now()}`),
     name: normName(sp?.name || "Producto Printful"),
     price: Number(price.toFixed(2)),
     image: cover,
     sku: sp?.external_id || String(sp?.id || ""),
-    categories: detectCategories(sp?.name || ""),
+    categories,
     colors,
     variant_map: firstColor ? { ...colors[firstColor].sizes } : {},
   };
@@ -203,33 +215,39 @@ function mergeByName(list){
       if (!tgt.colors[cName]) tgt.colors[cName] = { hex: cData.hex || null, label_es:cData.label_es||cName, image: cData.image || tgt.image, sizes:{} , local_candidates:cData.local_candidates||[]};
       if (!tgt.colors[cName].image && cData.image) tgt.colors[cName].image = cData.image;
       Object.assign(tgt.colors[cName].sizes, cData.sizes||{});
-      // mezcla candidatos locales
       if (Array.isArray(cData.local_candidates)) {
         tgt.colors[cName].local_candidates = Array.from(new Set([...(tgt.colors[cName].local_candidates||[]), ...cData.local_candidates]));
       }
     }
+    // unificar categorías (union)
+    const setCats = new Set([...(tgt.categories||[]), ...(p.categories||[])]);
+    tgt.categories = Array.from(setCats);
   }
   return Array.from(map.values());
 }
 
-// ===== Endpoints
+// ===== Endpoints =====
 router.get("/api/printful/products", async (req,res)=>{
   try{
     if (!process.env.PRINTFUL_API_KEY) return res.status(500).json({ error:"PRINTFUL_API_KEY no configurada en el servidor" });
     res.setHeader("Cache-Control","no-store");
+
     const force = String(req.query.refresh||"")==="1";
     const now = Date.now();
     if (!force && now - productCache.time < PRODUCT_CACHE_TTL && productCache.data.length){
       return res.json({ products: productCache.data, cached:true });
     }
+
     const list = await fetchAllSyncedProducts();
     if (!list.length){
       productCache = { time: now, data: [] };
       return res.json({ products: [], note:"No hay productos 'añadidos a tienda' en Printful." });
     }
+
     const details = await Promise.all(list.map(p=>pfGet(`/store/products/${p.id}`)));
     const normalized = await Promise.all(details.map(normalizeDetail));
     const merged = mergeByName(normalized);
+
     productCache = { time: now, data: merged };
     res.json({ products: merged, cached:false, refreshed:force });
   }catch(err){
