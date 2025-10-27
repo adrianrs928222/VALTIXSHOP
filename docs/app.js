@@ -36,7 +36,8 @@ async function loadProducts(){
   try{
     const res = await fetch(`${BACKEND_URL}/api/printful/products`);
     const { products } = await res.json();
-    window.products = products || [];
+    // Si Printful no devuelve nada, usa los locales de products.js
+    window.products = products && products.length ? products : window.products;
     renderProducts();
   }catch(e){
     console.error("❌ Error al cargar productos:", e);
@@ -44,7 +45,7 @@ async function loadProducts(){
   }
 }
 
-// ===== Render productos (color + talla) =====
+// ===== Render productos (color + talla + imágenes dobles) =====
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -59,7 +60,7 @@ function renderProducts(){
 
   list.forEach(p=>{
     const colors = p.colors || {};
-    const colorNames = Object.keys(colors).filter(c => c && c !== "Color único");
+    const colorNames = Object.keys(colors);
     let selectedColor = colorNames[0] || null;
 
     const initialSizes = (selectedColor && colors[selectedColor]?.sizes)
@@ -70,7 +71,10 @@ function renderProducts(){
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
-      <img class="card-img" src="${ colors[selectedColor]?.image || p.image }" alt="${p.name}">
+      <div class="card-img-wrap">
+        <img class="card-img main" src="${ colors[selectedColor]?.image || p.image }" alt="${p.name}">
+        <img class="card-img hover" src="${ colors[selectedColor]?.side_image || p.image }" alt="${p.name}">
+      </div>
       <div class="card-body">
         <h3 class="card-title">${p.name}</h3>
         <p class="card-price">${money(p.price)}</p>
@@ -83,6 +87,7 @@ function renderProducts(){
                 class="color-circle ${idx===0?"active":""}" 
                 title="${cn}" 
                 data-color="${cn}" 
+                data-url="${colors[cn].url}"
                 style="background-color:${cn.toLowerCase()};"
               ></button>
             `).join("")}
@@ -94,7 +99,7 @@ function renderProducts(){
       </div>
     `;
 
-    const imgEl = card.querySelector(".card-img");
+    const imgEl = card.querySelector(".card-img.main");
     const sizesWrap = card.querySelector("[data-sizes]");
 
     function renderSizes(){
@@ -130,6 +135,10 @@ function renderProducts(){
         selectedColor = btn.dataset.color;
         imgEl.src = colors[selectedColor]?.image || p.image;
         renderSizes();
+      });
+      // Ir a enlace del color
+      btn.addEventListener("dblclick", ()=>{
+        if (btn.dataset.url) window.location.href = btn.dataset.url;
       });
     });
 
@@ -225,22 +234,7 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ===== Promo / Router / Nav / Menú =====
-function startPromo(){
-  const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
-  if(window.innerWidth <= 520){
-    textEl.textContent = "🚚 Envíos GRATIS en pedidos superiores a 60€";
-  } else {
-    const msgs=[
-      "Compra hoy y recibe en España o en cualquier parte del mundo 🌍",
-      "🚚 Envíos GRATIS en pedidos superiores a 60€"
-    ];
-    let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
-    show(); setInterval(show,8000);
-  }
-}
-
-function handleHash(){ renderProducts(); }
+// ===== Nav / Init =====
 function setupHamburger(){
   const btn = $("#menu-toggle");
   const nav = $("#main-nav");
@@ -279,20 +273,16 @@ function updateActiveNavLink(){
 document.addEventListener("DOMContentLoaded", async ()=>{
   setYear();
   setupHamburger();
-  startPromo();
-
   await loadProducts();
   renderCart();
 
   $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
-
-  // Carrito
   $("#openCart")?.addEventListener("click", openCart);
   $("#closeCart")?.addEventListener("click", closeCart);
   $("#drawerBackdrop")?.addEventListener("click", closeCart);
   $("#clearCart")?.addEventListener("click", clearCart);
   $("#checkoutBtn")?.addEventListener("click", goCheckout);
 
-  window.addEventListener("hashchange", ()=>{ handleHash(); updateActiveNavLink(); });
+  window.addEventListener("hashchange", ()=>{ renderProducts(); updateActiveNavLink(); });
   updateActiveNavLink();
 });
