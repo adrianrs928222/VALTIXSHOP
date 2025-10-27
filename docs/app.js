@@ -1,5 +1,4 @@
-// app.js
-// VALTIX — Frontend catálogo + carrito + Stripe (sincronizado con backend Printful)
+// app.js — VALTIX (solo HEX para colores, sincronizado con Printful)
 
 // ===== Config =====
 const BACKEND_URL = "https://valtixshop.onrender.com";
@@ -7,7 +6,9 @@ const CHECKOUT_PATH = "/checkout";
 
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
+
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+let products = [];
 
 // ===== Utils =====
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
@@ -31,72 +32,49 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-// Paleta para normalizar nombres de color → HEX (swatches)
-function swatchHex(name){
-  const m = {
-    negro:"#000000", black:"#000000", "black heather":"#1f1f1f",
-    gris:"#808080", gray:"#808080", "athletic heather":"#a7a7a7",
-    blanco:"#ffffff", white:"#ffffff", ivory:"#fffff0", cream:"#fffdd0", beige:"#f5f5dc",
-    navy:"#001f3f", azul:"#0057ff", blue:"#0057ff", royal:"#4169e1", lightblue:"#87cefa", cyan:"#00ffff",
-    rojo:"#ff0000", red:"#ff0000", burgundy:"#800020", maroon:"#800000", pink:"#ffc0cb", fuchsia:"#ff00ff",
-    green:"#008000", forest:"#0b3d02", olive:"#556b2f", mint:"#98ff98",
-    yellow:"#ffd700", gold:"#ffd700", orange:"#ff7f00",
-    sand:"#c2b280", brown:"#5c4033", purple:"#800080", violet:"#8a2be2"
-  };
-  const key = String(name||"").trim().toLowerCase().replace(/\s+/g," ");
-  if (m[key]) return m[key];
-  const k2 = key.replace(/\/.*$/,"").replace(/\(.+\)/g,"").trim();
-  if (m[k2]) return m[k2];
-  return null;
-}
-
 // ===== Data (AUTO-SYNC) =====
-async function fetchProducts() {
+async function fetchProducts({ refreshOnce=false } = {}) {
   try {
-    const res = await fetch(`${BACKEND_URL}/api/printful/products`, { headers: { Accept: "application/json" }});
+    const url = `${BACKEND_URL}/api/printful/products${refreshOnce ? "?refresh=1" : ""}`;
+    const res = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const { products } = await res.json();
-    window.products = Array.isArray(products) ? products : [];
+    const data = await res.json();
+    products = Array.isArray(data.products) ? data.products : [];
   } catch (e) {
     console.error("❌ No se pudieron obtener productos del backend:", e);
-    window.products = [];
+    products = [];
   }
 }
 
-// ===== Render catálogo =====
+// ===== Render catálogo (usa SOLO HEX) =====
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
 
-  if(!Array.isArray(window.products) || !window.products.length){
+  if(!Array.isArray(products) || !products.length){
     grid.innerHTML=`<p style="color:#777">Aún no hay productos disponibles.</p>`;
     return;
   }
 
   const cat=getActiveCategory();
   const list = (cat==="all")
-    ? window.products
-    : window.products.filter(p=>Array.isArray(p.categories)&&p.categories.includes(cat));
+    ? products
+    : products.filter(p=>Array.isArray(p.categories)&&p.categories.includes(cat));
 
   list.forEach(p=>{
-    const colors = p.colors || {};
-    const colorNames = Object.keys(colors).length ? Object.keys(colors) : ["Color único"];
-    let selectedColor = colorNames[0];
+    // p.colors: { "Black": { hex:"#000000", sizes:{ "S": 123, ... } }, ... }
+    const colorNames = Object.keys(p.colors || {});
+    const orderedColors = colorNames.length ? colorNames : ["Color Único"];
+    let selectedColor = orderedColors[0];
 
-    const initialSizes = (selectedColor && colors[selectedColor]?.sizes)
-      ? Object.keys(colors[selectedColor].sizes)
-      : Object.keys(p.variant_map || {});
-    let selectedSize = initialSizes[0] || null;
-
-    const mainImg = (cn)=> (colors[cn]?.image || p.image || "");
-    const sideImg = (cn)=> (colors[cn]?.side_image || colors[cn]?.image || p.image || "");
+    const sizesFor = (c) => Object.keys(p.colors?.[c]?.sizes || p.variant_map || {});
+    let selectedSize = sizesFor(selectedColor)[0] || null;
 
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
       <div class="card-img-wrap">
-        <img class="card-img main" src="${mainImg(selectedColor)}" alt="${p.name}">
-        <img class="card-img hover" src="${sideImg(selectedColor)}" alt="${p.name}">
+        <img class="card-img main" src="${p.image}" alt="${p.name}">
       </div>
       <div class="card-body">
         <h3 class="card-title">${p.name}</h3>
@@ -104,13 +82,10 @@ function renderProducts(){
         <div class="stock-line"><span class="stock-badge ok" data-stock>En stock</span></div>
 
         <div class="options color-selector" role="group" aria-label="Colores">
-          ${colorNames.map((cn,idx)=>{
-            const hx = swatchHex(cn);
-            const img = colors[cn]?.image || "";
-            const style = hx
-              ? `background-color:${hx};`
-              : (img ? `background-image:url('${img}');background-size:cover;background-position:center;` : `background:linear-gradient(45deg,#bbb,#eee);`);
-            return `<button class="color-circle ${idx===0?"active":""}" title="${cn}" data-color="${cn}" style="${style}"></button>`;
+          ${orderedColors.map((cn,idx)=>{
+            const hx = p.colors?.[cn]?.hex || "#ddd";
+            const label = cn;
+            return `<button class="color-circle ${idx===0?"active":""}" title="${label}" data-color="${label}" style="background-color:${hx};"></button>`;
           }).join("")}
         </div>
 
@@ -120,16 +95,12 @@ function renderProducts(){
       </div>
     `;
 
-    const mainEl = card.querySelector(".card-img.main");
-    const hoverEl = card.querySelector(".card-img.hover");
     const sizesWrap = card.querySelector("[data-sizes]");
 
     function renderSizes(){
-      const currentSizes = (selectedColor && colors[selectedColor]?.sizes)
-        ? Object.keys(colors[selectedColor].sizes)
-        : Object.keys(p.variant_map || {});
-      selectedSize = currentSizes[0] || null;
-      sizesWrap.innerHTML = currentSizes.map((sz,idx)=>`
+      const current = sizesFor(selectedColor);
+      selectedSize = current[0] || null;
+      sizesWrap.innerHTML = current.map((sz,idx)=>`
         <button class="option-btn ${idx===0?"active":""}" data-sz="${sz}">${sz}</button>
       `).join("");
       sizesWrap.querySelectorAll(".option-btn").forEach(btn=>{
@@ -142,19 +113,16 @@ function renderProducts(){
     }
 
     function currentVariantId(){
-      if (colors[selectedColor]?.sizes?.[selectedSize]) return colors[selectedColor].sizes[selectedSize];
-      if (p?.variant_map && selectedSize && p.variant_map[selectedSize]) return p.variant_map[selectedSize];
-      return p.variant_id || null;
+      const map = p.colors?.[selectedColor]?.sizes || p.variant_map || {};
+      return map[selectedSize] || null;
     }
 
-    // Cambiar color + fotos
+    // Cambiar color (solo afecta tallas y variant_id; la imagen de portada se mantiene)
     card.querySelectorAll(".color-circle").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         card.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         selectedColor = btn.dataset.color;
-        mainEl.src = mainImg(selectedColor);
-        hoverEl.src = sideImg(selectedColor);
         renderSizes();
       });
     });
@@ -171,7 +139,7 @@ function renderProducts(){
         sku: p.sku + (selectedColor?`_${selectedColor}`:"") + (selectedSize?`_${selectedSize}`:""),
         name: `${p.name}${colorLabel}${sizeLabel}`,
         price: p.price,
-        image: mainImg(selectedColor),
+        image: p.image,
         variant_id: vid
       });
       openCart();
@@ -305,7 +273,8 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   setupHamburger();
   startPromo();
 
-  await fetchProducts();   // ← sincroniza con backend/Printful
+  // 1ª carga con refresh para traer último catálogo
+  await fetchProducts({ refreshOnce: true });
   renderProducts();
 
   renderCart();
