@@ -13,7 +13,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD para breadcrumbs (lo actualiza app.js) -->
+  <!-- JSON-LD para breadcrumbs (lo actualizará app.js) -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
     {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
@@ -76,7 +76,7 @@
   <footer class="footer">
     <div class="container footer-inner">
       <div>© <span id="year"></span> VALTIX</div>
-      <nav class="legal-links" aria-label="Información legal">
+      <nav class="legal-links">
         <a href="#info/aviso-legal">Aviso legal</a>
         <a href="#info/politica-compras">Política de compras</a>
         <a href="#info/privacidad">Política de privacidad</a>
@@ -84,7 +84,7 @@
     </div>
   </footer>
 
-  <!-- Drawer Carrito -->
+  <!-- Backdrop & Drawer carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -99,7 +99,7 @@
     </div>
   </aside>
 
-  <!-- Solo app.js (sin products.js) -->
-  <script src="./app.js?v=hex1"></script>
+  <!-- Carga solo app.js (sin products.js) -->
+  <script src="./app.js?v=pro-detail" defer></script>
 </body>
 </html>
