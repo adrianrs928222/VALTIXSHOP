@@ -3,82 +3,61 @@ import fetch from "node-fetch";
 
 const router = express.Router();
 
-/* ================== Config Printful ================== */
 const PRINTFUL_API = "https://api.printful.com";
 const PF_HEADERS = {
   Authorization: `Bearer ${process.env.PRINTFUL_API_KEY || ""}`,
   "Content-Type": "application/json",
 };
 
-/* ================== Cache ================== */
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
-/* ================== Color map oficial (HEX exactos) ================== */
-/* Añade o ajusta aquí tus colores tal como aparecen en Printful */
+// ====== Colores (HEX exacto y etiqueta ES) ======
 const COLOR_MAP = {
-  "Adobe":        "#A6654E",
-  "Black":        "#000000",
-  "White":        "#FFFFFF",
-  "French Navy":  "#031A44",
-  "Heather Grey": "#B3B7BD",
-  "Natural":      "#EFE9E2",
-  "Burgundy":     "#800020",
-  "Bottle Green": "#0B3D02",
-  "Royal Blue":   "#4169E1",
-  "Light Pink":   "#F4C2C2",
-  // comunes (fallbacks)
-  "Navy":         "#001F3F",
-  "Grey":         "#808080",
-  "Gray":         "#808080",
-  "Red":          "#FF0000",
-  "Blue":         "#0057FF",
-  "Green":        "#008000",
-  "Yellow":       "#FFEA00",
-  "Pink":         "#FFC0CB",
-  "Orange":       "#FFA500",
-  "Beige":        "#F5F5DC",
-  "Brown":        "#5C4033",
+  "Adobe":        { hex:"#A6654E", es:"Adobe" },
+  "Black":        { hex:"#000000", es:"Negro" },
+  "White":        { hex:"#FFFFFF", es:"Blanco" },
+  "French Navy":  { hex:"#031A44", es:"Azul marino" },
+  "Heather Grey": { hex:"#B3B7BD", es:"Gris jaspeado" },
+  "Natural":      { hex:"#EFE9E2", es:"Natural" },
+  "Burgundy":     { hex:"#800020", es:"Burdeos" },
+  "Bottle Green": { hex:"#0B3D02", es:"Verde botella" },
+  "Royal Blue":   { hex:"#4169E1", es:"Azul royal" },
+  "Light Pink":   { hex:"#F4C2C2", es:"Rosa claro" },
+  "Navy":         { hex:"#001F3F", es:"Azul marino" },
+  "Grey":         { hex:"#808080", es:"Gris" },
+  "Gray":         { hex:"#808080", es:"Gris" },
+  "Red":          { hex:"#FF0000", es:"Rojo" },
+  "Blue":         { hex:"#0057FF", es:"Azul" },
+  "Green":        { hex:"#008000", es:"Verde" },
+  "Yellow":       { hex:"#FFEA00", es:"Amarillo" },
+  "Pink":         { hex:"#FFC0CB", es:"Rosa" },
+  "Orange":       { hex:"#FFA500", es:"Naranja" },
+  "Beige":        { hex:"#F5F5DC", es:"Beis" },
+  "Brown":        { hex:"#5C4033", es:"Marrón" },
 };
 
-function colorHexFromName(name = "") {
-  const exact = COLOR_MAP[name?.trim()] || null;
-  if (exact) return exact;
-
-  // fallback por “familia” de color (nombre en minúsculas)
-  const k = String(name || "").trim().toLowerCase();
-  const map = {
-    "black":"#000000","white":"#ffffff","navy":"#001f3f","grey":"#808080","gray":"#808080",
-    "red":"#ff0000","blue":"#0057ff","green":"#008000","yellow":"#ffea00","pink":"#ffc0cb",
-    "orange":"#ffa500","beige":"#f5f5dc","brown":"#5c4033","natural":"#efe9e2"
-  };
-  return map[k] || "#dddddd";
-}
-
-/* ================== Helpers ================== */
-async function pfGet(path) {
-  const res = await fetch(`${PRINTFUL_API}${path}`, { headers: PF_HEADERS });
-  let payload = null;
-  try { payload = await res.json(); } catch {}
-  if (!res.ok) {
-    const msg = payload?.error || payload || (await res.text().catch(()=>"" ));
-    throw new Error(`Printful GET ${path} -> ${res.status} ${JSON.stringify(msg)}`);
-  }
-  return payload;
-}
-
-async function fetchAllSyncedProducts() {
-  const limit = 100;
-  let offset = 0;
-  const all = [];
-  while (true) {
-    const data = await pfGet(`/store/products?limit=${limit}&offset=${offset}`);
-    const items = data?.result || [];
-    all.push(...items);
-    if (items.length < limit) break;
-    offset += limit;
-  }
-  return all;
+function colorInfo(name=""){
+  const key = String(name).trim();
+  if (COLOR_MAP[key]) return COLOR_MAP[key];
+  const k = key.toLowerCase();
+  const fam = [
+    { re:/black/, hex:"#000000", es:"Negro" },
+    { re:/white|ivory|cream|natural/, hex:"#ffffff", es:"Blanco/Natural" },
+    { re:/navy|marine/, hex:"#001f3f", es:"Azul marino" },
+    { re:/royal|blue/, hex:"#0057ff", es:"Azul" },
+    { re:/red|scarlet|crimson/, hex:"#ff0000", es:"Rojo" },
+    { re:/green|forest|bottle/, hex:"#008000", es:"Verde" },
+    { re:/yellow|gold/, hex:"#ffea00", es:"Amarillo" },
+    { re:/pink|magenta|fuchsia/, hex:"#ffc0cb", es:"Rosa" },
+    { re:/orange|coral/, hex:"#ffa500", es:"Naranja" },
+    { re:/beige|sand|khaki|tan/, hex:"#f5f5dc", es:"Beis" },
+    { re:/grey|gray|heather/, hex:"#808080", es:"Gris" },
+    { re:/brown|chocolate|coffee/, hex:"#5c4033", es:"Marrón" },
+    { re:/burgundy|wine/, hex:"#800020", es:"Burdeos" },
+  ];
+  for (const f of fam) if (f.re.test(k)) return { hex:f.hex, es:f.es };
+  return { hex:"#dddddd", es:key || "Color" };
 }
 
 function capWords(s){
@@ -86,6 +65,11 @@ function capWords(s){
 }
 function normName(s){
   return capWords(String(s||"").replace(/[-_]/g," ").replace(/\s+/g," ").trim());
+}
+function slug(s){
+  return String(s||"").toLowerCase().trim()
+    .normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
 }
 
 function detectCategories(name=""){
@@ -98,24 +82,57 @@ function detectCategories(name=""){
   return ["otros"];
 }
 
-/* ================== Normalizador por producto ================== */
-/* Extrae color y talla desde “Nombre / Color / Talla” y genera:
-   colors = { [ColorName]: { hex, image, sizes: { [Size]: variant_id } } }
-*/
-function normalizeDetail(detail){
+async function pfGet(path) {
+  const r = await fetch(`${PRINTFUL_API}${path}`, { headers: PF_HEADERS });
+  let json = null; try { json = await r.json(); } catch {}
+  if (!r.ok) {
+    const msg = json?.error || json || (await r.text().catch(()=>"" ));
+    throw new Error(`Printful GET ${path} -> ${r.status} ${JSON.stringify(msg)}`);
+  }
+  return json;
+}
+async function fetchAllSyncedProducts() {
+  const limit = 100; let offset = 0; const all = [];
+  while (true) {
+    const data = await pfGet(`/store/products?limit=${limit}&offset=${offset}`);
+    const items = data?.result || [];
+    all.push(...items);
+    if (items.length < limit) break;
+    offset += limit;
+  }
+  return all;
+}
+function firstPreview(files = []){
+  return (
+    files?.find(f=>f.type==="preview" && f.preview_url)?.preview_url ||
+    files?.find(f=>f.preview_url)?.preview_url ||
+    files?.find(f=>f.thumbnail_url)?.thumbnail_url ||
+    files?.find(f=>f.url)?.url ||
+    null
+  );
+}
+async function hydrateVariant(v) {
+  if (v?.files && v.files.length) return v;
+  try {
+    const det = await pfGet(`/store/variants/${v.variant_id}`);
+    const rr = det?.result || {};
+    return { ...v, product: rr.product || v.product, files: rr.files?.length ? rr.files : v.files };
+  } catch { return v; }
+}
+
+async function normalizeDetail(detail){
   const sp = detail?.result?.sync_product;
-  const variants = detail?.result?.sync_variants || [];
+  let variants = detail?.result?.sync_variants || [];
+  variants = await Promise.all(variants.map(hydrateVariant));
 
   const prices = variants.map(v=>parseFloat(v.retail_price)).filter(n=>!Number.isNaN(n));
   const price = prices.length ? Math.min(...prices) : 0;
 
   const colors = {};
-
   for (const v of variants) {
     const product = v?.product || {};
     const raw = String(v?.name || "").trim();
 
-    // Parse robusto del nombre: “Nombre / Color / Talla”
     let colorName = "";
     let size = "";
 
@@ -126,40 +143,38 @@ function normalizeDetail(detail){
         colorName = segs[segs.length - 2];
       }
     }
-
-    // fallbacks
     if (!colorName) colorName = product.color_name || product.color || "";
     if (!colorName && raw.includes("-")) colorName = raw.split("-").pop().trim();
     if (!colorName) colorName = "Color Único";
     colorName = capWords(colorName);
-
     if (!size) size = product.size || `VAR_${v.variant_id}`;
 
-    // HEX prioritario (el que mande Printful) y si no, mapeo propio
     let hex = product.hex_code || v?.color_code || v?.color_hex || null;
     if (hex && /^#?[0-9A-Fa-f]{3,6}$/.test(hex)) hex = hex.startsWith("#") ? hex : `#${hex}`;
-    if (!hex) hex = colorHexFromName(colorName);
+    const ci = colorInfo(colorName);
+    if (!hex) hex = ci.hex;
 
-    // Imagen de variante (preferencias)
-    const vImg =
-      (v?.files||[]).find(f=>f.type==="preview" && f.preview_url)?.preview_url ||
-      (v?.files||[]).find(f=>f.preview_url)?.preview_url ||
-      (v?.files||[]).find(f=>f.thumbnail_url)?.thumbnail_url ||
-      (v?.files||[]).find(f=>f.url)?.url ||
-      product.image || sp?.thumbnail_url || null;
+    const img = firstPreview(v?.files) || product.image || sp?.thumbnail_url || null;
 
-    if (!colors[colorName]) colors[colorName] = { hex, image: vImg, sizes: {} };
-    if (!colors[colorName].image && vImg) colors[colorName].image = vImg;
+    if (!colors[colorName]) colors[colorName] = { hex, label_es: ci.es, image: img, sizes: {} };
+    if (!colors[colorName].image && img) colors[colorName].image = img;
     colors[colorName].sizes[size] = v.variant_id;
   }
 
   const firstColor = Object.keys(colors)[0];
-  const cover =
-    (firstColor && colors[firstColor]?.image) ||
-    sp?.thumbnail_url ||
-    "https://i.postimg.cc/k5ZGwR5W/producto1.png";
+  const cover = (firstColor && colors[firstColor]?.image) || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
-  const variant_map = firstColor ? { ...colors[firstColor].sizes } : {};
+  // Sugerencias de nombre/slug para imágenes locales
+  const pSlug = slug(sp?.name || "");
+  for (const [cName, obj] of Object.entries(colors)) {
+    const cSlug = slug(cName);
+    obj.local_candidates = [
+      `/img/${pSlug}__${cSlug}.jpg`,
+      `/img/${pSlug}__${cSlug}.png`,
+      `/img/${pSlug}/${cSlug}.jpg`,
+      `/img/${pSlug}/${cSlug}.png`,
+    ];
+  }
 
   return {
     id: String(sp?.id || sp?.external_id || `pf_${Date.now()}`),
@@ -169,11 +184,10 @@ function normalizeDetail(detail){
     sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
     colors,
-    variant_map,
+    variant_map: firstColor ? { ...colors[firstColor].sizes } : {},
   };
 }
 
-/* ================== Fusión por nombre (si colores están como productos separados) ================== */
 function mergeByName(list){
   const map = new Map();
   for (const p of list){
@@ -183,44 +197,39 @@ function mergeByName(list){
       continue;
     }
     const tgt = map.get(key);
-    // precio mínimo
     tgt.price = Math.min(tgt.price, p.price);
-    // portada si falta
     if (!tgt.image && p.image) tgt.image = p.image;
-    // fusionar colores/tallas
     for (const [cName, cData] of Object.entries(p.colors||{})){
-      if (!tgt.colors[cName]) tgt.colors[cName] = { hex: cData.hex || null, image: cData.image || tgt.image, sizes:{} };
+      if (!tgt.colors[cName]) tgt.colors[cName] = { hex: cData.hex || null, label_es:cData.label_es||cName, image: cData.image || tgt.image, sizes:{} , local_candidates:cData.local_candidates||[]};
       if (!tgt.colors[cName].image && cData.image) tgt.colors[cName].image = cData.image;
       Object.assign(tgt.colors[cName].sizes, cData.sizes||{});
+      // mezcla candidatos locales
+      if (Array.isArray(cData.local_candidates)) {
+        tgt.colors[cName].local_candidates = Array.from(new Set([...(tgt.colors[cName].local_candidates||[]), ...cData.local_candidates]));
+      }
     }
   }
   return Array.from(map.values());
 }
 
-/* ================== Endpoints ================== */
+// ===== Endpoints
 router.get("/api/printful/products", async (req,res)=>{
   try{
-    if (!process.env.PRINTFUL_API_KEY) {
-      return res.status(500).json({ error:"PRINTFUL_API_KEY no configurada en el servidor" });
-    }
+    if (!process.env.PRINTFUL_API_KEY) return res.status(500).json({ error:"PRINTFUL_API_KEY no configurada en el servidor" });
     res.setHeader("Cache-Control","no-store");
-
     const force = String(req.query.refresh||"")==="1";
     const now = Date.now();
     if (!force && now - productCache.time < PRODUCT_CACHE_TTL && productCache.data.length){
       return res.json({ products: productCache.data, cached:true });
     }
-
-    const list = await fetchAllSyncedProducts(); // solo “Añadidos a tienda”
+    const list = await fetchAllSyncedProducts();
     if (!list.length){
       productCache = { time: now, data: [] };
       return res.json({ products: [], note:"No hay productos 'añadidos a tienda' en Printful." });
     }
-
     const details = await Promise.all(list.map(p=>pfGet(`/store/products/${p.id}`)));
-    const normalized = details.map(normalizeDetail);
+    const normalized = await Promise.all(details.map(normalizeDetail));
     const merged = mergeByName(normalized);
-
     productCache = { time: now, data: merged };
     res.json({ products: merged, cached:false, refreshed:force });
   }catch(err){
@@ -229,13 +238,11 @@ router.get("/api/printful/products", async (req,res)=>{
   }
 });
 
-// Invalida la caché manualmente
 router.post("/api/printful/refresh",(req,res)=>{
   productCache = { time:0, data:[] };
   res.json({ ok:true, msg:"Caché invalidada" });
 });
 
-// Depuración: ver cómo quedó un producto concreto tras normalización
 router.get("/api/printful/debug", (req,res)=>{
   const q = String(req.query.name||"").trim().toLowerCase();
   const matches = (productCache.data||[]).filter(p=>p.name.toLowerCase().includes(q));
