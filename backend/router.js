@@ -10,40 +10,23 @@ const PF_HEADERS = {
   "Content-Type": "application/json",
 };
 
-/* ========== Helpers ========== */
-async function pfGet(path, { retries = 2, retryDelayMs = 500 } = {}) {
+/* ========= Cache simple (1h) ========= */
+const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1 hora
+let productCache = { time: 0, data: [] };
+
+/* ========= Helpers ========= */
+async function pfGet(path) {
   const url = `${PRINTFUL_API}${path}`;
-  let lastErr;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const res = await fetch(url, { headers: PF_HEADERS });
+  const res = await fetch(url, { headers: PF_HEADERS });
 
-      let payload = null;
-      try {
-        payload = await res.json();
-      } catch {
-        // ignore parse errors
-      }
+  let payload = null;
+  try { payload = await res.json(); } catch {}
 
-      if (!res.ok) {
-        const msg =
-          payload?.error ||
-          payload ||
-          (await res.text().catch(() => ""));
-        throw new Error(
-          `Printful GET ${path} -> ${res.status} ${JSON.stringify(msg)}`
-        );
-      }
-      return payload;
-    } catch (err) {
-      lastErr = err;
-      if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, retryDelayMs * (attempt + 1)));
-        continue;
-      }
-      throw lastErr;
-    }
+  if (!res.ok) {
+    const msg = payload?.error || payload || (await res.text().catch(() => ""));
+    throw new Error(`Printful GET ${path} -> ${res.status} ${JSON.stringify(msg)}`);
   }
+  return payload;
 }
 
 async function fetchAllSyncedProducts() {
@@ -61,7 +44,7 @@ async function fetchAllSyncedProducts() {
 }
 
 function detectCategories(name = "") {
-  const n = String(name).toLowerCase();
+  const n = name.toLowerCase();
   if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
   if (/(hoodie|sudadera)/i.test(n)) return ["sudaderas"];
   if (/(pant|pantal[oó]n|leggings|jogger)/i.test(n)) return ["pantalones"];
@@ -70,44 +53,62 @@ function detectCategories(name = "") {
   return ["otros"];
 }
 
+/* ========= Normalizador robusto (colores + tallas + imagen por color) ========= */
 function normalizeProduct(detail) {
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
-  const prices = variants
-    .map((v) => parseFloat(v.retail_price))
-    .filter((n) => !Number.isNaN(n));
+
+  // Precio mínimo entre variantes
+  const prices = variants.map(v => parseFloat(v.retail_price)).filter(n => !Number.isNaN(n));
   const price = prices.length ? Math.min(...prices) : 0;
 
+  // Normalizador de nombre de color
+  const normColor = (raw = "") => {
+    const base = String(raw).trim().toLowerCase().replace(/\s+/g, " ");
+    if (!base) return "";
+    if (/black heather|heather black/.test(base)) return "Black";
+    if (/athletic heather|dark heather/.test(base)) return "Gray";
+    return base.replace(/\b\w/g, c => c.toUpperCase());
+  };
+
   const colors = {};
+
   for (const v of variants) {
     const product = v?.product || {};
-    const raw = v?.name || "";
+    const rawName = v?.name || "";
 
-    let color = (product.color_name || product.color || "").trim();
-    if (!color && raw.includes("/")) color = raw.split("/")[0].trim();
-    if (!color) color = "Color único";
+    // Color desde color_name, color o parte izquierda de "Color/Size"
+    let color =
+      normColor(product.color_name) ||
+      normColor(product.color) ||
+      normColor(rawName.split("/")[0]) ||
+      "Color único";
 
-    let size = (product.size || "").trim();
-    if (!size && raw.includes("/")) size = raw.split("/").pop().trim();
-    if (!size) size = `VAR_${v.variant_id}`;
+    // Talla desde product.size o parte derecha de "Color/Size"
+    let size =
+      String(product.size || "").trim() ||
+      String(rawName.includes("/") ? rawName.split("/").pop() : "").trim() ||
+      `VAR_${v.variant_id}`;
 
     if (!colors[color]) colors[color] = { image: null, sizes: {} };
 
-    const variantImage =
-      v?.files?.find((f) => f.preview_url)?.preview_url ||
-      v?.files?.find((f) => f.thumbnail_url)?.thumbnail_url ||
-      product.image ||
-      sp?.thumbnail_url ||
+    // Imagen priorizada por archivos mockup/preview de la variante
+    const fromFiles =
+      v?.files?.find(f => f.preview_url)?.preview_url ||
+      v?.files?.find(f => f.thumbnail_url)?.thumbnail_url ||
+      v?.files?.find(f => f.url)?.url ||
       null;
 
-    if (!colors[color].image) {
-      colors[color].image =
-        variantImage || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
+    const variantImage = fromFiles || product.image || sp?.thumbnail_url || null;
+
+    if (!colors[color].image && variantImage) {
+      colors[color].image = variantImage; // garantizamos una imagen por color
     }
 
-    colors[color].sizes[size] = String(v.variant_id);
+    colors[color].sizes[size] = v.variant_id;
   }
 
+  // Portada segura
   const firstColor = Object.keys(colors)[0];
   const cover =
     (firstColor && colors[firstColor]?.image) ||
@@ -128,67 +129,41 @@ function normalizeProduct(detail) {
   };
 }
 
-/* ========== Endpoints ========== */
+/* ========= Endpoints ========= */
 
-// Productos normalizados (paginables en respuesta)
+// Catálogo normalizado con caché (1h)
 router.get("/api/printful/products", async (req, res) => {
   try {
     if (!process.env.PRINTFUL_API_KEY) {
-      return res
-        .status(500)
-        .json({ error: "PRINTFUL_API_KEY no configurada en el servidor" });
+      return res.status(500).json({ error: "PRINTFUL_API_KEY no configurada en el servidor" });
+    }
+
+    const now = Date.now();
+    if (now - productCache.time < PRODUCT_CACHE_TTL && productCache.data.length) {
+      return res.json({ products: productCache.data, cached: true });
     }
 
     const list = await fetchAllSyncedProducts();
     if (!list.length) {
-      return res.json({
-        total: 0,
-        offset: 0,
-        limit: 0,
-        products: [],
-        note: "No hay productos 'añadidos a tienda' en Printful.",
-      });
+      productCache = { time: now, data: [] };
+      return res.json({ products: [], note: "No hay productos 'añadidos a tienda' en Printful." });
     }
 
-    const details = await Promise.all(
-      list.map((p) => pfGet(`/store/products/${p.id}`))
-    );
+    const details = await Promise.all(list.map(p => pfGet(`/store/products/${p.id}`)));
     const products = details.map(normalizeProduct);
 
-    const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 100));
-    const offset = Math.max(0, Number(req.query.offset) || 0);
-    const slice = products.slice(offset, offset + limit);
-
-    res.json({
-      total: products.length,
-      offset,
-      limit,
-      products: slice,
-    });
+    productCache = { time: now, data: products };
+    res.json({ products, cached: false });
   } catch (err) {
     console.error("PF /products error:", err.message);
     res.status(500).json({ error: String(err.message) });
   }
 });
 
-// Producto individual normalizado
-router.get("/api/printful/products/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const detail = await pfGet(`/store/products/${encodeURIComponent(id)}`);
-    const product = normalizeProduct(detail);
-    res.json({ product });
-  } catch (err) {
-    res.status(500).json({ error: String(err.message) });
-  }
-});
-
-// Lista cruda (nativa de Printful)
+// Lista cruda (debug)
 router.get("/api/printful/raw-list", async (req, res) => {
   try {
-    const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 50));
-    const offset = Math.max(0, Number(req.query.offset) || 0);
-    const data = await pfGet(`/store/products?limit=${limit}&offset=${offset}`);
+    const data = await pfGet(`/store/products?limit=50&offset=0`);
     res.json(data);
   } catch (e) {
     res.status(500).json({ error: String(e.message || e) });
