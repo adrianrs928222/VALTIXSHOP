@@ -15,35 +15,33 @@ const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
 // ====== Colores (HEX y etiqueta ES) ======
 const COLOR_MAP = {
-  "Adobe":        { hex:"#A6654E", es:"Adobe" },
-  "Black":        { hex:"#000000", es:"Negro" },
-  "White":        { hex:"#FFFFFF", es:"Blanco" },
-  "French Navy":  { hex:"#031A44", es:"Azul marino" },
-  "Heather Grey": { hex:"#B3B7BD", es:"Gris jaspeado" },
-  "Natural":      { hex:"#EFE9E2", es:"Natural" },
-  "Burgundy":     { hex:"#800020", es:"Burdeos" },
-  "Bottle Green": { hex:"#0B3D02", es:"Verde botella" },
-  "Royal Blue":   { hex:"#4169E1", es:"Azul royal" },
-  "Light Pink":   { hex:"#F4C2C2", es:"Rosa claro" },
-  "Navy":         { hex:"#001F3F", es:"Azul marino" },
-  "Grey":         { hex:"#808080", es:"Gris" },
-  "Gray":         { hex:"#808080", es:"Gris" },
-  "Red":          { hex:"#FF0000", es:"Rojo" },
-  "Blue":         { hex:"#0057FF", es:"Azul" },
-  "Green":        { hex:"#008000", es:"Verde" },
-  "Yellow":       { hex:"#FFEA00", es:"Amarillo" },
-  "Pink":         { hex:"#FFC0CB", es:"Rosa" },
-  "Orange":       { hex:"#FFA500", es:"Naranja" },
-  "Beige":        { hex:"#F5F5DC", es:"Beis" },
-  "Brown":        { hex:"#5C4033", es:"Marrón" },
+  Adobe:        { hex:"#A6654E", es:"Adobe" },
+  Black:        { hex:"#000000", es:"Negro" },
+  White:        { hex:"#FFFFFF", es:"Blanco" },
+  "French Navy":{ hex:"#031A44", es:"Azul marino" },
+  "Heather Grey":{ hex:"#B3B7BD", es:"Gris jaspeado" },
+  Natural:      { hex:"#EFE9E2", es:"Natural" },
+  Burgundy:     { hex:"#800020", es:"Burdeos" },
+  "Bottle Green":{ hex:"#0B3D02", es:"Verde botella" },
+  "Royal Blue": { hex:"#4169E1", es:"Azul royal" },
+  "Light Pink": { hex:"#F4C2C2", es:"Rosa claro" },
+  Navy:         { hex:"#001F3F", es:"Azul marino" },
+  Grey:         { hex:"#808080", es:"Gris" },
+  Gray:         { hex:"#808080", es:"Gris" },
+  Red:          { hex:"#FF0000", es:"Rojo" },
+  Blue:         { hex:"#0057FF", es:"Azul" },
+  Green:        { hex:"#008000", es:"Verde" },
+  Yellow:       { hex:"#FFEA00", es:"Amarillo" },
+  Pink:         { hex:"#FFC0CB", es:"Rosa" },
+  Orange:       { hex:"#FFA500", es:"Naranja" },
+  Beige:        { hex:"#F5F5DC", es:"Beis" },
+  Brown:        { hex:"#5C4033", es:"Marrón" },
 };
 
 // ====== Override manual de categorías por NOMBRE (normalizado) ======
 const CATEGORY_OVERRIDE = {
-  // "Sudadera Negra Logo Amarillo": ["sudaderas"],
-  // "Hoodie Unisex Premium": ["sudaderas"],
-  // "Camiseta Algodón 180g": ["camisetas"],
-  // Añade aquí tus productos exactos (tal como aparecen en tu tienda) → categorías
+  // "Valtix V": ["sudaderas"],
+  // "Camiseta Premium Blanca 180g": ["camisetas"],
 };
 
 // ====== Helpers ======
@@ -172,7 +170,7 @@ async function normalizeDetail(detail){
   const firstColor = Object.keys(colors)[0];
   const cover = (firstColor && colors[firstColor]?.image) || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
-  // Sugerencias de nombre/slug para imágenes locales
+  // Sugerencias de imagen local
   const pSlug = slug(sp?.name || "");
   for (const [cName, obj] of Object.entries(colors)) {
     const cSlug = slug(cName);
@@ -184,7 +182,6 @@ async function normalizeDetail(detail){
     ];
   }
 
-  // ===== Categorías: override manual o detección automática =====
   const productNameNorm = normName(sp?.name || "");
   const categories = CATEGORY_OVERRIDE[productNameNorm] || detectCategories(sp?.name || "");
 
@@ -219,7 +216,6 @@ function mergeByName(list){
         tgt.colors[cName].local_candidates = Array.from(new Set([...(tgt.colors[cName].local_candidates||[]), ...cData.local_candidates]));
       }
     }
-    // unificar categorías (union)
     const setCats = new Set([...(tgt.categories||[]), ...(p.categories||[])]);
     tgt.categories = Array.from(setCats);
   }
