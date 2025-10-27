@@ -40,8 +40,7 @@ function startPromo(){
     "🚚 Envíos GRATIS en pedidos superiores a 60€"
   ];
   let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
-  show();
-  setInterval(show, 8000);
+  show(); setInterval(show, 8000);
 }
 
 // ===== Menu/Hamburguesa =====
@@ -137,6 +136,7 @@ function renderProducts(){
                 <button 
                   class="color-circle ${idx===0?"active":""}" 
                   title="${cn}" 
+                  aria-label="Color ${cn}"
                   data-color="${cn}" 
                   data-hex="${hex}"
                   style="background:${hex};"
@@ -159,7 +159,7 @@ function renderProducts(){
         : Object.keys(p.variant_map || {});
       selectedSize = currentSizes[0] || null;
       sizesWrap.innerHTML = currentSizes.map((sz,idx)=>`
-        <button class="option-btn ${idx===0?"active":""}" data-sz="${sz}">${sz}</button>
+        <button class="option-btn ${idx===0?"active":""}" data-sz="${sz}" aria-label="Talla ${sz}">${sz}</button>
       `).join("");
       sizesWrap.querySelectorAll(".option-btn").forEach(btn=>{
         btn.addEventListener("click", ()=>{
