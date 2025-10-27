@@ -1,48 +1,24 @@
 // products.js
-// VALTIX — catálogo con vistas múltiples e imágenes locales
+// VALTIX — sincronización completa con Printful.
+// Carga todos los productos directamente desde tu backend conectado a Printful.
 
-window.products = [
-  {
-    id: "sudadera-valtix",
-    name: "Sudadera Valtix Edition",
-    price: 36.50,
-    sku: "sudadera_valtix_black",
-    categories: ["sudaderas"],
-    colors: {
-      "Negra": {
-        image: "./img/sudadera_front.jpg",
-        side_image: "./img/sudadera_side.jpg",
-        url: "https://adrianrs928222.github.io/VALTIXSHOP/#producto/sudadera-black",
-        sizes: {
-          "S": "68f8b9bca9496",
-          "M": "68f8b9bca9441",
-          "L": "68f8b9bca9475",
-          "XL": "68f8b9bca94a1",
-          "2XL": "68f8b9bca94c2"
-        }
-      }
-    }
-  },
+(async function () {
+  const BACKEND_URL = "https://valtixshop.onrender.com";
+  const grid = document.querySelector("#grid");
 
-  {
-    id: "camiseta-premium",
-    name: "Camiseta Premium Blanca",
-    price: 29.99,
-    sku: "tee_white_180",
-    categories: ["camisetas"],
-    colors: {
-      "Blanca": {
-        image: "./img/camiseta_front.jpg",
-        side_image: "./img/camiseta_side.jpg",
-        url: "https://adrianrs928222.github.io/VALTIXSHOP/#producto/camiseta-blanca",
-        sizes: {
-          "S": 1111111001,
-          "M": 1111111002,
-          "L": 1111111003,
-          "XL": 1111111004,
-          "XXL": 1111111005
-        }
-      }
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/printful/products`);
+    const data = await res.json();
+
+    if (!data?.products?.length) {
+      grid.innerHTML = `<p style="color:#666">No hay productos sincronizados desde Printful.</p>`;
+      return;
     }
+
+    window.products = data.products;
+    console.log(`✅ ${data.products.length} productos cargados desde Printful`);
+  } catch (err) {
+    console.error("❌ Error al cargar productos de Printful:", err);
+    grid.innerHTML = `<p style="color:#666">Error al conectar con Printful.</p>`;
   }
-];
+})();
