@@ -5,25 +5,34 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>VALTIX | Estilo que evoluciona – Moda premium para cada día y cada momento</title>
   <meta name="description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
-  <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <meta property="og:title" content="VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento" />
-  <meta property="og:description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
-  <meta property="og:image" content="https://via.placeholder.com/1200x630" />
-  <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
+  <link rel="canonical" href="https://www.valtixshop.com/" />
+
+  <!-- Social -->
+  <meta property="og:title" content="VALTIX | Tu look, tu historia" />
+  <meta property="og:description" content="Moda premium, envío rápido y pago seguro." />
+  <meta property="og:image" content="https://cdn.valtixshop.com/og/og-default.jpg" />
+  <meta property="og:url" content="https://www.valtixshop.com/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD para breadcrumbs (app.js lo actualiza en listado y detalle) -->
+  <!-- JSON-LD breadcrumbs (se actualiza desde app.js) -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
+    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://www.valtixshop.com/"}
   ]}
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./style.css" />
+  <!-- Perf/CDN -->
+  <link rel="preconnect" href="https://cdn.valtixshop.com" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.valtixshop.com">
+  <link rel="preconnect" href="https://api.valtixshop.com" crossorigin>
+  <link rel="dns-prefetch" href="https://api.valtixshop.com">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css?v=prod1" />
 </head>
 
 <body>
@@ -81,7 +90,6 @@
     </div>
   </footer>
 
-  <!-- Backdrop & Drawer carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -96,50 +104,6 @@
     </div>
   </aside>
 
-  <!-- Vista de producto (overlay profesional) -->
-  <div id="pdOverlay" class="pd-overlay" aria-hidden="true">
-    <div class="pd-panel" role="dialog" aria-modal="true" aria-labelledby="pdTitle">
-      <button class="pd-close" id="pdClose" aria-label="Cerrar">✕</button>
-      <div class="pd-grid">
-        <!-- Galería -->
-        <div class="pd-media">
-          <img id="pdMain" class="pd-main" src="" alt="">
-          <div id="pdThumbs" class="pd-thumbs"></div>
-        </div>
-        <!-- Info -->
-        <div class="pd-info">
-          <h2 id="pdTitle" class="pd-title"></h2>
-          <div class="pd-price" id="pdPrice"></div>
-          <div class="pd-stock"><span class="stock-badge ok">En stock</span></div>
-
-          <div class="pd-block">
-            <div class="pd-label">Color</div>
-            <div id="pdColors" class="color-selector"></div>
-          </div>
-
-          <div class="pd-block">
-            <div class="pd-label">Talla</div>
-            <div id="pdSizes" class="options"></div>
-          </div>
-
-          <div class="pd-cta">
-            <button id="pdAdd" class="btn">Añadir al carrito</button>
-          </div>
-
-          <div class="pd-meta">
-            <ul>
-              <li>Pago seguro con Stripe</li>
-              <li>Envío 2–5 días en España</li>
-              <li>Devoluciones fáciles</li>
-            </ul>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- App -->
-  <script src="./app.js?v=pro-detail" defer></script>
+  <script src="app.js?v=prod1"></script>
 </body>
 </html>
