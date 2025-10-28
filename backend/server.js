@@ -5,20 +5,22 @@ import fetch from "node-fetch";
 import bodyParser from "body-parser";
 import nodemailer from "nodemailer";
 
-import router from "./router.js";   // ✅ SOLO una vez, arriba
-import admin from "./admin.js";     // ✅ import admin una vez
+import router from "./router.js";
+import admin from "./admin.js";
 
 const app = express();
 
 /* ================== CORS ================== */
-const ALLOWED_ORIGINS = [
-  "https://adrianrs928222.github.io",
-  "https://valtixshop.onrender.com",
-  "http://localhost:5500",
-  "http://127.0.0.1:5500",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000"
+/* Permite configurar dominios extra por ENV (coma-separados) */
+const DEFAULT_ORIGINS = [
+  "https://adrianrs928222.github.io",   // GitHub Pages
+  "https://valtixshop.onrender.com"     // Backend (Render) o panel
 ];
+const EXTRA_ORIGINS = (process.env.FRONTEND_ORIGINS || "")
+  .split(",").map(s=>s.trim()).filter(Boolean);
+// Ejemplo FRONTEND_ORIGINS: https://shop.tudominio.com,https://tudominio.com
+
+const ALLOWED_ORIGINS = [...new Set([...DEFAULT_ORIGINS, ...EXTRA_ORIGINS])];
 
 app.use(
   cors({
@@ -32,7 +34,6 @@ app.use(
   })
 );
 
-// Preflight
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
@@ -51,6 +52,27 @@ const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
 const stripe = STRIPE_KEY ? new Stripe(STRIPE_KEY) : null;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const PRINTFUL_KEY = process.env.PRINTFUL_API_KEY || "";
+
+/* ================== Email transport (Gmail o Hostinger) ================== */
+function buildTransporter(){
+  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) return null;
+
+  // Si defines MAIL_HOST (p.ej. smtp.hostinger.com) usa SMTP genérico
+  if (process.env.MAIL_HOST) {
+    return nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      port: Number(process.env.MAIL_PORT || 465),
+      secure: String(process.env.MAIL_SECURE || "true") === "true",
+      auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
+    });
+  }
+
+  // Por defecto: Gmail (requiere App Password)
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
+  });
+}
 
 /* ========== WEBHOOK STRIPE (raw antes de express.json) ========== */
 app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, res) => {
@@ -107,30 +129,29 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
         else console.log("✅ Pedido Printful creado:", data?.result?.id || data);
       }
 
-      // Email post-compra (opcional)
-      if (cd.email && process.env.MAIL_USER && process.env.MAIL_PASS) {
-        try {
-          const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
-          });
-          await transporter.sendMail({
-            from: '"VALTIX Shop" <no-reply@valtix.com>',
-            to: cd.email,
-            subject: "Confirmación de pedido VALTIX",
-            html: `
-              <h2>Gracias por tu compra</h2>
-              <p>Tu pedido está en proceso. Te avisaremos cuando se envíe.</p>
-              <p><strong>Resumen:</strong></p>
-              <ul>
-                ${cart.map(i=>`<li>${i.name} × ${i.quantity}</li>`).join("")}
-              </ul>
-              <p>Atención al cliente: soporte@valtix.com</p>
-            `
-          });
-          console.log("📧 Email de confirmación enviado a", cd.email);
-        } catch(e){
-          console.error("❌ Error enviando email:", e.message);
+      // Email post-compra (si hay config)
+      if (cd.email) {
+        const transporter = buildTransporter();
+        if (transporter) {
+          try {
+            await transporter.sendMail({
+              from: process.env.MAIL_FROM || `"VALTIX Shop" <${process.env.MAIL_USER}>`,
+              to: cd.email,
+              subject: "Confirmación de pedido VALTIX",
+              html: `
+                <h2>¡Gracias por tu compra!</h2>
+                <p>Tu pedido está en proceso. Te avisaremos cuando se envíe.</p>
+                <p><strong>Resumen:</strong></p>
+                <ul>
+                  ${cart.map(i=>`<li>${i.name} × ${i.quantity}</li>`).join("")}
+                </ul>
+                <p>Soporte: soporte@valtix.com</p>
+              `
+            });
+            console.log("📧 Email de confirmación enviado a", cd.email);
+          } catch(e){
+            console.error("❌ Error enviando email:", e.message);
+          }
         }
       }
     } catch (e) {
@@ -188,11 +209,12 @@ app.post("/checkout", async (req, res) => {
 });
 
 /* ================== Rutas ================== */
-app.use(router);        // ✅ rutas Printful (/api/printful/…)
-app.use("/admin", admin); // ✅ panel admin protegido
+app.use(router);           // /api/printful/…
+app.use("/admin", admin);  // /admin/orders (protegido)
 
 /* ================== Start ================== */
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor VALTIX en puerto ${PORT}`);
+  console.log(`🌐 CORS → ${ALLOWED_ORIGINS.join(", ")}`);
 });
