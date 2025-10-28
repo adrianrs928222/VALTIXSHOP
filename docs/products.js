@@ -3,22 +3,21 @@
  * VALTIX Product Page  (manteniendo el nombre: product.js)
  * - Carga images.json (manual)
  * - Colores/tallas 1:1 con Printful (variant_id real)
- * - Galería por color (case-insensitive)
+ * - Galería por color (case-insensitive) + lazy loading thumbs
  * - Selector con HEX forzado si falta
  * - Checkout via backend (Stripe) + Drawer carrito
- * - SEO JSON-LD (BreadcrumbList + Product)
+ * - SEO JSON-LD (BreadcrumbList + Product) + <meta> dinámico
  * ============================================================
  */
 
-// ===== Config
 const BACKEND_URL = "https://valtixshop.onrender.com";
 
-// ===== Helpers
+// Helpers
 const $  = s => document.querySelector(s);
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getSku(){ const u=new URL(location.href); return u.searchParams.get("sku"); }
 
-// ===== Carrito
+// Carrito
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
 function addToCart(item){
@@ -36,7 +35,6 @@ function renderCart(){
   const count = cart.reduce((s,i)=>s+i.qty,0);
   const countEl=$("#cartCount"); if(countEl) countEl.textContent=count;
   const box=$("#cartItems"); if(!box) return;
-
   box.innerHTML="";
   if(!cart.length){
     box.innerHTML=`<p style="color:#666">Tu carrito está vacío.</p>`;
@@ -79,7 +77,7 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ===== PF util
+// PF util
 function availableColorsOf(p){
   return Object.entries(p.colors||{})
     .filter(([,meta]) => meta && meta.sizes && Object.keys(meta.sizes).length)
@@ -87,7 +85,7 @@ function availableColorsOf(p){
 }
 function sizeNamesOf(p,color){ return Object.keys(p.colors?.[color]?.sizes||{}); }
 
-// ===== images.json (manual) + lookup
+// images.json (manual) + lookup
 const MANUAL_IMAGES = {};
 function manualImagesFor(sku, color){
   const bucket = MANUAL_IMAGES[sku] || {};
@@ -95,7 +93,7 @@ function manualImagesFor(sku, color){
   return key ? bucket[key] : null;
 }
 
-// ===== Color HEX (cliente) si Printful no trae
+// Color HEX adicional
 const COLOR_HEX_CLIENT = {
   "verde":"#008000","negro":"#000000","blanco":"#ffffff","gris":"#808080",
   "azul":"#0057ff","navy":"#001f3f","rojo":"#ff0000","burdeos":"#800020",
@@ -107,7 +105,7 @@ function hexFromNameClient(name){
   return COLOR_HEX_CLIENT[k] || null;
 }
 
-// ===== SEO helpers
+// SEO helpers
 function setBreadcrumbsJSONLD(sku){
   const el = document.getElementById("breadcrumbs-jsonld");
   if(!el) return;
@@ -141,13 +139,17 @@ function setProductJSONLD({name, sku, price, currency="EUR", image, brand="VALTI
   el.textContent = JSON.stringify(data);
 }
 
-// ===== Render ficha
+// Render ficha
 function renderProduct(p){
   // Texto y precio
   $("#pName").textContent = p.name;
   $("#pPrice").textContent = money(p.price);
 
-  // Selección inicial
+  // SEO <title> y metas base
+  document.title = `${p.name} – VALTIX`;
+  document.querySelector('meta[name="description"]')?.setAttribute("content", `${p.name} disponible en varios colores y tallas en VALTIX.`);
+  document.querySelector('meta[property="og:title"]')?.setAttribute("content", `${p.name} – VALTIX`);
+
   const colorsPF = availableColorsOf(p);
   let selColor   = colorsPF[0] || null;
   let selSize    = selColor ? sizeNamesOf(p, selColor)[0] : null;
@@ -173,7 +175,7 @@ function renderProduct(p){
       updateAddBtn();
       setProductJSONLD({
         name: p.name, sku: p.sku, price: p.price,
-        image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src)],
+        image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src || i.dataset.src)],
         color: selColor, size: selSize
       });
     });
@@ -195,16 +197,14 @@ function renderProduct(p){
         updateAddBtn();
         setProductJSONLD({
           name: p.name, sku: p.sku, price: p.price,
-          image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src)],
+          image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src || i.dataset.src)],
           color: selColor, size: selSize
         });
       });
     });
-    // (Opcional): llamar a /availability si quieres atenuar sin stock
-    // markUnavailableSizes().catch(()=>{});
   }
 
-  // Galería
+  // Galería (con lazy para thumbs)
   const mainImg = $("#mainImg");
   const thumbs  = $("#thumbs");
 
@@ -215,22 +215,36 @@ function renderProduct(p){
 
     mainImg.src = imgs[0] || "";
     mainImg.alt = `${p.name} - ${selColor}`;
+    document.querySelector('meta[property="og:image"]')?.setAttribute("content", mainImg.src);
 
-    thumbs.innerHTML = imgs.map((u,idx)=>`<img src="${u}" data-idx="${idx}" class="${idx===0?"active":""}" alt="Vista ${idx+1}">`).join("");
+    thumbs.innerHTML = imgs.map((u,idx)=>`
+      <img src="${idx===0 ? u : ''}" data-src="${u}" loading="lazy" class="${idx===0?'active':''}" alt="Vista ${idx+1}">
+    `).join("");
+
+    const observer = new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){
+          const img = e.target;
+          if(!img.src) img.src = img.dataset.src;
+          observer.unobserve(img);
+        }
+      });
+    });
+    thumbs.querySelectorAll("img").forEach(i => observer.observe(i));
+
     thumbs.querySelectorAll("img").forEach(img=>{
       img.addEventListener("click", ()=>{
         thumbs.querySelectorAll("img").forEach(i=>i.classList.remove("active"));
         img.classList.add("active");
-        mainImg.src = img.src;
+        mainImg.src = img.src || img.dataset.src;
         setProductJSONLD({
           name: p.name, sku: p.sku, price: p.price,
-          image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src)],
+          image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src || i.dataset.src)],
           color: selColor, size: selSize
         });
       });
     });
 
-    // SEO inicial
     setProductJSONLD({
       name: p.name, sku: p.sku, price: p.price,
       image: imgs, color: selColor, size: selSize
@@ -243,52 +257,11 @@ function renderProduct(p){
     btn.disabled = !can;
   }
 
-  // (Opcional PRO) disponibilidad en vivo
-  async function markUnavailableSizes(){
-    const sizes = sizeNamesOf(p, selColor);
-    if(!sizes.length) return;
-    const ids = sizes.map(sz => String(p.colors[selColor].sizes[sz]));
-    const r = await fetch(`${BACKEND_URL}/availability`, {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ variant_ids: ids })
-    });
-    const { ok, availability } = await r.json();
-    if(!ok || !availability) return;
-
-    document.querySelectorAll("#sizeWrap .option-btn").forEach(btn=>{
-      const sz = btn.dataset.sz;
-      const vid = String(p.colors[selColor].sizes[sz]);
-      const val = availability[vid]; // true, false, null
-      if(val === false){
-        btn.disabled = true;
-        btn.title = "Sin stock temporalmente";
-        btn.classList.add("muted");
-        if(btn.classList.contains("active")){
-          btn.classList.remove("active"); btn.setAttribute("aria-pressed","false");
-          const firstOk = sizes.find(s => availability[String(p.colors[selColor].sizes[s])] !== false);
-          if(firstOk){
-            const fallbackBtn = [...document.querySelectorAll("#sizeWrap .option-btn")].find(b=>b.dataset.sz===firstOk);
-            if(fallbackBtn){ fallbackBtn.classList.add("active"); fallbackBtn.setAttribute("aria-pressed","true"); }
-            selSize = firstOk;
-          }else{
-            selSize = null;
-          }
-          updateAddBtn();
-        }
-      }else{
-        btn.disabled = false;
-        btn.classList.remove("muted");
-      }
-    });
-  }
-
-  // Inicializar
+  // Init
   buildSizes();
   buildGallery();
   updateAddBtn();
 
-  // Añadir al carrito
   $("#addBtn").addEventListener("click", ()=>{
     if(!(selColor && selSize)) return;
     const vid = p.colors[selColor].sizes[selSize];
@@ -302,22 +275,19 @@ function renderProduct(p){
     openCart();
   });
 
-  // SEO migas
   setBreadcrumbsJSONLD(p.sku);
 }
 
-// ===== Carga datos + eventos
+// Carga
 async function loadAndRender(){
   const sku = getSku();
   if(!sku){ alert("SKU no especificado"); return; }
 
-  // Cargar images.json manual
   try{
     const r = await fetch("images.json",{cache:"no-store"});
     if (r.ok) Object.assign(MANUAL_IMAGES, await r.json());
   }catch{}
 
-  // Cargar productos desde backend
   let products = [];
   try{
     const res = await fetch(`${BACKEND_URL}/api/printful/products`, { cache:"no-store" });
@@ -330,7 +300,6 @@ async function loadAndRender(){
 
   renderProduct(p);
 
-  // Drawer carrito
   $("#openCart")?.addEventListener("click", openCart);
   $("#closeCart")?.addEventListener("click", closeCart);
   $("#drawerBackdrop")?.addEventListener("click", closeCart);
