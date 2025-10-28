@@ -1,10 +1,13 @@
 {
   "name": "valtix-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "Backend API y herramientas de gestión para la tienda VALTIX (Printful + Stripe + Generador de imágenes)",
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build:images": "node scripts/generate-images-json.mjs"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -13,7 +16,20 @@
     "node-fetch": "^3.3.2",
     "stripe": "^14.0.0"
   },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "keywords": [
+    "printful",
+    "stripe",
+    "dropshipping",
+    "valtix",
+    "api",
+    "tienda-online"
+  ],
+  "author": "VALTIX Studio",
+  "license": "MIT"
 }
