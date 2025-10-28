@@ -469,3 +469,5 @@ a { text-decoration: none; color: inherit; }
   .grid { grid-template-columns: 1fr; }
   .cart-btn { padding: 8px 10px; }
 }
+/* Atenuar tallas sin stock (si activas el chequeo) */
+.option-btn.muted { opacity: .5; cursor: not-allowed; }
