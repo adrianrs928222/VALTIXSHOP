@@ -11,9 +11,9 @@ const BACKEND_URL = "https://valtixshop.onrender.com";
 // ===== Imágenes manuales por color (edita libremente).
 // NO agrega colores: solo sustituye imagen/galería si el color YA existe en Printful.
 const MANUAL_IMAGES = {
-  // "MI-SKU-001": {
-  //   "Black": [
-  //     "https://cdn.mi-tienda.com/sku001/black_1.jpg",
+  // "VALTIX-TEE-001": {
+  //   "verde": [
+  //     "https://i.postimg.cc/hvtPyh8x/unisex-premium-sweatshirt-forest-green-front-690008790b167.jpg",
   //     "https://cdn.mi-tienda.com/sku001/black_2.jpg"
   //   ],
   //   "White": [
