@@ -40,8 +40,18 @@ const COLOR_MAP = {
 
 // ====== Override manual de categorías por NOMBRE (normalizado) ======
 const CATEGORY_OVERRIDE = {
-  // "Valtix V": ["sudaderas"],
-  // "Camiseta Premium Blanca 180g": ["camisetas"],
+  // "Sudadera Negra Logo Amarillo": ["sudaderas"],
+};
+
+// ====== OVERRIDE MANUAL DE IMÁGENES (por producto y color, usando slugs) ======
+const IMAGE_OVERRIDE = {
+  // Ejemplo solicitado:
+  "sudadera-negra-logo-amarillo": {
+    "negro": "/img/sudadera-negra-logo-amarillo__negro.jpg",
+    "azul-marino": "/img/sudadera-negra-logo-amarillo__azul-marino.jpg"
+  },
+  // Añade más aquí:
+  // "camiseta-premium-blanca-180g": { "blanco": "/img/camiseta-premium-blanca-180g__blanco.jpg" }
 };
 
 // ====== Helpers ======
@@ -170,7 +180,7 @@ async function normalizeDetail(detail){
   const firstColor = Object.keys(colors)[0];
   const cover = (firstColor && colors[firstColor]?.image) || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
-  // Sugerencias de imagen local
+  // Sugerencias de imagen local (patrones estándar)
   const pSlug = slug(sp?.name || "");
   for (const [cName, obj] of Object.entries(colors)) {
     const cSlug = slug(cName);
@@ -180,6 +190,13 @@ async function normalizeDetail(detail){
       `/img/${pSlug}/${cSlug}.jpg`,
       `/img/${pSlug}/${cSlug}.png`,
     ];
+  }
+
+  // ===== Override manual absoluto si existe =====
+  for (const [cName, obj] of Object.entries(colors)) {
+    const cSlug = slug(cName);
+    const custom = IMAGE_OVERRIDE[pSlug]?.[cSlug];
+    if (custom) obj.image = custom;
   }
 
   const productNameNorm = normName(sp?.name || "");
