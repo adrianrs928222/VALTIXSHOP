@@ -1,4 +1,4 @@
-// router.js
+// backend/router.js
 import express from "express";
 import fetch from "node-fetch";
 
@@ -13,48 +13,52 @@ const PF_HEADERS = {
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
-// ====== Colores (HEX y etiqueta ES) ======
+// ===== Colores (HEX + etiqueta ES) =====
 const COLOR_MAP = {
-  Adobe:        { hex:"#A6654E", es:"Adobe" },
-  Black:        { hex:"#000000", es:"Negro" },
-  White:        { hex:"#FFFFFF", es:"Blanco" },
-  "French Navy":{ hex:"#031A44", es:"Azul marino" },
-  "Heather Grey":{ hex:"#B3B7BD", es:"Gris jaspeado" },
-  Natural:      { hex:"#EFE9E2", es:"Natural" },
-  Burgundy:     { hex:"#800020", es:"Burdeos" },
-  "Bottle Green":{ hex:"#0B3D02", es:"Verde botella" },
+  Adobe: { hex:"#A6654E", es:"Adobe" },
+  Black: { hex:"#000000", es:"Negro" },
+  White: { hex:"#FFFFFF", es:"Blanco" },
+  "French Navy": { hex:"#031A44", es:"Azul marino" },
+  "Heather Grey": { hex:"#B3B7BD", es:"Gris jaspeado" },
+  Natural: { hex:"#EFE9E2", es:"Natural" },
+  Burgundy: { hex:"#800020", es:"Burdeos" },
+  "Bottle Green": { hex:"#0B3D02", es:"Verde botella" },
   "Royal Blue": { hex:"#4169E1", es:"Azul royal" },
   "Light Pink": { hex:"#F4C2C2", es:"Rosa claro" },
-  Navy:         { hex:"#001F3F", es:"Azul marino" },
-  Grey:         { hex:"#808080", es:"Gris" },
-  Gray:         { hex:"#808080", es:"Gris" },
-  Red:          { hex:"#FF0000", es:"Rojo" },
-  Blue:         { hex:"#0057FF", es:"Azul" },
-  Green:        { hex:"#008000", es:"Verde" },
-  Yellow:       { hex:"#FFEA00", es:"Amarillo" },
-  Pink:         { hex:"#FFC0CB", es:"Rosa" },
-  Orange:       { hex:"#FFA500", es:"Naranja" },
-  Beige:        { hex:"#F5F5DC", es:"Beis" },
-  Brown:        { hex:"#5C4033", es:"Marrón" },
+  Navy: { hex:"#001F3F", es:"Azul marino" },
+  Grey: { hex:"#808080", es:"Gris" },
+  Gray: { hex:"#808080", es:"Gris" },
+  Red: { hex:"#FF0000", es:"Rojo" },
+  Blue: { hex:"#0057FF", es:"Azul" },
+  Green: { hex:"#008000", es:"Verde" },
+  Yellow: { hex:"#FFEA00", es:"Amarillo" },
+  Pink: { hex:"#FFC0CB", es:"Rosa" },
+  Orange: { hex:"#FFA500", es:"Naranja" },
+  Beige: { hex:"#F5F5DC", es:"Beis" },
+  Brown: { hex:"#5C4033", es:"Marrón" },
 };
 
-// ====== Override manual de categorías por NOMBRE (normalizado) ======
+// ===== Override manual de categorías por NOMBRE normalizado (opcional) =====
 const CATEGORY_OVERRIDE = {
   // "Sudadera Negra Logo Amarillo": ["sudaderas"],
 };
 
-// ====== OVERRIDE MANUAL DE IMÁGENES (por producto y color, usando slugs) ======
+// ===== OVERRIDE MANUAL DE IMÁGENES =====
+// 1) Por NOMBRE de producto (slug) + color (slug)
 const IMAGE_OVERRIDE = {
-  // Ejemplo solicitado:
-  "valtix v": {
-    "botle green": "img/sudadera_verde.jpg",
-    "azul-marino": "img/sudadera-negra-logo-amarillo__azul-marino.jpg"
+  // Ejemplo para tu sudadera “Valtix V”
+  "valtix-v": {
+    "bottle-green": "img/sudadera_verde.jpg", // si Printful lo llama “Bottle Green”
+    "verde": "img/sudadera_verde.jpg",        // alias por si cambia
+    "verde-botella": "img/sudadera_verde.jpg"
   },
-  // Añade más aquí:
-  // "camiseta-premium-blanca-180g": { "blanco": "/img/camiseta-premium-blanca-180g__blanco.jpg" }
+};
+// 2) Por ID de Printful (más robusto si el nombre cambia)
+const IMAGE_OVERRIDE_ID = {
+  // "399424305": { "bottle-green": "img/sudadera_verde.jpg" }
 };
 
-// ====== Helpers ======
+// ===== Helpers =====
 function colorInfo(name=""){
   const key = String(name).trim();
   if (COLOR_MAP[key]) return COLOR_MAP[key];
@@ -88,6 +92,7 @@ function slug(s){
     .normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
 }
+
 function detectCategories(name=""){
   const n = String(name).toLowerCase();
   if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
@@ -107,6 +112,7 @@ async function pfGet(path) {
   }
   return json;
 }
+
 async function fetchAllSyncedProducts() {
   const limit = 100; let offset = 0; const all = [];
   while (true) {
@@ -118,6 +124,7 @@ async function fetchAllSyncedProducts() {
   }
   return all;
 }
+
 function firstPreview(files = []){
   return (
     files?.find(f=>f.type==="preview" && f.preview_url)?.preview_url ||
@@ -127,6 +134,7 @@ function firstPreview(files = []){
     null
   );
 }
+
 async function hydrateVariant(v) {
   if (v?.files && v.files.length) return v;
   try {
@@ -180,23 +188,26 @@ async function normalizeDetail(detail){
   const firstColor = Object.keys(colors)[0];
   const cover = (firstColor && colors[firstColor]?.image) || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
-  // Sugerencias de imagen local (patrones estándar)
+  // Patrones locales sugeridos (el front intentará HEAD)
   const pSlug = slug(sp?.name || "");
   for (const [cName, obj] of Object.entries(colors)) {
     const cSlug = slug(cName);
     obj.local_candidates = [
-      `/img/${pSlug}__${cSlug}.jpg`,
-      `/img/${pSlug}__${cSlug}.png`,
-      `/img/${pSlug}/${cSlug}.jpg`,
-      `/img/${pSlug}/${cSlug}.png`,
+      `img/${pSlug}__${cSlug}.webp`,
+      `img/${pSlug}__${cSlug}.jpg`,
+      `img/${pSlug}/${cSlug}.webp`,
+      `img/${pSlug}/${cSlug}.jpg`,
     ];
   }
 
-  // ===== Override manual absoluto si existe =====
+  // Overrides manuales por nombre y por ID
+  const pId = String(sp?.id || sp?.external_id || "");
   for (const [cName, obj] of Object.entries(colors)) {
     const cSlug = slug(cName);
-    const custom = IMAGE_OVERRIDE[pSlug]?.[cSlug];
-    if (custom) obj.image = custom;
+    const byName = IMAGE_OVERRIDE[pSlug]?.[cSlug];
+    const byId   = IMAGE_OVERRIDE_ID[pId]?.[cSlug];
+    if (byName) obj.image = byName;
+    if (byId)   obj.image = byId;
   }
 
   const productNameNorm = normName(sp?.name || "");
