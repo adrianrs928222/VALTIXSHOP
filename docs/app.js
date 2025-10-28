@@ -1,4 +1,5 @@
-// app.js — robusto (anti-freeze)
+// docs/app.js
+// Local-first images (sin depender de Printful)
 
 // ===== Config =====
 const BACKEND_URL = "https://valtixshop.onrender.com";
@@ -19,8 +20,7 @@ function productSlug(p){ return String(p?.name||"").toLowerCase().normalize("NFK
 function colorSlug(n){ return String(n||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
 function imgUrl(path){ if(!path) return ""; if (/^https?:\/\//i.test(path)) return path; return CDN_BASE + (path.startsWith("/") ? path.slice(1) : path); }
 
-// HEAD con timeout
-function headWithTimeout(url, ms=1500){
+function headWithTimeout(url, ms=1200){
   return new Promise((resolve) => {
     const ctrl = new AbortController();
     const t = setTimeout(()=>{ try{ctrl.abort();}catch{} resolve(null); }, ms);
@@ -48,7 +48,7 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-// ===== Promo (protegido) =====
+// ===== Promo =====
 function startPromo(){
   try{
     const textEl=$(".promo-text"); if(!textEl) return;
@@ -92,7 +92,6 @@ function updateActiveNavLink(){
     a.classList.toggle("active", cat!=="all" && match===cat);
   });
 }
-
 function filtered(){
   const cat=getActiveCategory();
   if (cat==="all") return allProducts;
@@ -110,11 +109,13 @@ function renderProducts(){
     const colorNames = Object.keys(colors);
     const firstColor = colorNames[0] || null;
 
+    const firstLocal = (firstColor && (colors[firstColor].image || colors[firstColor].local_candidates?.[0])) || "img/placeholder.jpg";
+
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
       <button class="card-link" data-open>
-        <img class="card-img" src="${ imgUrl(firstColor ? colors[firstColor]?.image : p.image) }" alt="${p.name}">
+        <img class="card-img" src="${ imgUrl(firstLocal) }" alt="${p.name}">
       </button>
       <div class="card-body">
         <h3 class="card-title">${p.name}</h3>
@@ -141,21 +142,26 @@ const pmSizes = $("#pmSizes");
 
 let modalState = { product:null, color:null, size:null };
 
-async function pickBestImage(prod, colorName){
+async function pickBestLocal(prod, colorName){
   try{
     const col = prod.colors?.[colorName];
-    if (col?.image) return imgUrl(col.image);
-    if (col && Array.isArray(col.local_candidates) && col.local_candidates.length){
-      for (const rel of col.local_candidates.slice(0,2)){
+    const first = col?.image || (Array.isArray(col?.local_candidates) ? col.local_candidates[0] : null);
+    if (first){
+      const u = imgUrl(first);
+      const ok = await headWithTimeout(u, 1200);
+      if (ok) return u;
+    }
+    if (Array.isArray(col?.local_candidates) && col.local_candidates.length){
+      for (const rel of col.local_candidates.slice(1,3)){
         const url = imgUrl(rel);
         const ok = await headWithTimeout(url, 1200);
         if (ok) return url;
       }
     }
-    return imgUrl(prod.image || "img/placeholder.jpg");
+    return imgUrl("img/placeholder.jpg");
   }catch(e){
-    console.error("pickBestImage error:", e);
-    return imgUrl(prod?.image || "img/placeholder.jpg");
+    console.error("pickBestLocal error:", e);
+    return imgUrl("img/placeholder.jpg");
   }
 }
 
@@ -180,7 +186,7 @@ function openProductModal(prod){
         btn.classList.add("active");
         modalState.color = btn.dataset.color;
         pmColorName.textContent = prod.colors[modalState.color]?.label_es || modalState.color;
-        const url = await pickBestImage(prod, modalState.color);
+        const url = await pickBestLocal(prod, modalState.color);
         pmImg.src = url;
         renderSizesCurrent();
       }catch(e){ console.error("Color change error:", e); }
@@ -188,7 +194,7 @@ function openProductModal(prod){
   });
 
   pmColorName.textContent = modalState.color ? (prod.colors[modalState.color]?.label_es || modalState.color) : "";
-  pickBestImage(prod, modalState.color).then(u=> pmImg.src = u).catch(()=>{ pmImg.src = imgUrl(prod.image||"img/placeholder.jpg"); });
+  pickBestLocal(prod, modalState.color).then(u=> pmImg.src = u).catch(()=>{ pmImg.src = imgUrl("img/placeholder.jpg"); });
 
   renderSizesCurrent();
 
@@ -350,7 +356,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
     $("#goCatalog")?.addEventListener("click",(e)=>{ e.preventDefault(); $("#catalogo")?.scrollIntoView({behavior:"smooth"}); });
 
-    // Carrito
     $("#openCart")?.addEventListener("click", openCart);
     $("#closeCart")?.addEventListener("click", closeCart);
     $("#drawerBackdrop")?.addEventListener("click", closeCart);
