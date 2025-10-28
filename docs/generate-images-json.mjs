@@ -1,4 +1,3 @@
-// scripts/generate-images-json.mjs
 import { promises as fs } from "fs";
 import path from "path";
 
