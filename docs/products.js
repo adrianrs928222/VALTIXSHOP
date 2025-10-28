@@ -1,32 +1,19 @@
 /**
  * ============================================================
  * VALTIX Product Page  (manteniendo el nombre: product.js)
+ * - Carga images.json (manual)
  * - Colores/tallas 1:1 con Printful (variant_id real)
- * - Galería con imágenes manuales por color
- * - Checkout via backend
+ * - Galería por color (case-insensitive)
+ * - Selector con HEX forzado si falta
+ * - Checkout via backend (Stripe) + Drawer carrito
  * - SEO JSON-LD (BreadcrumbList + Product)
- * - Menú móvil
- * - (Opcional) marcar tallas sin stock con /availability
  * ============================================================
  */
 
 // ===== Config
 const BACKEND_URL = "https://valtixshop.onrender.com";
 
-// ===== Imágenes manuales por color (edita o usa images.json)
-const MANUAL_IMAGES = {
-  // "VALTIX-TEE-001": {
-  //   "Verde": [
-  //     "./assets/VALTIX-TEE-001/verde/1.jpg",
-  //     "./assets/VALTIX-TEE-001/verde/2.jpg"
-  //   ],
-  //   "White": [
-  //     "./assets/VALTIX-TEE-001/white/1.jpg"
-  //   ]
-  // }
-};
-
-// ===== Helpers DOM / util
+// ===== Helpers
 const $  = s => document.querySelector(s);
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getSku(){ const u=new URL(location.href); return u.searchParams.get("sku"); }
@@ -100,11 +87,24 @@ function availableColorsOf(p){
 }
 function sizeNamesOf(p,color){ return Object.keys(p.colors?.[color]?.sizes||{}); }
 
-// ===== Helper: imágenes manuales case-insensitive
+// ===== images.json (manual) + lookup
+const MANUAL_IMAGES = {};
 function manualImagesFor(sku, color){
   const bucket = MANUAL_IMAGES[sku] || {};
   const key = Object.keys(bucket).find(k => k.toLowerCase().trim() === String(color).toLowerCase().trim());
   return key ? bucket[key] : null;
+}
+
+// ===== Color HEX (cliente) si Printful no trae
+const COLOR_HEX_CLIENT = {
+  "verde":"#008000","negro":"#000000","blanco":"#ffffff","gris":"#808080",
+  "azul":"#0057ff","navy":"#001f3f","rojo":"#ff0000","burdeos":"#800020",
+  "morado":"#800080","rosa":"#ffc0cb","amarillo":"#ffea00","naranja":"#ff7f00",
+  "beige":"#f5f5dc","marrón":"#5c4033","oliva":"#556b2f","oro":"#ffd700"
+};
+function hexFromNameClient(name){
+  const k = String(name||"").trim().toLowerCase();
+  return COLOR_HEX_CLIENT[k] || null;
 }
 
 // ===== SEO helpers
@@ -143,22 +143,22 @@ function setProductJSONLD({name, sku, price, currency="EUR", image, brand="VALTI
 
 // ===== Render ficha
 function renderProduct(p){
-  // 1) Texto y precio
+  // Texto y precio
   $("#pName").textContent = p.name;
   $("#pPrice").textContent = money(p.price);
 
-  // 2) Estado de selección inicial
+  // Selección inicial
   const colorsPF = availableColorsOf(p);
   let selColor   = colorsPF[0] || null;
   let selSize    = selColor ? sizeNamesOf(p, selColor)[0] : null;
 
-  // 3) Selector de colores
+  // Selector de colores
   const cw = $("#colorWrap");
   cw.innerHTML = colorsPF.map((c,idx)=>{
-    const hex = p.colors[c]?.hex || "";
+    const hex = p.colors[c]?.hex || hexFromNameClient(c) || "";
     const style = hex
       ? `style="background-color:${hex}"`
-      : `style="background:#eee;color:#111;display:grid;place-items:center;font-weight:800"`
+      : `style="background:#eee;color:#111;display:grid;place-items:center;font-weight:800"`;
     const content = hex ? "" : c.slice(0,2).toUpperCase();
     return `<button class="color-circle ${idx===0?"active":""}" title="${c}" data-color="${c}" aria-pressed="${idx===0}" ${style}>${content}</button>`;
   }).join("");
@@ -171,7 +171,6 @@ function renderProduct(p){
       buildSizes();
       buildGallery();
       updateAddBtn();
-      // Refrescar SEO (color)
       setProductJSONLD({
         name: p.name, sku: p.sku, price: p.price,
         image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src)],
@@ -180,7 +179,7 @@ function renderProduct(p){
     });
   });
 
-  // 4) Selector de tallas
+  // Selector de tallas
   const sw = $("#sizeWrap");
   function buildSizes(){
     const sizes = sizeNamesOf(p, selColor);
@@ -194,7 +193,6 @@ function renderProduct(p){
         btn.classList.add("active"); btn.setAttribute("aria-pressed","true");
         selSize = btn.dataset.sz;
         updateAddBtn();
-        // Refrescar SEO (size)
         setProductJSONLD({
           name: p.name, sku: p.sku, price: p.price,
           image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src)],
@@ -202,11 +200,11 @@ function renderProduct(p){
         });
       });
     });
-    // (Opcional) marcar tallas sin stock
-    markUnavailableSizes().catch(()=>{});
+    // (Opcional): llamar a /availability si quieres atenuar sin stock
+    // markUnavailableSizes().catch(()=>{});
   }
 
-  // 5) Galería
+  // Galería
   const mainImg = $("#mainImg");
   const thumbs  = $("#thumbs");
 
@@ -217,13 +215,13 @@ function renderProduct(p){
 
     mainImg.src = imgs[0] || "";
     mainImg.alt = `${p.name} - ${selColor}`;
+
     thumbs.innerHTML = imgs.map((u,idx)=>`<img src="${u}" data-idx="${idx}" class="${idx===0?"active":""}" alt="Vista ${idx+1}">`).join("");
     thumbs.querySelectorAll("img").forEach(img=>{
       img.addEventListener("click", ()=>{
         thumbs.querySelectorAll("img").forEach(i=>i.classList.remove("active"));
         img.classList.add("active");
         mainImg.src = img.src;
-        // SEO: refresca images
         setProductJSONLD({
           name: p.name, sku: p.sku, price: p.price,
           image: [$("#mainImg").src, ...[...document.querySelectorAll("#thumbs img")].map(i=>i.src)],
@@ -232,7 +230,7 @@ function renderProduct(p){
       });
     });
 
-    // SEO inicial (Product JSON-LD con todas las vistas disponibles)
+    // SEO inicial
     setProductJSONLD({
       name: p.name, sku: p.sku, price: p.price,
       image: imgs, color: selColor, size: selSize
@@ -245,7 +243,7 @@ function renderProduct(p){
     btn.disabled = !can;
   }
 
-  // (Opcional PRO) pedir disponibilidad y atenuar tallas sin stock
+  // (Opcional PRO) disponibilidad en vivo
   async function markUnavailableSizes(){
     const sizes = sizeNamesOf(p, selColor);
     if(!sizes.length) return;
@@ -285,12 +283,12 @@ function renderProduct(p){
     });
   }
 
-  // 6) Inicializa render
+  // Inicializar
   buildSizes();
   buildGallery();
   updateAddBtn();
 
-  // 7) Añadir al carrito (variant_id real)
+  // Añadir al carrito
   $("#addBtn").addEventListener("click", ()=>{
     if(!(selColor && selSize)) return;
     const vid = p.colors[selColor].sizes[selSize];
@@ -304,7 +302,7 @@ function renderProduct(p){
     openCart();
   });
 
-  // 8) SEO: migas de pan
+  // SEO migas
   setBreadcrumbsJSONLD(p.sku);
 }
 
@@ -313,12 +311,13 @@ async function loadAndRender(){
   const sku = getSku();
   if(!sku){ alert("SKU no especificado"); return; }
 
-  // Cargar JSON externo con imágenes manuales (opcional)
+  // Cargar images.json manual
   try{
-    const r = await fetch("./images.json",{cache:"no-store"});
-    Object.assign(MANUAL_IMAGES, await r.json());
+    const r = await fetch("images.json",{cache:"no-store"});
+    if (r.ok) Object.assign(MANUAL_IMAGES, await r.json());
   }catch{}
 
+  // Cargar productos desde backend
   let products = [];
   try{
     const res = await fetch(`${BACKEND_URL}/api/printful/products`, { cache:"no-store" });
@@ -338,19 +337,6 @@ async function loadAndRender(){
   $("#clearCart")?.addEventListener("click", ()=>{ cart=[]; saveCart(); });
   $("#checkoutBtn")?.addEventListener("click", goCheckout);
   renderCart();
-
-  // Menú hamburguesa
-  const btn = document.getElementById("menu-toggle");
-  const nav = document.getElementById("main-nav");
-  if(btn && nav){
-    btn.addEventListener("click", ()=>{
-      const isOpen = nav.classList.toggle("show");
-      btn.setAttribute("aria-expanded", String(isOpen));
-    });
-    nav.querySelectorAll("a").forEach(a => a.addEventListener("click", ()=>{
-      nav.classList.remove("show"); btn.setAttribute("aria-expanded","false");
-    }));
-  }
 }
 
 document.addEventListener("DOMContentLoaded", loadAndRender);
