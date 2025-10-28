@@ -3,13 +3,14 @@ import cors from "cors";
 import Stripe from "stripe";
 import fetch from "node-fetch";
 import bodyParser from "body-parser";
-import router from "./router.js";
-import admin from "./admin.js";
 import nodemailer from "nodemailer";
+
+import router from "./router.js";   // ✅ SOLO una vez, arriba
+import admin from "./admin.js";     // ✅ import admin una vez
 
 const app = express();
 
-// CORS (igual a tu config)
+/* ================== CORS ================== */
 const ALLOWED_ORIGINS = [
   "https://adrianrs928222.github.io",
   "https://valtixshop.onrender.com",
@@ -45,15 +46,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Stripe
+/* ================== Stripe / Printful ================== */
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
 const stripe = STRIPE_KEY ? new Stripe(STRIPE_KEY) : null;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
-
-// Printful
 const PRINTFUL_KEY = process.env.PRINTFUL_API_KEY || "";
 
-// Webhook (raw)
+/* ========== WEBHOOK STRIPE (raw antes de express.json) ========== */
 app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, res) => {
   if (!stripe || !WEBHOOK_SECRET) return res.json({ received: true, disabled: true });
 
@@ -81,6 +80,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
         }))
         .filter(it => !!it.variant_id);
 
+      // Crear pedido en Printful
       if (items.length && PRINTFUL_KEY) {
         const payload = {
           recipient: {
@@ -107,7 +107,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
         else console.log("✅ Pedido Printful creado:", data?.result?.id || data);
       }
 
-      // ✉️ Email post-compra (si hay email)
+      // Email post-compra (opcional)
       if (cd.email && process.env.MAIL_USER && process.env.MAIL_PASS) {
         try {
           const transporter = nodemailer.createTransport({
@@ -140,19 +140,18 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
   res.json({ received: true });
 });
 
-// JSON normal
+/* ========= Body parser normal DESPUÉS del webhook raw ========= */
 app.use(express.json());
 
-// Health
+/* ================== Health ================== */
 app.get("/health", (_, res) => {
   res.json({ ok: true, allowedOrigins: ALLOWED_ORIGINS });
 });
 
-// Checkout Stripe (igual que tu flujo)
+/* ================== Checkout ================== */
 app.post("/checkout", async (req, res) => {
   try {
     if (!stripe) return res.status(500).json({ error: "Falta STRIPE_SECRET_KEY" });
-
     const items = Array.isArray(req.body.items) ? req.body.items : [];
     if (!items.length) return res.status(400).json({ error: "El carrito está vacío." });
 
@@ -188,20 +187,11 @@ app.post("/checkout", async (req, res) => {
   }
 });
 
-// Rutas Printful
-import router from "./router.js";
-app.use(router);
+/* ================== Rutas ================== */
+app.use(router);        // ✅ rutas Printful (/api/printful/…)
+app.use("/admin", admin); // ✅ panel admin protegido
 
-// Rutas admin
-import adminRouter from "./admin.js";
-app.use("/admin", adminRouter);
-
-// Availability (sigues teniendo tu endpoint si lo usas)
-app.post("/availability", async (req, res) => {
-  res.status(501).json({ ok:false, error:"Usa el endpoint previo de tu versión si lo necesitas" });
-});
-
-// Arranque
+/* ================== Start ================== */
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor VALTIX en puerto ${PORT}`);
