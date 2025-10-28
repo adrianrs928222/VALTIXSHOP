@@ -6,6 +6,22 @@
   <title>VALTIX – Producto</title>
   <meta name="theme-color" content="#000000" />
   <link rel="stylesheet" href="./style.css" />
+
+  <!-- SEO estático base (el dinámico lo ajusta product.js) -->
+  <meta name="description" content="VALTIX | Ropa urbana premium – calidad, estilo y actitud. Compra camisetas, sudaderas y más con envío a todo el mundo.">
+  <meta name="keywords" content="VALTIX, ropa urbana, streetwear, camisetas, sudaderas, printful, tienda online, dropshipping">
+  <meta property="og:type" content="product">
+  <meta property="og:title" content="VALTIX – Producto">
+  <meta property="og:description" content="Ropa urbana premium con envío internacional. Pagos seguros con Stripe.">
+  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/valtix-v__verde.jpg">
+  <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/">
+  <meta property="og:site_name" content="VALTIX">
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./img/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
   <style>
     .prod { padding: 24px 0; }
     .prod-inner { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
@@ -77,7 +93,28 @@
     </div>
   </aside>
 
-  <!-- MISMO nombre de script que usas -->
+  <!-- GA4 (reemplaza G-VALTIX001 por tu ID real) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VALTIX001"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-VALTIX001', { send_page_view: true });
+
+    document.addEventListener("click",(e)=>{
+      if(e.target && e.target.id === "addBtn"){
+        const name = document.getElementById('pName')?.innerText || 'Producto';
+        const priceText = document.getElementById('pPrice')?.innerText || "0";
+        const price = parseFloat(priceText.replace(/[^\d.,]/g,"").replace(",","."));
+        gtag('event', 'add_to_cart', {
+          currency: 'EUR',
+          value: isNaN(price) ? 0 : price,
+          items: [{ item_name: name }]
+        });
+      }
+    });
+  </script>
+
   <script src="./product.js?v=2"></script>
   <script>
     // Menú hamburguesa (móvil)
@@ -93,6 +130,8 @@
           nav.classList.remove("show"); btn.setAttribute("aria-expanded","false");
         }));
       }
+      // PWA
+      if("serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js"); }
     });
   </script>
 </body>
