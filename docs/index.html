@@ -16,6 +16,10 @@
     .thumbs img.active { outline:2px solid #000; }
     @media (max-width: 960px){ .prod-inner{ grid-template-columns: 1fr; } }
   </style>
+
+  <!-- JSON-LD placeholders (rellenados dinámicamente por product.js) -->
+  <script id="breadcrumbs-jsonld" type="application/ld+json"></script>
+  <script id="product-jsonld" type="application/ld+json"></script>
 </head>
 <body>
   <div class="envio-bar">🚚 Envíos gratis en pedidos superiores a 60€</div>
@@ -27,11 +31,11 @@
       </a>
       <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
       <nav id="main-nav" class="nav" aria-label="Categorías">
-        <a href="#c/camisetas">Camisetas</a>
-        <a href="#c/sudaderas">Sudaderas</a>
-        <a href="#c/pantalones">Pantalones</a>
-        <a href="#c/zapatos">Zapatos</a>
-        <a href="#c/accesorios">Accesorios</a>
+        <a href="./#c/camisetas">Camisetas</a>
+        <a href="./#c/sudaderas">Sudaderas</a>
+        <a href="./#c/pantalones">Pantalones</a>
+        <a href="./#c/zapatos">Zapatos</a>
+        <a href="./#c/accesorios">Accesorios</a>
       </nav>
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
@@ -73,6 +77,7 @@
     </div>
   </aside>
 
+  <!-- Mantenemos el MISMO nombre del script que enviaste -->
   <script src="./product.js?v=2"></script>
 </body>
 </html>
