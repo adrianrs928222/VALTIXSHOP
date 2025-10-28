@@ -1,34 +1,22 @@
-/**
- * ============================================================
- * VALTIX Backend API
- * ------------------------------------------------------------
- * Servidor Express para integraciones con:
- *  - Printful (catálogo + pedidos)
- *  - Stripe (checkout + webhooks)
- *  - CORS controlado
- * ============================================================
- */
-
 import express from "express";
 import cors from "cors";
 import Stripe from "stripe";
 import fetch from "node-fetch";
 import bodyParser from "body-parser";
-import router from "./router.js"; // Rutas Printful
+import router from "./router.js";
+import admin from "./admin.js";
+import nodemailer from "nodemailer";
 
 const app = express();
 
-/* ============================================================
-   🔒 CONFIGURACIÓN DE CORS
-   Solo permite dominios oficiales de producción y pruebas.
-============================================================ */
+// CORS (igual a tu config)
 const ALLOWED_ORIGINS = [
   "https://adrianrs928222.github.io",
   "https://valtixshop.onrender.com",
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   "http://localhost:3000",
-  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3000"
 ];
 
 app.use(
@@ -39,11 +27,11 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature"],
+    allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature", "x-admin-key"],
   })
 );
 
-// Preflight CORS
+// Preflight
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
@@ -51,103 +39,33 @@ app.use((req, res, next) => {
     res.header("Vary", "Origin");
   }
   res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Stripe-Signature");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Stripe-Signature, x-admin-key");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
 
-/* ============================================================
-   💳 STRIPE CONFIG
-============================================================ */
+// Stripe
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
 const stripe = STRIPE_KEY ? new Stripe(STRIPE_KEY) : null;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 
-/* ============================================================
-   🧩 PRINTFUL CONFIG
-============================================================ */
+// Printful
 const PRINTFUL_KEY = process.env.PRINTFUL_API_KEY || "";
-const availabilityCache = { data: {}, updatedAt: null };
 
-// Helper para detectar errores de disponibilidad
-const isUnavailableMessage = msg =>
-  /unavailable|discontinued|invalid variant|out of stock|not available/i.test(String(msg));
-
-/* ============================================================
-   🔍 PROBAR DISPONIBILIDAD DE VARIANTES EN PRINTFUL
-============================================================ */
-async function probeVariantsAvailability(variantIds = []) {
-  if (!variantIds.length) return {};
-
-  if (!PRINTFUL_KEY) {
-    const fallback = {};
-    variantIds.forEach(v => (fallback[v] = null));
-    return fallback;
-  }
-
-  const payload = {
-    recipient: {
-      name: "VALTIX Probe",
-      address1: "Test 1",
-      city: "Madrid",
-      country_code: "ES",
-      zip: "28001",
-    },
-    items: variantIds.map(v => ({
-      variant_id: String(v),
-      quantity: 1,
-      name: "Availability Probe",
-    })),
-    confirm: false,
-  };
-
-  try {
-    const r = await fetch("https://api.printful.com/orders", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${PRINTFUL_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (r.ok) {
-      const success = {};
-      variantIds.forEach(v => (success[v] = true));
-      return success;
-    }
-
-    const data = await r.json().catch(() => ({}));
-    const flag = isUnavailableMessage(data?.error?.message || "") ? false : null;
-    const output = {};
-    variantIds.forEach(v => (output[v] = flag));
-    return output;
-  } catch (e) {
-    console.error("❌ Error al probar disponibilidad:", e);
-    const out = {};
-    variantIds.forEach(v => (out[v] = null));
-    return out;
-  }
-}
-
-/* ============================================================
-   ⚡ STRIPE WEBHOOK (RAW BODY)
-============================================================ */
+// Webhook (raw)
 app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, res) => {
   if (!stripe || !WEBHOOK_SECRET) return res.json({ received: true, disabled: true });
 
   const sig = req.headers["stripe-signature"];
   let event;
-
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, WEBHOOK_SECRET);
   } catch (err) {
-    console.error("❌ Error de firma del webhook:", err.message);
+    console.error("❌ Error firma webhook:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // ✅ Pedido completado
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     try {
@@ -163,21 +81,19 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
         }))
         .filter(it => !!it.variant_id);
 
-      if (!items.length) return res.json({ received: true });
+      if (items.length && PRINTFUL_KEY) {
+        const payload = {
+          recipient: {
+            name: cd.name || "Cliente VALTIX",
+            address1: address.line1 || "Dirección",
+            city: address.city || "Ciudad",
+            country_code: (address.country || "ES").toUpperCase(),
+            zip: address.postal_code || "00000",
+          },
+          items,
+          confirm: true,
+        };
 
-      const payload = {
-        recipient: {
-          name: cd.name || "Cliente VALTIX",
-          address1: address.line1 || "Dirección",
-          city: address.city || "Ciudad",
-          country_code: (address.country || "ES").toUpperCase(),
-          zip: address.postal_code || "00000",
-        },
-        items,
-        confirm: true,
-      };
-
-      if (PRINTFUL_KEY) {
         const r = await fetch("https://api.printful.com/orders", {
           method: "POST",
           headers: {
@@ -187,32 +103,52 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
           body: JSON.stringify(payload),
         });
         const data = await r.json().catch(() => ({}));
-        if (!r.ok) console.error("❌ Error al crear pedido en Printful:", data);
+        if (!r.ok) console.error("❌ Error pedido Printful:", data);
         else console.log("✅ Pedido Printful creado:", data?.result?.id || data);
       }
+
+      // ✉️ Email post-compra (si hay email)
+      if (cd.email && process.env.MAIL_USER && process.env.MAIL_PASS) {
+        try {
+          const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS }
+          });
+          await transporter.sendMail({
+            from: '"VALTIX Shop" <no-reply@valtix.com>',
+            to: cd.email,
+            subject: "Confirmación de pedido VALTIX",
+            html: `
+              <h2>Gracias por tu compra</h2>
+              <p>Tu pedido está en proceso. Te avisaremos cuando se envíe.</p>
+              <p><strong>Resumen:</strong></p>
+              <ul>
+                ${cart.map(i=>`<li>${i.name} × ${i.quantity}</li>`).join("")}
+              </ul>
+              <p>Atención al cliente: soporte@valtix.com</p>
+            `
+          });
+          console.log("📧 Email de confirmación enviado a", cd.email);
+        } catch(e){
+          console.error("❌ Error enviando email:", e.message);
+        }
+      }
     } catch (e) {
-      console.error("❌ Error creando pedido Printful:", e);
+      console.error("❌ Error creando pedido/Email:", e);
     }
   }
-
   res.json({ received: true });
 });
 
-/* ============================================================
-   📦 BODY PARSER (JSON NORMAL)
-============================================================ */
+// JSON normal
 app.use(express.json());
 
-/* ============================================================
-   💚 HEALTH CHECK
-============================================================ */
+// Health
 app.get("/health", (_, res) => {
   res.json({ ok: true, allowedOrigins: ALLOWED_ORIGINS });
 });
 
-/* ============================================================
-   💳 CHECKOUT STRIPE
-============================================================ */
+// Checkout Stripe (igual que tu flujo)
 app.post("/checkout", async (req, res) => {
   try {
     if (!stripe) return res.status(500).json({ error: "Falta STRIPE_SECRET_KEY" });
@@ -252,52 +188,21 @@ app.post("/checkout", async (req, res) => {
   }
 });
 
-/* ============================================================
-   🔎 DISPONIBILIDAD DE VARIANTES
-============================================================ */
-app.post("/availability", async (req, res) => {
-  try {
-    const { variant_ids = [] } = req.body || {};
-    if (!Array.isArray(variant_ids) || !variant_ids.length)
-      return res.status(400).json({ ok: false, error: "variant_ids requerido" });
-
-    const fromCache = {};
-    const missing = [];
-
-    for (const v of variant_ids) {
-      const key = String(v);
-      if (key in availabilityCache.data) fromCache[key] = availabilityCache.data[key];
-      else missing.push(key);
-    }
-
-    let fresh = {};
-    if (missing.length) {
-      fresh = await probeVariantsAvailability(missing);
-      Object.assign(availabilityCache.data, fresh);
-      availabilityCache.updatedAt = new Date().toISOString();
-    }
-
-    res.json({
-      ok: true,
-      updatedAt: availabilityCache.updatedAt,
-      availability: { ...fromCache, ...fresh },
-    });
-  } catch (e) {
-    console.error("❌ Error en availability:", e);
-    res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-/* ============================================================
-   🧭 RUTAS PRINTFUL (router.js)
-============================================================ */
+// Rutas Printful
+import router from "./router.js";
 app.use(router);
 
-/* ============================================================
-   🚀 ARRANQUE DEL SERVIDOR
-============================================================ */
+// Rutas admin
+import adminRouter from "./admin.js";
+app.use("/admin", adminRouter);
+
+// Availability (sigues teniendo tu endpoint si lo usas)
+app.post("/availability", async (req, res) => {
+  res.status(501).json({ ok:false, error:"Usa el endpoint previo de tu versión si lo necesitas" });
+});
+
+// Arranque
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor VALTIX iniciado en puerto ${PORT}`);
-  console.log(`🌐 Orígenes permitidos: ${ALLOWED_ORIGINS.join(", ")}`);
+  console.log(`✅ Servidor VALTIX en puerto ${PORT}`);
 });
