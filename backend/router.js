@@ -13,7 +13,7 @@ const PF_HEADERS = {
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
-// ===== Colores (HEX + etiqueta ES) =====
+// === Colores conocidos (HEX + etiqueta ES) ===
 const COLOR_MAP = {
   Adobe: { hex:"#A6654E", es:"Adobe" },
   Black: { hex:"#000000", es:"Negro" },
@@ -38,27 +38,40 @@ const COLOR_MAP = {
   Brown: { hex:"#5C4033", es:"Marrón" },
 };
 
-// ===== Override manual de categorías por NOMBRE normalizado (opcional) =====
+// === Overrides manuales ===
 const CATEGORY_OVERRIDE = {
   // "Sudadera Negra Logo Amarillo": ["sudaderas"],
 };
 
-// ===== OVERRIDE MANUAL DE IMÁGENES =====
-// 1) Por NOMBRE de producto (slug) + color (slug)
+// 1) Override por slug de producto + slug de color → imagen local
 const IMAGE_OVERRIDE = {
-  // Ejemplo para tu sudadera “Valtix V”
-  "valtix-v": {
-    "bottle-green": "img/sudadera_verde.jpg", // si Printful lo llama “Bottle Green”
-    "verde": "img/sudadera_verde.jpg",        // alias por si cambia
-    "verde-botella": "img/sudadera_verde.jpg"
-  },
+  // "valtix-v": { "bottle-green": "img/valtix-v__bottle-green.jpg" }
 };
-// 2) Por ID de Printful (más robusto si el nombre cambia)
+// 2) Override por ID Printful + slug de color
 const IMAGE_OVERRIDE_ID = {
-  // "399424305": { "bottle-green": "img/sudadera_verde.jpg" }
+  // "399424305": { "bottle-green": "img/valtix-v__bottle-green.jpg" }
 };
 
-// ===== Helpers =====
+// === Helpers ===
+function slug(s){
+  return String(s||"").toLowerCase().trim()
+    .normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+}
+function capWords(s){
+  return String(s||"").toLowerCase().replace(/\s+/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+}
+function normName(s){ return capWords(String(s||"").replace(/[-_]/g," ").replace(/\s+/g," ").trim()); }
+
+function detectCategories(name=""){
+  const n = String(name).toLowerCase();
+  if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
+  if (/(hoodie|sudadera)/i.test(n)) return ["sudaderas"];
+  if (/(pant|pantal[oó]n|leggings|jogger)/i.test(n)) return ["pantalones"];
+  if (/(shoe|sneaker|zapatilla|bota)/i.test(n)) return ["zapatos"];
+  if (/(cap|gorra|beanie|gorro)/i.test(n)) return ["accesorios"];
+  return ["otros"];
+}
 function colorInfo(name=""){
   const key = String(name).trim();
   if (COLOR_MAP[key]) return COLOR_MAP[key];
@@ -81,27 +94,6 @@ function colorInfo(name=""){
   for (const f of fam) if (f.re.test(k)) return { hex:f.hex, es:f.es };
   return { hex:"#dddddd", es:key || "Color" };
 }
-function capWords(s){
-  return String(s||"").toLowerCase().replace(/\s+/g," ").replace(/\b\w/g,c=>c.toUpperCase());
-}
-function normName(s){
-  return capWords(String(s||"").replace(/[-_]/g," ").replace(/\s+/g," ").trim());
-}
-function slug(s){
-  return String(s||"").toLowerCase().trim()
-    .normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
-}
-
-function detectCategories(name=""){
-  const n = String(name).toLowerCase();
-  if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
-  if (/(hoodie|sudadera)/i.test(n)) return ["sudaderas"];
-  if (/(pant|pantal[oó]n|leggings|jogger)/i.test(n)) return ["pantalones"];
-  if (/(shoe|sneaker|zapatilla|bota)/i.test(n)) return ["zapatos"];
-  if (/(cap|gorra|beanie|gorro)/i.test(n)) return ["accesorios"];
-  return ["otros"];
-}
 
 async function pfGet(path) {
   const r = await fetch(`${PRINTFUL_API}${path}`, { headers: PF_HEADERS });
@@ -112,7 +104,6 @@ async function pfGet(path) {
   }
   return json;
 }
-
 async function fetchAllSyncedProducts() {
   const limit = 100; let offset = 0; const all = [];
   while (true) {
@@ -124,7 +115,6 @@ async function fetchAllSyncedProducts() {
   }
   return all;
 }
-
 function firstPreview(files = []){
   return (
     files?.find(f=>f.type==="preview" && f.preview_url)?.preview_url ||
@@ -134,7 +124,6 @@ function firstPreview(files = []){
     null
   );
 }
-
 async function hydrateVariant(v) {
   if (v?.files && v.files.length) return v;
   try {
@@ -188,7 +177,7 @@ async function normalizeDetail(detail){
   const firstColor = Object.keys(colors)[0];
   const cover = (firstColor && colors[firstColor]?.image) || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
-  // Patrones locales sugeridos (el front intentará HEAD)
+  // candidatos locales sugeridos (front los probará con HEAD)
   const pSlug = slug(sp?.name || "");
   for (const [cName, obj] of Object.entries(colors)) {
     const cSlug = slug(cName);
@@ -200,7 +189,7 @@ async function normalizeDetail(detail){
     ];
   }
 
-  // Overrides manuales por nombre y por ID
+  // overrides manuales por nombre y por ID
   const pId = String(sp?.id || sp?.external_id || "");
   for (const [cName, obj] of Object.entries(colors)) {
     const cSlug = slug(cName);
@@ -244,13 +233,12 @@ function mergeByName(list){
         tgt.colors[cName].local_candidates = Array.from(new Set([...(tgt.colors[cName].local_candidates||[]), ...cData.local_candidates]));
       }
     }
-    const setCats = new Set([...(tgt.categories||[]), ...(p.categories||[])]);
-    tgt.categories = Array.from(setCats);
+    tgt.categories = Array.from(new Set([...(tgt.categories||[]), ...(p.categories||[])]));
   }
   return Array.from(map.values());
 }
 
-// ===== Endpoints =====
+// === Endpoints ===
 router.get("/api/printful/products", async (req,res)=>{
   try{
     if (!process.env.PRINTFUL_API_KEY) return res.status(500).json({ error:"PRINTFUL_API_KEY no configurada en el servidor" });
