@@ -47,8 +47,8 @@ const CATEGORY_OVERRIDE = {
 const IMAGE_OVERRIDE = {
   // Ejemplo solicitado:
   "sudadera-negra-logo-verde": {
-    "verde": "/img/sudadera_verde.jpg",
-    "azul-marino": "/img/sudadera-negra-logo-amarillo__azul-marino.jpg"
+    "verde": "img/sudadera_verde.jpg",
+    "azul-marino": "img/sudadera-negra-logo-amarillo__azul-marino.jpg"
   },
   // Añade más aquí:
   // "camiseta-premium-blanca-180g": { "blanco": "/img/camiseta-premium-blanca-180g__blanco.jpg" }
