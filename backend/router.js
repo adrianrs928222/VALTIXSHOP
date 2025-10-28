@@ -47,7 +47,7 @@ const CATEGORY_OVERRIDE = {
 const IMAGE_OVERRIDE = {
   // Ejemplo solicitado:
   "valtix v": {
-    "verde": "img/sudadera_verde.jpg",
+    "botle green": "img/sudadera_verde.jpg",
     "azul-marino": "img/sudadera-negra-logo-amarillo__azul-marino.jpg"
   },
   // Añade más aquí:
