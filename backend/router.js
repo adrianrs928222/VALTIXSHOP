@@ -46,8 +46,8 @@ const CATEGORY_OVERRIDE = {
 // ====== OVERRIDE MANUAL DE IMÁGENES (por producto y color, usando slugs) ======
 const IMAGE_OVERRIDE = {
   // Ejemplo solicitado:
-  "sudadera-negra-logo-amarillo": {
-    "negro": "/img/sudadera-negra-logo-amarillo__negro.jpg",
+  "sudadera-negra-logo-verde": {
+    "verde": "/img/sudadera_verde.jpg",
     "azul-marino": "/img/sudadera-negra-logo-amarillo__azul-marino.jpg"
   },
   // Añade más aquí:
