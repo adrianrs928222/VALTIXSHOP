@@ -13,18 +13,11 @@ const PF_HEADERS = {
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
-// === Colores conocidos (HEX + etiqueta ES) ===
+// === Color map (HEX + etiqueta ES) ===
 const COLOR_MAP = {
-  Adobe: { hex:"#A6654E", es:"Adobe" },
   Black: { hex:"#000000", es:"Negro" },
   White: { hex:"#FFFFFF", es:"Blanco" },
   "French Navy": { hex:"#031A44", es:"Azul marino" },
-  "Heather Grey": { hex:"#B3B7BD", es:"Gris jaspeado" },
-  Natural: { hex:"#EFE9E2", es:"Natural" },
-  Burgundy: { hex:"#800020", es:"Burdeos" },
-  "Bottle Green": { hex:"#0B3D02", es:"Verde botella" },
-  "Royal Blue": { hex:"#4169E1", es:"Azul royal" },
-  "Light Pink": { hex:"#F4C2C2", es:"Rosa claro" },
   Navy: { hex:"#001F3F", es:"Azul marino" },
   Grey: { hex:"#808080", es:"Gris" },
   Gray: { hex:"#808080", es:"Gris" },
@@ -36,19 +29,23 @@ const COLOR_MAP = {
   Orange: { hex:"#FFA500", es:"Naranja" },
   Beige: { hex:"#F5F5DC", es:"Beis" },
   Brown: { hex:"#5C4033", es:"Marrón" },
+  Burgundy: { hex:"#800020", es:"Burdeos" },
+  "Bottle Green": { hex:"#0B3D02", es:"Verde botella" },
+  "Royal Blue": { hex:"#4169E1", es:"Azul royal" },
+  Natural: { hex:"#EFE9E2", es:"Natural" },
+  "Heather Grey": { hex:"#B3B7BD", es:"Gris jaspeado" },
 };
 
-// === Overrides manuales ===
+// === Overrides manuales de categorías (opcional) ===
 const CATEGORY_OVERRIDE = {
-  // "Sudadera Negra Logo Amarillo": ["sudaderas"],
+  // "VALTIX V": ["sudaderas"]
 };
 
-// 1) Override por slug de producto + slug de color → imagen local
-const IMAGE_OVERRIDE = {
+// === Overrides de imagen manuales (opcionales, relativas al front) ===
+const IMAGE_OVERRIDE_BY_SLUG = {
   // "valtix-v": { "bottle-green": "img/valtix-v__bottle-green.jpg" }
 };
-// 2) Override por ID Printful + slug de color
-const IMAGE_OVERRIDE_ID = {
+const IMAGE_OVERRIDE_BY_ID = {
   // "399424305": { "bottle-green": "img/valtix-v__bottle-green.jpg" }
 };
 
@@ -115,15 +112,7 @@ async function fetchAllSyncedProducts() {
   }
   return all;
 }
-function firstPreview(files = []){
-  return (
-    files?.find(f=>f.type==="preview" && f.preview_url)?.preview_url ||
-    files?.find(f=>f.preview_url)?.preview_url ||
-    files?.find(f=>f.thumbnail_url)?.thumbnail_url ||
-    files?.find(f=>f.url)?.url ||
-    null
-  );
-}
+
 async function hydrateVariant(v) {
   if (v?.files && v.files.length) return v;
   try {
@@ -167,17 +156,11 @@ async function normalizeDetail(detail){
     const ci = colorInfo(colorName);
     if (!hex) hex = ci.hex;
 
-    const img = firstPreview(v?.files) || product.image || sp?.thumbnail_url || null;
-
-    if (!colors[colorName]) colors[colorName] = { hex, label_es: ci.es, image: img, sizes: {} };
-    if (!colors[colorName].image && img) colors[colorName].image = img;
+    if (!colors[colorName]) colors[colorName] = { hex, label_es: ci.es, image: null, sizes: {}, local_candidates: [] };
     colors[colorName].sizes[size] = v.variant_id;
   }
 
-  const firstColor = Object.keys(colors)[0];
-  const cover = (firstColor && colors[firstColor]?.image) || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
-
-  // candidatos locales sugeridos (front los probará con HEAD)
+  // Candidatas de imagen locales (no usamos imágenes de Printful)
   const pSlug = slug(sp?.name || "");
   for (const [cName, obj] of Object.entries(colors)) {
     const cSlug = slug(cName);
@@ -186,18 +169,23 @@ async function normalizeDetail(detail){
       `img/${pSlug}__${cSlug}.jpg`,
       `img/${pSlug}/${cSlug}.webp`,
       `img/${pSlug}/${cSlug}.jpg`,
+      `img/${pSlug}__${cSlug}.png`,
     ];
   }
 
-  // overrides manuales por nombre y por ID
+  // Overrides manuales por slug o por ID
   const pId = String(sp?.id || sp?.external_id || "");
   for (const [cName, obj] of Object.entries(colors)) {
     const cSlug = slug(cName);
-    const byName = IMAGE_OVERRIDE[pSlug]?.[cSlug];
-    const byId   = IMAGE_OVERRIDE_ID[pId]?.[cSlug];
-    if (byName) obj.image = byName;
+    const bySlug = IMAGE_OVERRIDE_BY_SLUG[pSlug]?.[cSlug];
+    const byId   = IMAGE_OVERRIDE_BY_ID[pId]?.[cSlug];
+    if (bySlug) obj.image = bySlug;
     if (byId)   obj.image = byId;
   }
+
+  // Portada: primera candidata local o placeholder
+  const firstColor = Object.keys(colors)[0];
+  const cover = (firstColor && (colors[firstColor].image || colors[firstColor].local_candidates?.[0])) || "img/placeholder.jpg";
 
   const productNameNorm = normName(sp?.name || "");
   const categories = CATEGORY_OVERRIDE[productNameNorm] || detectCategories(sp?.name || "");
@@ -226,7 +214,7 @@ function mergeByName(list){
     tgt.price = Math.min(tgt.price, p.price);
     if (!tgt.image && p.image) tgt.image = p.image;
     for (const [cName, cData] of Object.entries(p.colors||{})){
-      if (!tgt.colors[cName]) tgt.colors[cName] = { hex: cData.hex || null, label_es:cData.label_es||cName, image: cData.image || tgt.image, sizes:{} , local_candidates:cData.local_candidates||[]};
+      if (!tgt.colors[cName]) tgt.colors[cName] = { hex: cData.hex || null, label_es:cData.label_es||cName, image: cData.image || null, sizes:{}, local_candidates:cData.local_candidates||[]};
       if (!tgt.colors[cName].image && cData.image) tgt.colors[cName].image = cData.image;
       Object.assign(tgt.colors[cName].sizes, cData.sizes||{});
       if (Array.isArray(cData.local_candidates)) {
