@@ -1,6 +1,7 @@
 /**
  * ============================================================
- * VALTIX Product Page  (manteniendo el nombre: product.js)
+ * VALTIX Product Page  (product.js)
+ * - BACKEND_URL dinámico (GitHub Pages / Hostinger)
  * - Carga images.json (manual)
  * - Colores/tallas 1:1 con Printful (variant_id real)
  * - Galería por color (case-insensitive) + lazy loading thumbs
@@ -10,14 +11,26 @@
  * ============================================================
  */
 
-const BACKEND_URL = "https://valtixshop.onrender.com";
+/* ===== Detectar backend según dónde corre el frontend ===== */
+const HOST = location.hostname;
 
-// Helpers
+// Cambia estas URLs por las tuyas reales:
+const BACKEND_RENDER    = "https://valtixshop.onrender.com";   // Render (o tu backend en la nube)
+const BACKEND_HOSTINGER = "https://api.valtixshop.com";        // (opcional) tu subdominio API en Hostinger
+
+// Heurística simple: si es GitHub Pages, usa Render; si es dominio propio, usa Hostinger (o Render si aún no tienes API propia)
+const isGitHub    = HOST.endsWith(".github.io");
+const isValtixDom = /\.(com|es|net)$/i.test(HOST) || /valtix/i.test(HOST);
+
+// Selección final del backend:
+const BACKEND_URL = isGitHub ? BACKEND_RENDER : (BACKEND_HOSTINGER || BACKEND_RENDER);
+
+// ===== Helpers
 const $  = s => document.querySelector(s);
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getSku(){ const u=new URL(location.href); return u.searchParams.get("sku"); }
 
-// Carrito
+// ===== Carrito
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
 function addToCart(item){
@@ -77,7 +90,7 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// PF util
+// ===== PF util
 function availableColorsOf(p){
   return Object.entries(p.colors||{})
     .filter(([,meta]) => meta && meta.sizes && Object.keys(meta.sizes).length)
@@ -85,7 +98,7 @@ function availableColorsOf(p){
 }
 function sizeNamesOf(p,color){ return Object.keys(p.colors?.[color]?.sizes||{}); }
 
-// images.json (manual) + lookup
+// ===== images.json (manual) + lookup
 const MANUAL_IMAGES = {};
 function manualImagesFor(sku, color){
   const bucket = MANUAL_IMAGES[sku] || {};
@@ -93,7 +106,7 @@ function manualImagesFor(sku, color){
   return key ? bucket[key] : null;
 }
 
-// Color HEX adicional
+// ===== Color HEX adicional
 const COLOR_HEX_CLIENT = {
   "verde":"#008000","negro":"#000000","blanco":"#ffffff","gris":"#808080",
   "azul":"#0057ff","navy":"#001f3f","rojo":"#ff0000","burdeos":"#800020",
@@ -105,7 +118,7 @@ function hexFromNameClient(name){
   return COLOR_HEX_CLIENT[k] || null;
 }
 
-// SEO helpers
+// ===== SEO helpers
 function setBreadcrumbsJSONLD(sku){
   const el = document.getElementById("breadcrumbs-jsonld");
   if(!el) return;
@@ -139,13 +152,12 @@ function setProductJSONLD({name, sku, price, currency="EUR", image, brand="VALTI
   el.textContent = JSON.stringify(data);
 }
 
-// Render ficha
+// ===== Render ficha
 function renderProduct(p){
-  // Texto y precio
   $("#pName").textContent = p.name;
   $("#pPrice").textContent = money(p.price);
 
-  // SEO <title> y metas base
+  // SEO <title> y metas
   document.title = `${p.name} – VALTIX`;
   document.querySelector('meta[name="description"]')?.setAttribute("content", `${p.name} disponible en varios colores y tallas en VALTIX.`);
   document.querySelector('meta[property="og:title"]')?.setAttribute("content", `${p.name} – VALTIX`);
