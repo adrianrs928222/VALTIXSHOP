@@ -3,36 +3,28 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VALTIX | Estilo que evoluciona – Moda premium para cada día y cada momento</title>
-  <meta name="description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
-  <link rel="canonical" href="https://www.valtixshop.com/" />
-
-  <!-- Social -->
-  <meta property="og:title" content="VALTIX | Tu look, tu historia" />
-  <meta property="og:description" content="Moda premium, envío rápido y pago seguro." />
-  <meta property="og:image" content="https://cdn.valtixshop.com/og/og-default.jpg" />
-  <meta property="og:url" content="https://www.valtixshop.com/" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <title>VALTIX | Estilo que evoluciona – Moda premium</title>
+  <meta name="description" content="Camisetas, sudaderas, pantalones, zapatos y accesorios. Pago seguro con Stripe y envíos rápidos." />
+  <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
+  <meta property="og:title" content="VALTIX | Moda premium" />
+  <meta property="og:description" content="Camisetas, sudaderas, pantalones, zapatos y accesorios." />
+  <meta property="og:image" content="img/og-fallback.jpg" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD breadcrumbs (se actualiza desde app.js) -->
-  <script id="breadcrumbs-jsonld" type="application/ld+json">
-  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://www.valtixshop.com/"}
-  ]}
-  </script>
+  <!-- JSON-LD de breadcrumbs (lo actualiza app.js) -->
+  <script id="breadcrumbs-jsonld" type="application/ld+json">{
+    "@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
+    ]
+  }</script>
 
-  <!-- Perf/CDN -->
-  <link rel="preconnect" href="https://cdn.valtixshop.com" crossorigin>
-  <link rel="dns-prefetch" href="https://cdn.valtixshop.com">
-  <link rel="preconnect" href="https://api.valtixshop.com" crossorigin>
-  <link rel="dns-prefetch" href="https://api.valtixshop.com">
+  <!-- CDN opcional para producción en Hostinger -->
+  <script>window.CDN_BASE = ""; /* ej: "https://cdn.tudominio.com/VALTIXSHOP/" */</script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="style.css?v=prod1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
@@ -60,8 +52,8 @@
   <section class="hero">
     <div class="container hero-inner">
       <div>
-        <h1>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</h1>
-        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. Envíos 2–5 días (ES) e internacionales.</h2>
+        <h1>VALTIX | Tu look, tu historia</h1>
+        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios. Envíos 2–5 días en España e internacionales.</h2>
         <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
       <div class="hero-img" role="region" aria-label="Mensaje destacado">
@@ -90,6 +82,7 @@
     </div>
   </footer>
 
+  <!-- Drawer Carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -104,6 +97,42 @@
     </div>
   </aside>
 
-  <script src="app.js?v=prod1"></script>
+  <!-- Modal Producto -->
+  <div id="productModal" class="modal" aria-hidden="true">
+    <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+      <button class="modal__close" id="pmClose" aria-label="Cerrar">✕</button>
+      <div class="modal__grid">
+        <div class="modal__media">
+          <img id="pmImg" alt="" />
+        </div>
+        <div class="modal__info">
+          <h3 id="pmTitle"></h3>
+          <div class="pmPrice" id="pmPrice"></div>
+          <div class="pmStock"><span class="stock-badge ok">En stock</span></div>
+
+          <div class="pmBlock">
+            <div class="pmLabel">Color</div>
+            <div id="pmColors" class="color-selector"></div>
+            <div id="pmColorName" class="pmColorName"></div>
+          </div>
+
+          <div class="pmBlock">
+            <div class="pmLabel">Talla</div>
+            <div id="pmSizes" class="options"></div>
+          </div>
+
+          <button id="pmAdd" class="btn">Añadir al carrito</button>
+
+          <ul class="pmBullets">
+            <li>Pago seguro con Stripe</li>
+            <li>Envío 2–5 días en España</li>
+            <li>Devoluciones fáciles</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=final"></script>
 </body>
 </html>
