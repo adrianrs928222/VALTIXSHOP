@@ -1,4 +1,4 @@
-// app.js — versión robusta (anti-freeze) ✅
+// app.js — robusto (anti-freeze)
 
 // ===== Config =====
 const BACKEND_URL = "https://valtixshop.onrender.com";
@@ -10,7 +10,6 @@ const $$ = s => document.querySelectorAll(s);
 
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 let allProducts = [];
-let currentCat = "all";
 
 // ===== Util =====
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
@@ -20,7 +19,7 @@ function productSlug(p){ return String(p?.name||"").toLowerCase().normalize("NFK
 function colorSlug(n){ return String(n||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
 function imgUrl(path){ if(!path) return ""; if (/^https?:\/\//i.test(path)) return path; return CDN_BASE + (path.startsWith("/") ? path.slice(1) : path); }
 
-// HEAD con timeout para no congelar la UI
+// HEAD con timeout
 function headWithTimeout(url, ms=1500){
   return new Promise((resolve) => {
     const ctrl = new AbortController();
@@ -52,7 +51,7 @@ function updateBreadcrumbsSchema(){
 // ===== Promo (protegido) =====
 function startPromo(){
   try{
-    const box=$("#promoBox"); const textEl=$(".promo-text"); if(!box||!textEl) return;
+    const textEl=$(".promo-text"); if(!textEl) return;
     if(window.innerWidth <= 520){
       textEl.textContent = "🚚 Envíos GRATIS en pedidos superiores a 60€";
     } else {
@@ -68,17 +67,19 @@ function startPromo(){
 
 // ===== Data =====
 async function loadProducts(){
+  const grid = $("#grid");
   try{
     const res = await fetch(`${BACKEND_URL}/api/printful/products`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const { products } = await res.json();
     allProducts = Array.isArray(products) ? products : [];
     try { renderProducts(); } catch(e){
       console.error("Render grid error:", e);
-      $("#grid").innerHTML="<p>Error al mostrar productos.</p>";
+      if (grid) grid.innerHTML="<p>Error al mostrar productos.</p>";
     }
   }catch(e){
     console.error("❌ Error al cargar productos:", e);
-    $("#grid").innerHTML = "<p>Error al cargar productos.</p>";
+    if (grid) grid.innerHTML = "<p>Error al cargar productos.</p>";
   }
 }
 
@@ -121,12 +122,7 @@ function renderProducts(){
         <button class="btn btn-alt" data-open>Ver producto</button>
       </div>
     `;
-
-    // abrir modal
-    card.querySelectorAll("[data-open]").forEach(b=>{
-      b.addEventListener("click",()=> openProductModal(p));
-    });
-
+    card.querySelectorAll("[data-open]").forEach(b=> b.addEventListener("click",()=> openProductModal(p)));
     grid.appendChild(card);
   });
 
@@ -145,24 +141,17 @@ const pmSizes = $("#pmSizes");
 
 let modalState = { product:null, color:null, size:null };
 
-// Imagen segura: override/local con timeout, si falla → fallback
 async function pickBestImage(prod, colorName){
   try{
     const col = prod.colors?.[colorName];
-
-    // 1) Si el backend ya dio una imagen (override/local/printful), úsala directo
     if (col?.image) return imgUrl(col.image);
-
-    // 2) Probar candidatas locales con límite y timeout para no “congelar”
     if (col && Array.isArray(col.local_candidates) && col.local_candidates.length){
-      for (const rel of col.local_candidates.slice(0,2)){ // probamos como mucho 2
+      for (const rel of col.local_candidates.slice(0,2)){
         const url = imgUrl(rel);
         const ok = await headWithTimeout(url, 1200);
         if (ok) return url;
       }
     }
-
-    // 3) Fallback a la imagen del producto o placeholder
     return imgUrl(prod.image || "img/placeholder.jpg");
   }catch(e){
     console.error("pickBestImage error:", e);
@@ -178,7 +167,6 @@ function openProductModal(prod){
   const colorNames = Object.keys(prod.colors||{});
   modalState.color = colorNames[0] || null;
 
-  // colores
   pmColors.innerHTML = colorNames.map((c,i)=>{
     const hex = prod.colors[c]?.hex || "#dddddd";
     const es = prod.colors[c]?.label_es || c;
@@ -199,14 +187,11 @@ function openProductModal(prod){
     });
   });
 
-  // nombre del color seleccionado y foto inicial
   pmColorName.textContent = modalState.color ? (prod.colors[modalState.color]?.label_es || modalState.color) : "";
   pickBestImage(prod, modalState.color).then(u=> pmImg.src = u).catch(()=>{ pmImg.src = imgUrl(prod.image||"img/placeholder.jpg"); });
 
-  // tallas del color actual
   renderSizesCurrent();
 
-  // abrir
   modal.classList.add("open");
   modal.setAttribute("aria-hidden","false");
 }
@@ -253,8 +238,8 @@ $("#pmAdd").addEventListener("click", ()=>{
       variant_id: String(vid)
     });
 
-    closeModal(); // autocierra al añadir
-    openCart();   // abre carrito
+    closeModal();
+    openCart();
   }catch(e){ console.error("Add to cart error:", e); }
 });
 
@@ -279,7 +264,7 @@ function subtotal(){ return cart.reduce((s,i)=> s + (Number(i.price)*i.qty), 0);
 
 function renderCart(){
   const count = cart.reduce((s,i)=>s+i.qty,0);
-  const countEl=$("#cartCount"); if(countEl) countEl.textContent=count;
+  const countEl=$("#cartCount"); if(countEl) countEl.textContent = count;
   const box=$("#cartItems"); if(!box) return;
 
   box.innerHTML="";
