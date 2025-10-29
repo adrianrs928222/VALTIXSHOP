@@ -4,6 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>VALTIX – Ficha de Producto</title>
+  <meta name="description" content="Ficha de producto VALTIX: elige color y talla, disponibilidad en tiempo real y pago seguro con Stripe." />
   <link rel="stylesheet" href="./style.css"/>
 </head>
 <body>
@@ -52,7 +53,7 @@
     </div>
   </main>
 
-  <!-- Drawer carrito (reutilizado) -->
+  <!-- Drawer carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -67,17 +68,6 @@
     </div>
   </aside>
 
-  <script>
-    // Reutiliza el mismo menú móvil aquí
-    document.addEventListener('DOMContentLoaded', ()=>{
-      const menu=document.querySelector('#main-nav');
-      const t=document.querySelector('#menu-toggle');
-      function closeMenu(){ menu?.classList.remove('show'); document.body.classList.remove('nav-open'); }
-      t?.addEventListener('click', ()=>{ menu.classList.toggle('show'); document.body.classList.toggle('nav-open', menu.classList.contains('show')); });
-      document.querySelectorAll('#main-nav a').forEach(a=>a.addEventListener('click', closeMenu));
-      window.addEventListener('scroll', closeMenu);
-    });
-  </script>
-  <script src="./product.js?v=3"></script>
+  <script src="./product.js?v=4" defer></script>
 </body>
 </html>
