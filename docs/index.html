@@ -3,22 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VALTIX – Tu look, tu historia, tu marca.</title>
-
-  <!-- SEO -->
-  <meta name="description" content="VALTIX Streetwear premium. Tu look, tu historia, tu marca. Envíos a toda Europa en pedidos superiores a 60€. Pagos seguros con Stripe." />
+  <title>VALTIX – Producto</title>
   <meta name="theme-color" content="#000000" />
-  <meta property="og:title" content="VALTIX – Tu look, tu historia, tu marca." />
-  <meta property="og:description" content="Streetwear premium con envíos a toda Europa en pedidos superiores a 60€." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/og-cover.jpg" />
-  <meta name="twitter:card" content="summary_large_image" />
-
+  <meta name="description" content="Streetwear premium VALTIX. Ficha de producto con selector de color y talla. Envíos a toda Europa en pedidos superiores a 60€." />
   <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* ===== Estilos del acordeón tipo Nike/Zara ===== */
+    .acc { border-top: 1px solid var(--border); margin-top: 16px; }
+    .acc-item { border-bottom: 1px solid var(--border); }
+    .acc-item summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 0;
+      font-weight: 800;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .acc-item summary::-webkit-details-marker { display: none; }
+    .acc-item .acc-arrow { transition: transform .2s ease; }
+    .acc-item[open] .acc-arrow { transform: rotate(180deg); }
+    .acc-body { padding: 0 0 14px; color: var(--muted); }
+    .acc-body ul { margin: 8px 0 0 18px; }
+    .acc-body p { margin: 8px 0; }
+    .mini-kv { margin: 8px 0; color: var(--fg); }
+    .mini-kv b { color: var(--fg); }
+  </style>
 </head>
 <body>
-  <div class="envio-bar" id="envBar">🚚 Envíos a toda Europa en pedidos superiores a 60€</div>
+  <div class="envio-bar">🚚 Envíos a toda Europa en pedidos superiores a 60€</div>
 
   <header class="header">
     <div class="container header-inner">
@@ -27,11 +38,11 @@
       </a>
       <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
       <nav id="main-nav" class="nav" aria-label="Categorías">
-        <a href="#c/camisetas">Camisetas</a>
-        <a href="#c/sudaderas">Sudaderas</a>
-        <a href="#c/pantalones">Pantalones</a>
-        <a href="#c/zapatos">Zapatos</a>
-        <a href="#c/accesorios">Accesorios</a>
+        <a href="./#c/camisetas">Camisetas</a>
+        <a href="./#c/sudaderas">Sudaderas</a>
+        <a href="./#c/pantalones">Pantalones</a>
+        <a href="./#c/zapatos">Zapatos</a>
+        <a href="./#c/accesorios">Accesorios</a>
       </nav>
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
@@ -39,36 +50,83 @@
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="container hero-inner">
-        <div>
-          <h1>Tu look, tu historia, tu marca.</h1>
-          <p class="sub">Explora la colección oficial de VALTIX. Streetwear premium para quienes dejan huella. Envíos a toda Europa en pedidos superiores a 60€.</p>
-          <a id="goCatalog" class="cta" href="#catalogo">Ver catálogo</a>
-        </div>
-        <div class="hero-img">
-          <span style="color:#fff;font-weight:800">VALTIX</span>
-        </div>
-      </div>
-    </section>
+  <main class="main prod">
+    <div class="container prod-inner">
+      <!-- Galería -->
+      <section class="gallery" aria-label="Galería de producto">
+        <img id="mainImg" class="main-img" alt="Imagen principal del producto">
+        <div id="thumbs" class="thumbs"></div>
+      </section>
 
-    <section class="section">
-      <div class="container" style="display:flex;justify-content:center">
-        <div id="promoBox" class="promo-box">
-          <span class="promo-text">🚚 Envíos a toda Europa en pedidos superiores a 60€</span>
-        </div>
-      </div>
-    </section>
+      <!-- Lado derecho -->
+      <section aria-label="Detalles de producto">
+        <h1 id="pName">Producto</h1>
+        <div id="pPrice" class="card-price" style="font-size:1.1rem;"></div>
 
-    <section id="catalogo" class="section">
-      <div class="container">
-        <div id="grid" class="grid" aria-live="polite"></div>
-      </div>
-    </section>
+        <div class="options color-selector" id="colorWrap" role="group" aria-label="Colores"></div>
+        <div class="options" id="sizeWrap" role="group" aria-label="Tallas"></div>
+
+        <button id="addBtn" class="btn" disabled>Añadir al carrito</button>
+
+        <!-- ===== Acordeón tipo Nike/Zara ===== -->
+        <div class="acc" id="productAccordion">
+          <!-- Detalles -->
+          <details class="acc-item" open>
+            <summary>
+              <span>Detalles del producto</span>
+              <span class="acc-arrow">⌄</span>
+            </summary>
+            <div class="acc-body">
+              <p class="mini-kv">
+                <b>Color mostrado:</b> <span id="kvColor">—</span><br/>
+                <b>SKU:</b> <span id="kvSku">—</span>
+              </p>
+              <ul id="kvBullets">
+                <li>Streetwear premium VALTIX. Confección bajo demanda.</li>
+                <li>Impresión directa de alta calidad (DTG) o bordado según el modelo.</li>
+                <li>Diseñado para durar y mantener el color tras los lavados.</li>
+              </ul>
+            </div>
+          </details>
+
+          <!-- Talla y ajuste -->
+          <details class="acc-item">
+            <summary>
+              <span>Talla y ajuste</span>
+              <span class="acc-arrow">⌄</span>
+            </summary>
+            <div class="acc-body">
+              <ul>
+                <li>Elige tu talla habitual. Si dudas entre dos, te recomendamos la superior.</li>
+                <li>Consulta la guía de tallas del producto en el checkout si está disponible.</li>
+                <li>Los colores pueden variar ligeramente según tu pantalla.</li>
+              </ul>
+            </div>
+          </details>
+
+          <!-- Envíos y devoluciones -->
+          <details class="acc-item">
+            <summary>
+              <span>Devoluciones y envíos</span>
+              <span class="acc-arrow">⌄</span>
+            </summary>
+            <div class="acc-body">
+              <p><b>Producción bajo demanda</b> (Print-on-Demand): fabricamos tu prenda cuando la pides para evitar sobreproducción.</p>
+              <ul>
+                <li><b>Producción</b>: 2–5 días laborables.</li>
+                <li><b>Envío estándar UE</b>: 3–7 días laborables (según país).</li>
+                <li><b>Devoluciones</b>: aceptamos reclamaciones por artículos dañados, defectuosos o con error de impresión dentro de los <b>30 días</b> desde la entrega.</li>
+                <li><b>Cambios de talla/color</b>: al ser producción bajo demanda, no ofrecemos cambios preventivos, pero si llega con incidencia lo reemplazamos.</li>
+              </ul>
+              <p>¿Duda con tu pedido? Escríbenos: <a href="mailto:soporte@valtix.shop">soporte@valtix.shop</a></p>
+            </div>
+          </details>
+        </div>
+      </section>
+    </div>
   </main>
 
-  <!-- Drawer Carrito -->
+  <!-- Drawer Carrito (reutilizado) -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -83,16 +141,6 @@
     </div>
   </aside>
 
-  <!-- Quick View modal -->
-  <div class="drawer-backdrop" id="qvBackdrop"></div>
-  <aside id="qvDrawer" class="drawer" aria-hidden="true" aria-label="Vista rápida">
-    <div class="drawer-header">
-      <h3 id="qvName">Vista rápida</h3>
-      <button id="closeQV" aria-label="Cerrar">✕</button>
-    </div>
-    <div class="drawer-body" id="qvBody"></div>
-  </aside>
-
-  <script src="./app.js"></script>
+  <script src="./product.js?v=3"></script>
 </body>
 </html>
