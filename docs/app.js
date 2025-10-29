@@ -190,18 +190,6 @@ async function copyShareURL(slug){
   }catch{ alert("No se pudo copiar el enlace"); }
 }
 
-// (Opcional) compartir nativo con fallback a copiar
-async function shareNativeOrCopy(slug, name){
-  const url = `${location.origin}${location.pathname}#p/${encodeURIComponent(slug)}`;
-  if (navigator.share) {
-    try { await navigator.share({ title: name || "VALTIX", text: name || "Producto VALTIX", url }); return; }
-    catch {}
-  }
-  await navigator.clipboard.writeText(url);
-  const btn = $("#qvShare");
-  if (btn){ btn.textContent = "¡Enlace copiado!"; setTimeout(()=>btn.textContent="Compartir", 1400); }
-}
-
 // ===== Render catálogo
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
@@ -266,7 +254,7 @@ function renderProducts(){
             });
             const disabled = anyAvail ? "" : "disabled";
 
-            // Si tenemos mockup por color, úsalo como fondo del dot; si no, usa HEX.
+            // Mockup por color en el dot; fallback al HEX.
             const styleInline = meta?.image
               ? `background-image:url('${meta.image}'); background-size:cover; background-position:center;`
               : `background-color:${meta?.hex || "#ddd"};`;
@@ -322,15 +310,13 @@ function renderProducts(){
     }
     renderSizes();
 
-    // Cambiar foto al elegir color
+    // Cambiar foto al elegir color (usa mockup por color)
     card.querySelectorAll(".color-circle").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         if (btn.hasAttribute("disabled")) return;
         card.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         selectedColor = btn.dataset.color;
-
-        // Imagen grande = mockup del color (o fallback)
         imgEl.src = colorsMap[selectedColor]?.image || p.image;
 
         // seleccionar primera talla disponible del nuevo color
@@ -345,24 +331,15 @@ function renderProducts(){
       });
     });
 
-    // === PULSAR PRENDA → VISTA RÁPIDA ===
-    card.querySelector(".card-img-wrap").addEventListener("click", (e)=>{
-      e.preventDefault();
-      buildAndOpenQV(p);
-    });
-    card.querySelector(".card-title").addEventListener("click", (e)=>{
-      e.preventDefault();
-      buildAndOpenQV(p);
-    });
-
-    // Botón “Añadir al carrito” (en tarjeta) → abre Quick View (CTA real está en el modal)
+    // Abrir Vista Rápida
+    card.querySelector(".card-img-wrap").addEventListener("click", (e)=>{ e.preventDefault(); buildAndOpenQV(p); });
+    card.querySelector(".card-title").addEventListener("click", (e)=>{ e.preventDefault(); buildAndOpenQV(p); });
     card.querySelector(".qv-btn")?.addEventListener("click", ()=> buildAndOpenQV(p));
 
     // Compartir
     card.querySelector(".share-btn")?.addEventListener("click", async ()=>{
       setHashSlug(p.slug);
       await copyShareURL(p.slug);
-      // o: await shareNativeOrCopy(p.slug, p.name);
     });
 
     grid.appendChild(card);
@@ -374,10 +351,8 @@ function renderProducts(){
 
 // Construir y abrir QV para un producto dado
 function buildAndOpenQV(p){
-  // Guardar hash compartible
   setHashSlug(p.slug);
 
-  // Estado inicial de selección
   const colorsMap = p.colors || {};
   const colorNames = Object.keys(colorsMap);
   QV.product = p;
@@ -392,7 +367,7 @@ function buildAndOpenQV(p){
   $("#qvImg").src = colorsMap[QV.selectedColor]?.image || p.image;
   $("#qvImg").alt = p.name;
 
-  // Colores (con mockup si existe)
+  // Colores con mockup en los dots
   const qvColors = $("#qvColors");
   qvColors.innerHTML = Object.entries(colorsMap).map(([cn,meta])=>{
     const anyAvail = Object.values(meta.sizes||{}).some(vid=>{
@@ -463,7 +438,7 @@ function buildAndOpenQV(p){
     openCart();
   };
 
-  $("#qvShare").onclick = async ()=> { await copyShareURL(p.slug); /* o shareNativeOrCopy(p.slug, p.name) */ };
+  $("#qvShare").onclick = async ()=> { await copyShareURL(p.slug); };
 
   openQV();
 }
@@ -480,10 +455,6 @@ function updateActiveNavLink(){
 
 // ===== Init
 document.addEventListener("DOMContentLoaded", async ()=>{
-  setYear();
-  setPromoText();
-
-  // Toggle menú móvil accesible
   const mt = document.getElementById("menu-toggle");
   const nav = document.getElementById("main-nav");
   if (mt && nav) {
@@ -495,6 +466,9 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     $$("#main-nav a").forEach(a=>a.addEventListener('click', ()=>nav.classList.remove('show')));
     window.addEventListener('scroll', ()=>nav.classList.remove('show'));
   }
+
+  setYear();
+  setPromoText();
 
   // Quick View bindings globales
   $("#qvBackdrop")?.addEventListener("click", ()=>{
