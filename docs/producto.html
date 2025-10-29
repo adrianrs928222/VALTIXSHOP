@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VALTIX – Producto</title>
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Ficha de producto VALTIX con selector de color y talla. Envíos a toda Europa en pedidos superiores a 60€." />
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .acc { border-top: 1px solid var(--border); margin-top: 16px; }
+    .acc-item { border-bottom: 1px solid var(--border); }
+    .acc-item summary { list-style:none; cursor:pointer; padding:14px 0; font-weight:800; display:flex; justify-content:space-between; align-items:center; }
+    .acc-item summary::-webkit-details-marker{display:none;}
+    .acc-item .acc-arrow{transition:transform .2s ease;}
+    .acc-item[open] .acc-arrow{transform:rotate(180deg);}
+    .acc-body{padding:0 0 14px; color:var(--muted);}
+    .acc-body ul{margin:8px 0 0 18px;}
+    .acc-body p{margin:8px 0;}
+  </style>
+</head>
+<body>
+  <div class="envio-bar">🚚 Envíos a toda Europa en pedidos superiores a 60€</div>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="Inicio VALTIX">
+        <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
+      </a>
+      <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
+      <nav id="main-nav" class="nav" aria-label="Categorías">
+        <a href="./#c/camisetas">Camisetas</a>
+        <a href="./#c/sudaderas">Sudaderas</a>
+        <a href="./#c/pantalones">Pantalones</a>
+        <a href="./#c/zapatos">Zapatos</a>
+        <a href="./#c/accesorios">Accesorios</a>
+      </nav>
+      <button id="openCart" class="cart-btn" aria-haspopup="dialog">
+        Carrito <span id="cartCount" class="cart-count">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="main prod">
+    <div class="container prod-inner">
+      <section class="gallery" aria-label="Galería de producto">
+        <img id="mainImg" class="main-img" alt="Imagen principal del producto">
+        <div id="thumbs" class="thumbs"></div>
+      </section>
+
+      <section aria-label="Detalles de producto">
+        <h1 id="pName">Producto</h1>
+        <div id="pPrice" class="card-price" style="font-size:1.1rem;"></div>
+
+        <div class="options color-selector" id="colorWrap" role="group" aria-label="Colores"></div>
+        <div class="options" id="sizeWrap" role="group" aria-label="Tallas"></div>
+
+        <button id="addBtn" class="btn" disabled>Añadir al carrito</button>
+
+        <div class="acc" id="productAccordion">
+          <details class="acc-item" open>
+            <summary><span>Detalles del producto</span><span class="acc-arrow">⌄</span></summary>
+            <div class="acc-body">
+              <p><b>Color mostrado:</b> <span id="kvColor">—</span><br><b>SKU:</b> <span id="kvSku">—</span></p>
+              <ul id="kvBullets">
+                <li>Streetwear premium VALTIX. Confección bajo demanda.</li>
+                <li>Impresión directa o bordado de alta calidad (según modelo).</li>
+                <li>Diseñado para durar y mantener el color tras los lavados.</li>
+              </ul>
+            </div>
+          </details>
+          <details class="acc-item">
+            <summary><span>Talla y ajuste</span><span class="acc-arrow">⌄</span></summary>
+            <div class="acc-body">
+              <ul>
+                <li>Elige tu talla habitual. Si dudas entre dos, te recomendamos la superior.</li>
+                <li>Consulta la guía de tallas en el checkout si está disponible.</li>
+                <li>Los colores pueden variar ligeramente según tu pantalla.</li>
+              </ul>
+            </div>
+          </details>
+          <details class="acc-item">
+            <summary><span>Devoluciones y envíos</span><span class="acc-arrow">⌄</span></summary>
+            <div class="acc-body">
+              <ul>
+                <li><b>Producción</b>: 2–5 días laborables.</li>
+                <li><b>Envío estándar UE</b>: 3–7 días laborables.</li>
+                <li><b>Devoluciones</b>: 30 días por defecto de fabricación/impresión.</li>
+                <li>Al ser producción bajo demanda, no ofrecemos cambios preventivos de talla/color.</li>
+              </ul>
+              <p>Soporte: <a href="mailto:soporte@valtix.shop">soporte@valtix.shop</a></p>
+            </div>
+          </details>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Drawer -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
+    <div class="drawer-header">
+      <h3>Tu carrito</h3>
+      <button id="closeCart" aria-label="Cerrar carrito">✕</button>
+    </div>
+    <div id="cartItems" class="drawer-body"></div>
+    <div class="drawer-footer">
+      <div class="subtotal"><span>Subtotal</span><strong id="subtotal">0,00 €</strong></div>
+      <button id="clearCart" class="btn btn-alt">Vaciar carrito</button>
+      <button id="checkoutBtn" class="btn">Pagar</button>
+    </div>
+  </aside>
+
+  <script src="./product.js?v=4"></script>
+</body>
+</html>
