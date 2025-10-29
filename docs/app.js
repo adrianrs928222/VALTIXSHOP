@@ -265,10 +265,16 @@ function renderProducts(){
               return a === true || a === null;
             });
             const disabled = anyAvail ? "" : "disabled";
+
+            // Si tenemos mockup por color, úsalo como fondo del dot; si no, usa HEX.
+            const styleInline = meta?.image
+              ? `background-image:url('${meta.image}'); background-size:cover; background-position:center;`
+              : `background-color:${meta?.hex || "#ddd"};`;
+
             return `
               <button class="color-circle ${idx===0?"active":""}" ${disabled}
                 title="${cn}" data-color="${cn}"
-                style="background-color:${meta?.hex || "#ddd"};"></button>
+                style="${styleInline}"></button>
             `;
           }).join("")}
         </div>
@@ -323,6 +329,8 @@ function renderProducts(){
         card.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         selectedColor = btn.dataset.color;
+
+        // Imagen grande = mockup del color (o fallback)
         imgEl.src = colorsMap[selectedColor]?.image || p.image;
 
         // seleccionar primera talla disponible del nuevo color
@@ -347,7 +355,7 @@ function renderProducts(){
       buildAndOpenQV(p);
     });
 
-    // Botón “Añadir al carrito” (en tarjeta) → abre Quick View
+    // Botón “Añadir al carrito” (en tarjeta) → abre Quick View (CTA real está en el modal)
     card.querySelector(".qv-btn")?.addEventListener("click", ()=> buildAndOpenQV(p));
 
     // Compartir
@@ -384,7 +392,7 @@ function buildAndOpenQV(p){
   $("#qvImg").src = colorsMap[QV.selectedColor]?.image || p.image;
   $("#qvImg").alt = p.name;
 
-  // Colores
+  // Colores (con mockup si existe)
   const qvColors = $("#qvColors");
   qvColors.innerHTML = Object.entries(colorsMap).map(([cn,meta])=>{
     const anyAvail = Object.values(meta.sizes||{}).some(vid=>{
@@ -393,7 +401,10 @@ function buildAndOpenQV(p){
     });
     if(!anyAvail) return "";
     const active = (cn===QV.selectedColor) ? "active":"";
-    return `<button class="color-circle ${active}" title="${cn}" data-color="${cn}" style="background-color:${meta?.hex||"#ddd"};"></button>`;
+    const styleInline = meta?.image
+      ? `background-image:url('${meta.image}'); background-size:cover; background-position:center;`
+      : `background-color:${meta?.hex||"#ddd"};`;
+    return `<button class="color-circle ${active}" title="${cn}" data-color="${cn}" style="${styleInline}"></button>`;
   }).join("");
 
   qvColors.querySelectorAll(".color-circle").forEach(btn=>{
