@@ -3,20 +3,61 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
   <title>VALTIX – Producto</title>
   <meta name="theme-color" content="#000000" />
-  <meta name="description" content="Ficha de producto VALTIX con selector de color y talla. Envíos a toda Europa en pedidos superiores a 60€." />
+  <meta name="description" content="Streetwear premium VALTIX. Ficha de producto con selector de color y talla. Envíos a toda Europa en pedidos superiores a 60€." />
+
+  <!-- OG/Twitter: valores definitivos los setea product.js al cargar el producto -->
+  <meta property="og:type" content="product" />
+  <meta property="og:title" content="VALTIX – Producto" id="ogTitle"/>
+  <meta property="og:description" content="Streetwear premium VALTIX." id="ogDesc"/>
+  <meta property="og:image" content="" id="ogImage"/>
+  <meta property="og:url" content="" id="ogUrl"/>
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="VALTIX – Producto" id="twTitle"/>
+  <meta name="twitter:description" content="Streetwear premium VALTIX." id="twDesc"/>
+  <meta name="twitter:image" content="" id="twImage"/>
+
+  <!-- JSON-LD Product (lo rellena product.js) -->
+  <script type="application/ld+json" id="jsonld-product">{}</script>
+
+  <link rel="preconnect" href="https://valtixshop.onrender.com">
   <link rel="stylesheet" href="./style.css" />
+
   <style>
-    .acc { border-top: 1px solid var(--border); margin-top: 16px; }
-    .acc-item { border-bottom: 1px solid var(--border); }
-    .acc-item summary { list-style:none; cursor:pointer; padding:14px 0; font-weight:800; display:flex; justify-content:space-between; align-items:center; }
-    .acc-item summary::-webkit-details-marker{display:none;}
-    .acc-item .acc-arrow{transition:transform .2s ease;}
-    .acc-item[open] .acc-arrow{transform:rotate(180deg);}
-    .acc-body{padding:0 0 14px; color:var(--muted);}
-    .acc-body ul{margin:8px 0 0 18px;}
-    .acc-body p{margin:8px 0;}
+    /* ===== Layout ficha clean ===== */
+    .prod       { padding: 24px 0 56px; }
+    .prod-inner { display:grid; grid-template-columns:1.1fr 0.9fr; gap:28px; }
+    @media (max-width: 960px){ .prod-inner{ grid-template-columns:1fr; } }
+
+    .gallery    { display:grid; gap:12px; }
+    .main-img   { width:100%; aspect-ratio:1/1; object-fit:cover; border:1px solid var(--border); border-radius:16px; background:#f6f6f6; }
+    .thumbs     { display:flex; gap:10px; flex-wrap:wrap; }
+    .thumbs img { width:80px; height:80px; object-fit:cover; border:1px solid var(--border); border-radius:10px; cursor:pointer; }
+    .thumbs img.active { outline:2px solid #000; }
+
+    .p-header   { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+    .p-title    { margin:0; font-size:clamp(22px,3.6vw,32px); font-weight:900; }
+    .p-meta     { color:var(--muted); font-size:.95rem; display:flex; gap:12px; flex-wrap:wrap; }
+    .badge-ok   { display:inline-block; background:#d1e7dd; color:#0f5132; border:1px solid #badbcc; padding:2px 8px; border-radius:999px; font-weight:800; }
+
+    .price-row  { display:flex; align-items:center; justify-content:space-between; margin:8px 0 10px; }
+    .banner-ship{ background:#111; color:#fff; font-weight:800; border-radius:12px; padding:10px 12px; }
+
+    .box        { border:1px solid var(--border); border-radius:16px; padding:14px; background:#fff; }
+    .box h3     { margin:0 0 6px; font-size:1.05rem; }
+    .box ul     { margin:6px 0 0 18px; color:var(--muted); }
+
+    /* Controles */
+    .options    { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+    .color-circle { width:28px; height:28px; border-radius:50%; border:2px solid #ddd; cursor:pointer; }
+    .color-circle.active { border-color:#000; box-shadow:0 0 0 2px rgba(0,0,0,.08); }
+    .option-btn { border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:800; }
+    .option-btn.active { background:#111; color:#fff; border-color:#111; }
+    .btn-wrow   { display:flex; gap:10px; margin-top:12px; }
+
+    .kv { margin-top:10px; color:var(--muted); font-size:.95rem; }
   </style>
 </head>
 <body>
@@ -43,60 +84,69 @@
 
   <main class="main prod">
     <div class="container prod-inner">
+      <!-- Galería -->
       <section class="gallery" aria-label="Galería de producto">
-        <img id="mainImg" class="main-img" alt="Imagen principal del producto">
+        <img id="mainImg" class="main-img" alt="Imagen principal del producto" loading="eager">
         <div id="thumbs" class="thumbs"></div>
       </section>
 
-      <section aria-label="Detalles de producto">
-        <h1 id="pName">Producto</h1>
-        <div id="pPrice" class="card-price" style="font-size:1.1rem;"></div>
+      <!-- Info -->
+      <section aria-label="Información del producto">
+        <div class="p-header">
+          <h1 id="pName" class="p-title">Producto</h1>
+          <div class="p-meta">
+            <span id="pSku">SKU —</span>
+            <span class="badge-ok">En stock</span>
+            <span>Color: <b id="pColor">—</b></span>
+          </div>
+        </div>
 
-        <div class="options color-selector" id="colorWrap" role="group" aria-label="Colores"></div>
-        <div class="options" id="sizeWrap" role="group" aria-label="Tallas"></div>
+        <div class="price-row">
+          <div id="pPrice" class="card-price" style="font-size:1.25rem;"></div>
+          <div class="banner-ship">🚚 Envíos a toda Europa &gt; 60€</div>
+        </div>
 
-        <button id="addBtn" class="btn" disabled>Añadir al carrito</button>
+        <!-- Selectores -->
+        <div>
+          <div class="options color-selector" id="colorWrap" role="group" aria-label="Colores"></div>
+          <div class="options" id="sizeWrap" role="group" aria-label="Tallas"></div>
+          <div class="btn-wrow">
+            <button id="addBtn" class="btn" disabled>Añadir al carrito</button>
+          </div>
+        </div>
 
-        <div class="acc" id="productAccordion">
-          <details class="acc-item" open>
-            <summary><span>Detalles del producto</span><span class="acc-arrow">⌄</span></summary>
-            <div class="acc-body">
-              <p><b>Color mostrado:</b> <span id="kvColor">—</span><br><b>SKU:</b> <span id="kvSku">—</span></p>
-              <ul id="kvBullets">
-                <li>Streetwear premium VALTIX. Confección bajo demanda.</li>
-                <li>Impresión directa o bordado de alta calidad (según modelo).</li>
-                <li>Diseñado para durar y mantener el color tras los lavados.</li>
-              </ul>
-            </div>
-          </details>
-          <details class="acc-item">
-            <summary><span>Talla y ajuste</span><span class="acc-arrow">⌄</span></summary>
-            <div class="acc-body">
-              <ul>
-                <li>Elige tu talla habitual. Si dudas entre dos, te recomendamos la superior.</li>
-                <li>Consulta la guía de tallas en el checkout si está disponible.</li>
-                <li>Los colores pueden variar ligeramente según tu pantalla.</li>
-              </ul>
-            </div>
-          </details>
-          <details class="acc-item">
-            <summary><span>Devoluciones y envíos</span><span class="acc-arrow">⌄</span></summary>
-            <div class="acc-body">
-              <ul>
-                <li><b>Producción</b>: 2–5 días laborables.</li>
-                <li><b>Envío estándar UE</b>: 3–7 días laborables.</li>
-                <li><b>Devoluciones</b>: 30 días por defecto de fabricación/impresión.</li>
-                <li>Al ser producción bajo demanda, no ofrecemos cambios preventivos de talla/color.</li>
-              </ul>
-              <p>Soporte: <a href="mailto:soporte@valtix.shop">soporte@valtix.shop</a></p>
-            </div>
-          </details>
+        <!-- Bloques tipo Nike/Zara -->
+        <div class="box">
+          <h3>Características</h3>
+          <ul id="pFeatures">
+            <li>Streetwear premium VALTIX fabricado bajo demanda.</li>
+            <li>Impresión directa o bordado de alta calidad (según modelo).</li>
+            <li>Colores duraderos y tejido cómodo para uso diario.</li>
+          </ul>
+        </div>
+
+        <div class="box">
+          <h3>Talla y ajuste</h3>
+          <ul>
+            <li>Elige tu talla habitual. Si dudas entre dos, te recomendamos la superior.</li>
+            <li>Los colores pueden variar ligeramente según tu pantalla.</li>
+          </ul>
+        </div>
+
+        <div class="box">
+          <h3>Envíos y devoluciones</h3>
+          <ul>
+            <li><b>Producción</b>: 2–5 días laborables.</li>
+            <li><b>Envío estándar UE</b>: 3–7 días laborables.</li>
+            <li><b>Devoluciones</b>: 30 días por defecto de fabricación/impresión.</li>
+          </ul>
+          <p class="kv">Soporte: <a href="mailto:soporte@valtix.shop">soporte@valtix.shop</a></p>
         </div>
       </section>
     </div>
   </main>
 
-  <!-- Drawer -->
+  <!-- Drawer Carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
     <div class="drawer-header">
@@ -111,6 +161,6 @@
     </div>
   </aside>
 
-  <script src="./product.js?v=4"></script>
+  <script src="./product.js?v=5"></script>
 </body>
 </html>
