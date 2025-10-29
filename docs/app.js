@@ -1,7 +1,13 @@
-// ===== Config
-const BACKEND_URL = "https://valtixshop.onrender.com";
+// ============================================================
+// VALTIX – Catálogo (GitHub Pages)
+// - Lee productos del backend (Render)
+// - Botón "Ver ficha" que abre producto.html?sku=<p.sku> ✅
+// - Carrito local (sin cambios)
+// ============================================================
 
-// ===== Helpers
+const BACKEND_URL = "https://valtixshop.onrender.com";
+const CHECKOUT_PATH = "/checkout";
+
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 let products = [];
@@ -9,6 +15,25 @@ let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
+function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
+
+// ===== Breadcrumbs (SEO)
+function updateBreadcrumbsSchema(){
+  const el = $("#breadcrumbs-jsonld"); if(!el) return;
+  const base = {
+    "@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
+    ]
+  };
+  const cat = getActiveCategory();
+  if (cat!=="all"){
+    base.itemListElement.push({
+      "@type":"ListItem","position":2,"name":cat.charAt(0).toUpperCase()+cat.slice(1),
+      "item":`https://adrianrs928222.github.io/VALTIXSHOP/#c/${encodeURIComponent(cat)}`
+    });
+  }
+  el.textContent = JSON.stringify(base);
+}
 
 // ===== Data
 async function loadProducts(){
@@ -24,10 +49,7 @@ async function loadProducts(){
   }
 }
 
-// ===== Render
-const colorNamesOf = p => Object.keys(p.colors||{});
-const sizeNamesOf  = (p,c) => Object.keys(p.colors?.[c]?.sizes||{});
-
+// ===== Render catálogo
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -41,49 +63,47 @@ function renderProducts(){
   const list=(cat==="all") ? products : products.filter(p=>Array.isArray(p.categories)&&p.categories.includes(cat));
 
   list.forEach(p=>{
-    let colors = colorNamesOf(p);
-    if (!colors.length) colors = ["Único"];
-    const firstColor = colors[0];
-    const href = `./producto.html?sku=${encodeURIComponent(p.sku)}`;
-    const img0  = p.colors?.[firstColor]?.image || p.image;
+    const colorNames = Object.keys(p.colors || {});
+    const firstColor = colorNames[0] || null;
+
+    let selectedColor = firstColor;
+    let selectedSize =
+      (selectedColor && Object.keys(p.colors[selectedColor].sizes)[0]) || null;
 
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
-      <a class="card-img-wrap" href="${href}" aria-label="Ver ${p.name}">
-        <img class="card-img" src="${img0}" alt="${p.name}">
-      </a>
+      <div class="card-img-wrap">
+        <img class="card-img" src="${ (selectedColor && p.colors[selectedColor].image) || p.image }" alt="${p.name}">
+      </div>
       <div class="card-body">
-        <h3 class="card-title">${p.name}</h3>
+        <h3 class="card-title">
+          <a href="producto.html?sku=${encodeURIComponent(p.sku)}">${p.name}</a>
+        </h3>
         <p class="card-price">${money(p.price)}</p>
         <div class="stock-line"><span class="stock-badge ok">En stock</span></div>
 
         <div class="options color-selector" role="group" aria-label="Colores">
-          ${
-            colors.length>1
-            ? colors.map((cn,idx)=>`<button class="color-circle ${idx===0?"active":""}" title="${cn}" data-color="${cn}" style="background-color:${p.colors[cn]?.hex || "#ddd"};"></button>`).join("")
-            : `<span class="stock-badge">Color único</span>`
-          }
+          ${colorNames.map((cn,idx)=>`
+            <button class="color-circle ${idx===0?"active":""}" title="${cn}" data-color="${cn}" style="background-color:${p.colors[cn]?.hex || "#ddd"};"></button>
+          `).join("")}
         </div>
 
         <div class="options" role="group" aria-label="Tallas" data-sizes></div>
 
-        <div style="display:flex; gap:8px">
-          <a class="btn btn-alt" href="${href}">Ver ficha</a>
-          <button class="btn add-btn" data-sku="${p.sku}">Añadir</button>
+        <div style="display:grid;gap:8px;margin-top:10px">
+          <button class="btn add-btn" data-sku="${p.sku}">Añadir al carrito</button>
+          <button class="btn btn-alt view-btn" data-sku="${p.sku}">Ver ficha</button>
         </div>
       </div>
     `;
 
     const imgEl = card.querySelector(".card-img");
     const sizesWrap = card.querySelector("[data-sizes]");
-    let selectedColor = firstColor;
-    let selectedSize  = sizeNamesOf(p, selectedColor)[0] || Object.keys(p.colors?.[selectedColor]?.sizes||{Única:null})[0];
 
     function renderSizes(){
-      const sizes = sizeNamesOf(p, selectedColor);
-      if (!sizes.length) { sizesWrap.innerHTML = `<span class="stock-badge">Talla única</span>`; return; }
-      selectedSize = sizes[0];
+      const sizes = selectedColor ? Object.keys(p.colors[selectedColor].sizes) : [];
+      selectedSize = sizes[0] || null;
       sizesWrap.innerHTML = sizes.map((sz,idx)=>`
         <button class="option-btn ${idx===0?"active":""}" data-sz="${sz}">${sz}</button>
       `).join("");
@@ -108,10 +128,10 @@ function renderProducts(){
       });
     });
 
-    // Add to cart
+    // Add to cart (variante escogida)
     card.querySelector(".add-btn").addEventListener("click", ()=>{
-      const vid = p.colors?.[selectedColor]?.sizes?.[selectedSize] || Object.values(p.colors?.[selectedColor]?.sizes||{})[0];
-      if (!vid) { alert("Variante no disponible"); return; }
+      if (!selectedColor || !selectedSize) return;
+      const vid = p.colors[selectedColor].sizes[selectedSize];
       addToCart({
         sku: `${p.sku}_${selectedColor}_${selectedSize}`,
         name: `${p.name} ${selectedColor} ${selectedSize}`,
@@ -120,6 +140,11 @@ function renderProducts(){
         variant_id: vid
       });
       openCart();
+    });
+
+    // 👉 Ver ficha con SKU CORRECTO
+    card.querySelector(".view-btn").addEventListener("click", ()=>{
+      location.href = `producto.html?sku=${encodeURIComponent(p.sku)}`;
     });
 
     grid.appendChild(card);
@@ -181,12 +206,12 @@ function renderCart(){
 function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); $("#cartDrawer").setAttribute("aria-hidden","false"); renderCart(); }
 function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); $("#cartDrawer").setAttribute("aria-hidden","true"); }
 
-// ===== Checkout
+// ===== Checkout (Stripe)
 async function goCheckout(){
   if(!cart.length) return alert("Tu carrito está vacío.");
   const items = cart.map(i=>({ variant_id:i.variant_id, quantity:i.qty, sku:i.sku, name:i.name, price:Number(i.price) }));
   try{
-    const res = await fetch(`${BACKEND_URL}/checkout`, {
+    const res = await fetch(`${BACKEND_URL}${CHECKOUT_PATH}`, {
       method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ items })
     });
     const data = await res.json();
@@ -195,7 +220,7 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ===== Breadcrumbs + Nav activo
+// ===== Nav activo
 function updateActiveNavLink(){
   const cat = getActiveCategory();
   $$("#main-nav a").forEach(a=>{
@@ -204,25 +229,17 @@ function updateActiveNavLink(){
     a.classList.toggle("active", cat!=="all" && match===cat);
   });
 }
-function updateBreadcrumbsSchema(){
-  const el = $("#breadcrumbs-jsonld"); if(!el) return;
-  const base = {
-    "@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-      {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
-    ]
-  };
-  const cat = getActiveCategory();
-  if (cat!=="all"){
-    base.itemListElement.push({
-      "@type":"ListItem","position":2,"name":cat.charAt(0).toUpperCase()+cat.slice(1),
-      "item":`https://adrianrs928222.github.io/VALTIXSHOP/#c/${encodeURIComponent(cat)}`
-    });
-  }
-  el.textContent = JSON.stringify(base);
+
+// ===== Promo
+function startPromo(){
+  const box=$("#promoBox"); const textEl=box?.querySelector(".promo-text"); if(!box||!textEl) return;
+  textEl.textContent = "🚚 Envíos a toda Europa en pedidos superiores a 60€";
 }
 
 // ===== Init
 document.addEventListener("DOMContentLoaded", async ()=>{
+  setYear();
+  startPromo();
   await loadProducts();
   renderCart();
 
