@@ -3,11 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VALTIX | Tu look, tu historia, tu marca</title>
+  <title>VALTIX – Tu look, tu historia, tu marca</title>
+  <meta name="description" content="Explora la colección oficial de VALTIX. Streetwear premium para quienes dejan huella. Envíos a toda Europa en pedidos superiores a 60€." />
   <meta name="theme-color" content="#000000" />
-  <meta name="description" content="Streetwear premium VALTIX. Catálogo sincronizado con Printful. Envíos a toda Europa en pedidos superiores a 60€." />
+
+  <!-- Breadcrumbs (SEO) -->
+  <script id="breadcrumbs-jsonld" type="application/ld+json"></script>
+
   <link rel="stylesheet" href="./style.css" />
-  <script type="application/ld+json" id="breadcrumbs-jsonld"></script>
+  <style>
+    .prod { padding: 24px 0; }
+    .prod-inner { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
+    .gallery { display: grid; gap: 10px; }
+    .main-img { width:100%; aspect-ratio: 1/1; object-fit: cover; border:1px solid var(--border); border-radius: 12px; background:#f6f6f6; }
+    .thumbs { display:flex; gap:10px; flex-wrap:wrap; }
+    .thumbs img { width:72px; height:72px; object-fit:cover; border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+    .thumbs img.active { outline:2px solid #000; }
+    @media (max-width: 960px){ .prod-inner{ grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
   <div class="envio-bar">🚚 Envíos a toda Europa en pedidos superiores a 60€</div>
@@ -32,26 +45,27 @@
   </header>
 
   <main class="main">
-    <section class="hero">
-      <div class="container hero-inner">
+    <section class="hero container">
+      <div class="hero-inner">
         <div>
           <h1>Tu look, tu historia, tu marca.</h1>
-          <p class="sub">Explora la colección oficial de VALTIX. Streetwear premium para quienes dejan huella. Envíos a toda Europa.</p>
-          <a id="goCatalog" class="cta" href="#catalogo">Ver catálogo</a>
+          <p class="sub">Explora la colección oficial de VALTIX. Streetwear premium para quienes dejan huella. Envíos a toda Europa en pedidos superiores a 60€.</p>
+          <a href="#catalogo" class="cta" id="goCatalog">Ver catálogo</a>
         </div>
-        <div class="hero-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#111,#333)">
-          <div class="promo-box" style="max-width:none">
-            <span class="promo-text">🚚 Envíos a toda Europa en pedidos superiores a 60€</span>
-          </div>
+        <div class="hero-img">
+          <strong>VALTIX</strong>
         </div>
       </div>
     </section>
 
-    <section id="catalogo" class="section">
-      <div class="container">
-        <h2 style="margin:0 0 12px">Catálogo</h2>
-        <div id="grid" class="grid" role="list"></div>
+    <section class="container" style="display:grid;place-items:center;margin-bottom:18px">
+      <div id="promoBox" class="promo-box">
+        <span class="promo-text">🚚 Envíos a toda Europa en pedidos superiores a 60€</span>
       </div>
+    </section>
+
+    <section id="catalogo" class="section container">
+      <div id="grid" class="grid"></div>
     </section>
   </main>
 
@@ -70,6 +84,43 @@
     </div>
   </aside>
 
-  <script src="./app.js?v=4"></script>
+  <!-- ===== Quick View (Vista rápida) ===== -->
+  <div id="qvBackdrop" class="qv-backdrop" aria-hidden="true"></div>
+  <aside id="qvModal" class="qv-modal" role="dialog" aria-modal="true" aria-label="Vista rápida de producto">
+    <div class="qv-header"><button id="qvClose" class="qv-close" aria-label="Cerrar">✕</button></div>
+    <div class="qv-body">
+      <div class="qv-media">
+        <img id="qvMain" alt="Imagen principal" />
+        <div id="qvThumbs" class="qv-thumbs"></div>
+      </div>
+      <div class="qv-info">
+        <h2 id="qvName" class="qv-name">Producto</h2>
+        <div id="qvPrice" class="qv-price">0,00 €</div>
+        <div class="qv-stock">En stock</div>
+        <div class="qv-field">
+          <div class="qv-label">Color</div>
+          <div id="qvColors" class="qv-colors"></div>
+          <div id="qvColorName" class="qv-muted"></div>
+        </div>
+        <div class="qv-field">
+          <div class="qv-label">Talla</div>
+          <div id="qvSizes" class="qv-sizes"></div>
+        </div>
+        <button id="qvAdd" class="btn">Añadir al carrito</button>
+        <ul class="qv-badges">
+          <li>Pago seguro con Stripe</li>
+          <li>Envío 2–5 días en España</li>
+          <li>Devoluciones fáciles</li>
+        </ul>
+        <a id="qvFullLink" class="qv-full" href="#">Ver ficha completa →</a>
+      </div>
+    </div>
+  </aside>
+
+  <footer class="footer">
+    <div class="container">© <span id="year"></span> VALTIX — Envíos a toda Europa 🌍</div>
+  </footer>
+
+  <script src="./app.js"></script>
 </body>
 </html>
