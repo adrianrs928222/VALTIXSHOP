@@ -419,3 +419,39 @@ body.nav-open { overflow: hidden; }
   padding: 6px 0;
   letter-spacing: 0.3px;
 }
+/* --- Quick View: contenedor desplazable + footer fijo --- */
+.qv-content {
+  position: relative;
+  width: min(900px, 92vw);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 16px 0; /* sin padding abajo, lo maneja el footer */
+}
+.qv-scroll {
+  max-height: calc(90vh - 84px); /* reserva altura para footer y close */
+  overflow: auto;
+  padding-bottom: 12px;
+}
+.qv-footer {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, #fff 82%, rgba(255,255,255,0));
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Tarjeta clicable: imagen y título abren QV */
+.card-img-wrap { cursor: zoom-in; }
+.card-title { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Responsive footer en móvil: botones apilados */
+@media (max-width: 520px) {
+  .qv-footer { grid-template-columns: 1fr; }
+}
