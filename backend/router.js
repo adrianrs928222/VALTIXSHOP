@@ -9,9 +9,12 @@ const PF_HEADERS = {
   "Content-Type": "application/json",
 };
 
-/* ---------- Caché ---------- */
+/* ---------- Cachés ---------- */
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
+
+// cache catálogo de variantes para evitar N llamadas repetidas
+const catalogVariantCache = new Map(); // key: variant_id -> { color, color_code, size, product_id }
 
 /* ---------- Helpers ---------- */
 async function pfGet(path) {
@@ -38,6 +41,42 @@ async function fetchAllSyncedProducts() {
   return all;
 }
 
+/** Consulta el catálogo por variant_id: devuelve { color, color_code, size, product_id } */
+async function fetchCatalogVariant(variantId) {
+  if (catalogVariantCache.has(variantId)) return catalogVariantCache.get(variantId);
+  const data = await pfGet(`/products/variant/${variantId}`);
+  // estructura: { result: { variant: { id, size, color, color_code, product_id, ... } } }
+  const v = data?.result?.variant || {};
+  const out = {
+    size: v.size || "",
+    color: v.color || "",
+    color_code: v.color_code || null, // suele venir como HEX sin "#"
+    product_id: v.product_id || null,
+  };
+  catalogVariantCache.set(variantId, out);
+  return out;
+}
+
+/** Batch: dado un array de variant_ids (string/number), devuelve {id: info} */
+async function fetchCatalogVariantsBatch(variantIds = []) {
+  const unique = [...new Set(variantIds.map(String))];
+  const result = {};
+  // paraleliza pero limita un poco (simple throttle)
+  const chunkSize = 12;
+  for (let i = 0; i < unique.length; i += chunkSize) {
+    const slice = unique.slice(i, i + chunkSize);
+    const chunk = await Promise.all(
+      slice.map(async (id) => {
+        try { return [id, await fetchCatalogVariant(id)]; }
+        catch (e) { console.error("Catalog variant error", id, e.message); return [id, null]; }
+      })
+    );
+    for (const [id, info] of chunk) result[id] = info;
+  }
+  return result;
+}
+
+/* ---------- Clasificador simple por nombre de producto ---------- */
 function detectCategories(name=""){
   const n = name.toLowerCase();
   if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
@@ -48,75 +87,44 @@ function detectCategories(name=""){
   return ["otros"];
 }
 
-/* ---------- Color → HEX ---------- */
-function colorHexFromName(name=""){
-  const k = String(name).trim().toLowerCase().replace(/\s+/g," ");
-  const map = {
-    black:"#000000","black heather":"#1f1f1f","charcoal":"#36454f","dark gray":"#555555",
-    gray:"#808080","athletic heather":"#a7a7a7","silver":"#c0c0c0","ash":"#b2b2b2",
-    white:"#ffffff","ivory":"#fffff0","cream":"#fffdd0","beige":"#f5f5dc","sand":"#c2b280",
-    navy:"#001f3f","midnight navy":"#001a33","blue":"#0057ff","royal":"#4169e1",
-    "light blue":"#87cefa","sky blue":"#87ceeb","cyan":"#00ffff","teal":"#008080",
-    green:"#008000","forest":"#0b3d02","olive:"#556b2f","mint":"#98ff98",
-    red:"#ff0000","maroon":"#800000","burgundy":"#800020","wine":"#722f37",
-    orange:"#ff7f00","rust":"#b7410e","gold:"#ffd700","yellow":"#ffea00","mustard":"#e1ad01",
-    purple:"#800080","violet":"#8a2be2","lavender":"#b57edc","magenta":"#ff00ff","pink":"#ffc0cb",
-    brown:"#5c4033","chocolate":"#7b3f00","khaki":"#bdb76b",
-    negro:"#000000", blanco:"#ffffff", gris:"#808080", azul:"#0057ff", rojo:"#ff0000",
-    verde:"#008000", amarillo:"#ffea00", naranja:"#ff7f00", morado:"#800080", rosa:"#ffc0cb",
-    burdeos:"#800020", beige:"#f5f5dc", marrón:"#5c4033", caqui:"#bdb76b", oro:"#ffd700"
-  };
-  return map[k] || null;
-}
-
-/* ---------- Normalizador ---------- */
-function normalizeProduct(detail){
+/* ---------- Normalizador FINAL usando catálogo oficial ---------- */
+function normalizeProduct(detail, catalogMap){
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
 
+  // precio base (mínimo retail)
   const prices = variants.map(v=>parseFloat(v.retail_price)).filter(n=>!Number.isNaN(n));
   const price = prices.length ? Math.min(...prices) : 0;
 
-  const cap = s => String(s||"").toLowerCase().replace(/\s+/g," ").replace(/\b\w/g,c=>c.toUpperCase());
-  const colors = {};
+  const colors = {}; // { [Color Name]: { hex, image, sizes: { [Size]: variant_id } } }
 
   for (const v of variants){
-    const product = v?.product || {};
-    const raw = String(v?.name || "").trim();
+    const vid = String(v?.variant_id || "");
+    if (!vid) continue;
 
-    // --- COLOR ---
-    let colorName =
-      product.color_name || product.color || "";
-    if (!colorName && raw.includes("/")) colorName = raw.split("/")[0].split("-").pop().trim();
-    if (!colorName && raw.includes("-")) colorName = raw.split("-").pop().trim();
-    if (!colorName) colorName = "Color Único";
-    colorName = cap(colorName);
+    // Datos oficiales del catálogo
+    const cv = catalogMap[vid] || {};
+    const colorName = String(cv.color || "Color Único").trim();
+    const size = String(cv.size || "").trim() || `VAR_${vid}`;
+    // HEX directo del catálogo (color_code) o null
+    let hex = cv.color_code ? (cv.color_code.startsWith("#") ? cv.color_code : `#${cv.color_code}`) : null;
 
-    // HEX
-    let hex = product.hex_code || v?.color_code || v?.color_hex || null;
-    if (hex && /^#?[0-9A-Fa-f]{3,6}$/.test(hex)) hex = hex.startsWith("#") ? hex : `#${hex}`;
-    if (!hex) hex = colorHexFromName(colorName);
-
-    // --- TALLA ---
-    let size = product.size || "";
-    if (!size && raw.includes("/")) size = raw.split("/").pop().trim();
-    if (!size) size = `VAR_${v.variant_id}`;
-
-    // --- IMAGEN POR COLOR ---
+    // Imagen preferida de esa variante (preview del file)
     const fromFiles =
       (v?.files||[]).find(f=>f.type==="preview" && f.preview_url)?.preview_url ||
       (v?.files||[]).find(f=>f.preview_url)?.preview_url ||
       (v?.files||[]).find(f=>f.thumbnail_url)?.thumbnail_url ||
       (v?.files||[]).find(f=>f.url)?.url ||
-      product.image ||
-      sp?.thumbnail_url ||
       null;
 
     if (!colors[colorName]) colors[colorName] = { hex, image: fromFiles, sizes:{} };
     if (!colors[colorName].image && fromFiles) colors[colorName].image = fromFiles;
-    colors[colorName].sizes[size] = v.variant_id;
+    if (!colors[colorName].hex && hex) colors[colorName].hex = hex;
+
+    colors[colorName].sizes[size] = vid;
   }
 
+  // Portada: primera imagen de color o miniatura de producto
   const firstColor = Object.keys(colors)[0];
   const cover =
     (firstColor && colors[firstColor]?.image) ||
@@ -132,7 +140,7 @@ function normalizeProduct(detail){
     image: cover,
     sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
-    colors,
+    colors,      // ← ahora viene 1:1 con el catálogo oficial
     variant_map,
   };
 }
@@ -151,14 +159,26 @@ router.get("/api/printful/products", async (req,res)=>{
       return res.json({ products: productCache.data, cached:true });
     }
 
+    // 1) Lista de productos de la tienda
     const list = await fetchAllSyncedProducts();
     if (!list.length){
       productCache = { time: now, data: [] };
       return res.json({ products: [], note:"No hay productos 'añadidos a tienda' en Printful." });
     }
 
+    // 2) Detalles de cada producto
     const details = await Promise.all(list.map(p=>pfGet(`/store/products/${p.id}`)));
-    const products = details.map(normalizeProduct);
+
+    // 3) Recolectar TODOS los variant_id para pedir al catálogo oficial
+    const allVariantIds = [];
+    for (const d of details){
+      const vs = d?.result?.sync_variants || [];
+      vs.forEach(v => { if (v?.variant_id) allVariantIds.push(String(v.variant_id)); });
+    }
+    const catalogMap = await fetchCatalogVariantsBatch(allVariantIds);
+
+    // 4) Normalizar con datos oficiales de color/size/hex por variant_id
+    const products = details.map(detail => normalizeProduct(detail, catalogMap));
 
     productCache = { time: now, data: products };
     res.json({ products, cached:false, refreshed:force });
