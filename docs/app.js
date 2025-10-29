@@ -177,7 +177,6 @@ function closeQV(){ $("#qvBackdrop").classList.remove("show"); $("#qvModal").cla
 function openProductBySlug(slug){
   const p = products.find(x => x.slug === slug);
   if (!p) return; // slug inválido
-  // Simula clic en "Vista rápida" de ese producto
   buildAndOpenQV(p);
 }
 
@@ -187,8 +186,20 @@ async function copyShareURL(slug){
     const url = `${location.origin}${location.pathname}#p/${encodeURIComponent(slug)}`;
     await navigator.clipboard.writeText(url);
     const btn = $("#qvShare");
-    if (btn){ btn.textContent = "¡Enlace copiado!"; setTimeout(()=>btn.textContent="Copiar enlace", 1400); }
+    if (btn){ btn.textContent = "¡Enlace copiado!"; setTimeout(()=>btn.textContent="Compartir", 1400); }
   }catch{ alert("No se pudo copiar el enlace"); }
+}
+
+// (Opcional) compartir nativo con fallback a copiar
+async function shareNativeOrCopy(slug, name){
+  const url = `${location.origin}${location.pathname}#p/${encodeURIComponent(slug)}`;
+  if (navigator.share) {
+    try { await navigator.share({ title: name || "VALTIX", text: name || "Producto VALTIX", url }); return; }
+    catch {}
+  }
+  await navigator.clipboard.writeText(url);
+  const btn = $("#qvShare");
+  if (btn){ btn.textContent = "¡Enlace copiado!"; setTimeout(()=>btn.textContent="Compartir", 1400); }
 }
 
 // ===== Render catálogo
@@ -326,14 +337,37 @@ function renderProducts(){
       });
     });
 
-    // Vista rápida
-    card.querySelector(".qv-btn").addEventListener("click", ()=> buildAndOpenQV(p));
-    // Compartir → actualiza hash y copia
-    card.querySelector(".share-btn").addEventListener("click", async ()=>{
-      setHashSlug(p.slug);
-      await copyShareURL(p.slug);
+    /* ------------------------------------------------------------------
+       >>> AÑADIDO EXACTAMENTE AQUÍ (antes de appendChild):
+       - Clic en imagen y título abre Vista Rápida
+       - Botón Vista Rápida (si existe)
+       - Botón Compartir (si existe)
+    ------------------------------------------------------------------- */
+
+    // 1) Clic en la imagen abre Vista Rápida
+    card.querySelector(".card-img-wrap").addEventListener("click", (e)=>{
+      e.preventDefault();
+      buildAndOpenQV(p);
     });
 
+    // 2) Clic en el título abre Vista Rápida (y evita navegación)
+    card.querySelector(".card-title").addEventListener("click", (e)=>{
+      e.preventDefault();
+      buildAndOpenQV(p);
+    });
+
+    // 3) (Opcional) Botón "Vista rápida" sigue funcionando
+    card.querySelector(".qv-btn")?.addEventListener("click", ()=> buildAndOpenQV(p));
+
+    // 4) Botón "Compartir" (si lo tienes en la tarjeta)
+    card.querySelector(".share-btn")?.addEventListener("click", async ()=>{
+      setHashSlug(p.slug);
+      await copyShareURL(p.slug);
+      // O si prefieres compartir nativo:
+      // await shareNativeOrCopy(p.slug, p.name);
+    });
+
+    // Finalmente, añadimos la card al grid
     grid.appendChild(card);
   });
 
@@ -429,7 +463,7 @@ function buildAndOpenQV(p){
     openCart();
   };
 
-  $("#qvShare").onclick = async ()=> { await copyShareURL(p.slug); };
+  $("#qvShare").onclick = async ()=> { await copyShareURL(p.slug); /* o shareNativeOrCopy(p.slug, p.name) */ };
 
   openQV();
 }
@@ -463,10 +497,12 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   }
 
   // Quick View bindings globales
-  $("#qvBackdrop")?.addEventListener("click", closeQV);
+  $("#qvBackdrop")?.addEventListener("click", ()=>{
+    closeQV();
+    if (getHashSlug()) history.replaceState(null,"",`${location.pathname}${location.search}`);
+  });
   $("#qvClose")?.addEventListener("click", ()=>{
     closeQV();
-    // Si venimos de #p/<slug>, limpiamos hash
     if (getHashSlug()) history.replaceState(null,"",`${location.pathname}${location.search}`);
   });
 
