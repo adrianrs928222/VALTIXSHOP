@@ -1,138 +1,109 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Descubre los productos exclusivos de VALTIX: moda moderna, materiales premium y envíos a toda Europa. Personaliza tu estilo con nuestras prendas Printful de alta calidad." />
-  <meta name="keywords" content="Valtix, tienda, moda, ropa, streetwear, sudaderas, camisetas, Printful, dropshipping, Europa" />
-  <meta property="og:title" content="VALTIX — Tu look, tu historia, tu marca" />
-  <meta property="og:description" content="Descubre la colección oficial VALTIX. Envíos a toda Europa. Diseño premium, fabricado bajo demanda." />
-  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/og-valtix.jpg" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <title>VALTIX — Ficha de Producto</title>
-  <link rel="icon" href="img/favicon.png" />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VALTIX – Ficha de Producto</title>
+  <meta name="description" content="Ficha de producto VALTIX: colores, tallas, galería y envío a toda Europa en pedidos superiores a 60€." />
+  <meta name="theme-color" content="#000000" />
+  <link rel="stylesheet" href="./style.css" />
   <style>
-    /* --- Estilos adicionales para ficha profesional --- */
-    .product-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2rem;
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .product-gallery {
-      flex: 1 1 50%;
-      min-width: 320px;
-    }
-    .main-img-wrap {
-      width: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #f9f9f9;
-      position: relative;
-    }
-    #mainImage {
-      width: 100%;
-      transition: transform .3s ease;
-      cursor: zoom-in;
-    }
-    .thumbs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem;
-      margin-top: .8rem;
-    }
-    .thumb {
-      width: 70px;
-      height: 70px;
-      object-fit: cover;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all .2s;
-    }
-    .thumb.active, .thumb:hover { outline: 2px solid #000; }
-    .product-info {
-      flex: 1 1 45%;
-      min-width: 300px;
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-    }
-    .pname { font-size: 1.8rem; font-weight: 700; }
-    .pprice { font-size: 1.4rem; color: #111; font-weight: 600; }
-    .color-selector, .size-selector {
-      display: flex; flex-wrap: wrap; gap: .6rem;
-    }
-    .color-circle {
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      border: 2px solid #ddd;
-      cursor: pointer;
-      transition: all .2s;
-    }
-    .color-circle.active { border-color: #000; transform: scale(1.1); }
-    .size-btn {
-      padding: .4rem .8rem;
-      border: 1px solid #ccc;
-      background: #fff;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: .2s;
-    }
-    .size-btn.active, .size-btn:hover {
-      background: #000; color: #fff; border-color: #000;
-    }
-    .btn {
-      background: #000;
-      color: #fff;
-      border: none;
-      padding: .9rem 1.4rem;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background .2s;
-    }
-    .btn:hover { background: #111; }
-    .desc h3 {
-      font-size: 1.2rem;
-      margin-top: 1rem;
-    }
-    .desc p {
-      color: #555;
-      line-height: 1.5;
-      margin-bottom: .8rem;
-    }
-
-    @media (max-width: 768px){
-      .product-container { flex-direction: column; padding: 1rem; }
-      .product-info { gap: 1rem; }
-      .main-img-wrap { max-height: 420px; }
-      .thumb { width: 60px; height: 60px; }
-    }
+    .prod { padding: 24px 0; }
+    .prod-inner { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
+    .gallery { display: grid; gap: 10px; }
+    .main-img { width:100%; aspect-ratio: 1/1; object-fit: cover; border:1px solid var(--border); border-radius: 12px; background:#f6f6f6; }
+    .thumbs { display:flex; gap:10px; flex-wrap:wrap; }
+    .thumbs img { width:72px; height:72px; object-fit:cover; border:1px solid var(--border); border-radius:8px; cursor:pointer; }
+    .thumbs img.active { outline:2px solid #000; }
+    @media (max-width: 960px){ .prod-inner{ grid-template-columns: 1fr; } }
   </style>
 </head>
-
 <body>
-  <header>
-    <a href="index.html" class="logo">VALTIX</a>
+  <div class="envio-bar">🚚 Envíos a toda Europa en pedidos superiores a 60€</div>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a class="brand" href="./" aria-label="Inicio VALTIX">
+        <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
+      </a>
+      <nav id="main-nav" class="nav" aria-label="Categorías">
+        <a href="./#c/camisetas">Camisetas</a>
+        <a href="./#c/sudaderas">Sudaderas</a>
+        <a href="./#c/pantalones">Pantalones</a>
+        <a href="./#c/zapatos">Zapatos</a>
+        <a href="./#c/accesorios">Accesorios</a>
+      </nav>
+      <button id="openCart" class="cart-btn" aria-haspopup="dialog">
+        Carrito <span id="cartCount" class="cart-count">0</span>
+      </button>
+    </div>
   </header>
 
-  <main id="productSection">
-    <p style="text-align:center;padding:2rem;color:#666">Cargando producto...</p>
+  <main class="main prod">
+    <div class="container prod-inner">
+      <section class="gallery" aria-label="Galería de producto">
+        <img id="mainImg" class="main-img" alt="Imagen principal del producto">
+        <div id="thumbs" class="thumbs"></div>
+      </section>
+
+      <section aria-label="Detalles de producto">
+        <h1 id="pName">Producto</h1>
+        <div id="pPrice" class="card-price" style="font-size:1.1rem;"></div>
+
+        <div class="options color-selector" id="colorWrap" role="group" aria-label="Colores"></div>
+        <div class="options" id="sizeWrap" role="group" aria-label="Tallas"></div>
+
+        <button id="addBtn" class="btn" disabled>Añadir al carrito</button>
+
+        <details open class="qv-acc">
+          <summary class="qv-label">Detalles del producto</summary>
+          <ul class="qv-bul">
+            <li>Tejidos y acabados premium seleccionados por VALTIX.</li>
+            <li>Impresión gestionada por Printful. Control de calidad y tracking.</li>
+            <li>Imágenes, colores y tallas sincronizados con catálogo.</li>
+          </ul>
+        </details>
+
+        <details class="qv-acc">
+          <summary class="qv-label">Talla y ajuste</summary>
+          <ul class="qv-bul">
+            <li>Elige tu talla habitual. Si dudas entre dos, te recomendamos la superior.</li>
+            <li>Consulta guía de tallas en el checkout si está disponible.</li>
+            <li>Los colores pueden variar levemente según pantalla.</li>
+          </ul>
+        </details>
+
+        <details class="qv-acc">
+          <summary class="qv-label">Devoluciones y envíos</summary>
+          <ul class="qv-bul">
+            <li>Pago seguro con Stripe.</li>
+            <li>Envíos a toda Europa; 2–5 días en España.</li>
+            <li>Devoluciones fáciles. Atención en soporte@valtix.shop</li>
+          </ul>
+        </details>
+      </section>
+    </div>
   </main>
 
-  <footer>
-    <div class="footer-inner">
-      <p>© <span id="year"></span> VALTIX — Envíos a toda Europa 🌍</p>
+  <!-- Drawer Carrito -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
+    <div class="drawer-header">
+      <h3>Tu carrito</h3>
+      <button id="closeCart" aria-label="Cerrar carrito">✕</button>
     </div>
+    <div id="cartItems" class="drawer-body"></div>
+    <div class="drawer-footer">
+      <div class="subtotal"><span>Subtotal</span><strong id="subtotal">0,00 €</strong></div>
+      <button id="clearCart" class="btn btn-alt">Vaciar carrito</button>
+      <button id="checkoutBtn" class="btn">Pagar</button>
+    </div>
+  </aside>
+
+  <footer class="footer">
+    <div class="container">© <span id="year"></span> VALTIX — Envíos a toda Europa 🌍</div>
   </footer>
 
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
-  </script>
-  <script src="product.js"></script>
+  <script src="./product.js"></script>
 </body>
 </html>
