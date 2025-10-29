@@ -2,10 +2,10 @@
  * ============================================================
  * VALTIX Backend API
  * ------------------------------------------------------------
- * Servidor Express para integraciones con:
- *  - Printful (catálogo + pedidos)
- *  - Stripe (checkout + webhooks)
- *  - CORS controlado
+ * - Express + CORS controlado
+ * - Stripe (checkout + webhooks)
+ * - Printful (catálogo + pedidos)
+ * - Seguridad/Perf: helmet, compression, rate limit, morgan
  * ============================================================
  */
 
@@ -14,13 +14,19 @@ import cors from "cors";
 import Stripe from "stripe";
 import fetch from "node-fetch";
 import bodyParser from "body-parser";
-import router from "./router.js"; // Rutas Printful
+import router from "./router.js";    // Rutas Printful (catálogo)
+import adminRouter from "./admin.js"; // Rutas admin (pedidos)
+
+import helmet from "helmet";
+import compression from "compression";
+import morgan from "morgan";
+import rateLimit from "express-rate-limit";
 
 const app = express();
+app.set("trust proxy", 1);
 
 /* ============================================================
    🔒 CONFIGURACIÓN DE CORS
-   Solo permite dominios oficiales de producción y pruebas.
 ============================================================ */
 const ALLOWED_ORIGINS = [
   "https://adrianrs928222.github.io",
@@ -56,6 +62,15 @@ app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
+
+/* ============================================================
+   🛡️ Seguridad & Performance
+============================================================ */
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
+app.use(morgan("tiny"));
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 180 });
+app.use(limiter);
 
 /* ============================================================
    💳 STRIPE CONFIG
@@ -289,9 +304,10 @@ app.post("/availability", async (req, res) => {
 });
 
 /* ============================================================
-   🧭 RUTAS PRINTFUL (router.js)
+   🧭 Routers
 ============================================================ */
 app.use(router);
+app.use("/admin", adminRouter);
 
 /* ============================================================
    🚀 ARRANQUE DEL SERVIDOR
