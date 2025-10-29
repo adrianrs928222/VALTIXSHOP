@@ -2,7 +2,7 @@
 const BACKEND_URL = "https://valtixshop.onrender.com";
 const $ = s => document.querySelector(s);
 
-// ===== Carrito (igual que tu app)
+// ===== Carrito
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
@@ -26,27 +26,28 @@ function renderCart(){
 function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); renderCart(); }
 function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); }
 
-// ===== Utiles producto
+// ===== Util
 const colorNamesOf = p => Object.keys(p.colors||{});
 const sizeNamesOf  = (p,c) => Object.keys(p.colors?.[c]?.sizes||{});
 
-// ===== Render ficha
+// ===== Render
 function renderProduct(p){
   $("#pName").textContent = p.name;
   $("#pPrice").textContent = money(p.price);
-  $("#kvSku").textContent = p.sku || p.id || "-";
+  $("#kvSku").textContent  = p.sku || p.id || "-";
 
   let colors = colorNamesOf(p);
   if (!colors.length) colors = ["Único"];
   let selColor = colors[0] || "Único";
   let selSize  = sizeNamesOf(p, selColor)[0] || Object.keys(p.colors?.[selColor]?.sizes||{Única:null})[0];
 
-  // Selectores
-  const cw=$("#colorWrap"); const sw=$("#sizeWrap");
+  const cw=$("#colorWrap"), sw=$("#sizeWrap");
+  // Colores
   cw.innerHTML = colors.length>1
     ? colors.map((c,i)=>`<button class="color-circle ${i?"":"active"}" data-c="${c}" style="background-color:${p.colors[c]?.hex||"#ddd"}"></button>`).join("")
     : `<span class="stock-badge">Color único</span>`;
 
+  // Tallas
   function buildSizes(){
     const sizes = sizeNamesOf(p, selColor);
     if (!sizes.length){ sw.innerHTML = `<span class="stock-badge">Talla única</span>`; return; }
@@ -56,12 +57,12 @@ function renderProduct(p){
       btn.addEventListener("click", ()=>{
         sw.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
-        selSize = btn.dataset.sz;
-        updateAddBtn();
+        selSize = btn.dataset.sz; updateAddBtn();
       });
     });
   }
 
+  // Galería
   const mainImg=$("#mainImg"), thumbs=$("#thumbs");
   function buildGallery(){
     const url = p.colors?.[selColor]?.image || p.image;
@@ -70,29 +71,24 @@ function renderProduct(p){
   }
 
   function updateAddBtn(){
-    const btn=$("#addBtn");
     const can = !!(p.colors?.[selColor]?.sizes?.[selSize]);
-    btn.disabled = !can;
+    $("#addBtn").disabled = !can;
   }
-
-  function updateKeyVisual(){
+  function updateKV(){
     $("#kvColor").textContent = selColor;
   }
 
-  // Eventos color
   cw.querySelectorAll(".color-circle").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       cw.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
       btn.classList.add("active");
       selColor = btn.dataset.c;
-      buildSizes(); buildGallery(); updateKeyVisual(); updateAddBtn();
+      buildSizes(); buildGallery(); updateKV(); updateAddBtn();
     });
   });
 
-  // Inicializa
-  buildSizes(); buildGallery(); updateKeyVisual(); updateAddBtn();
+  buildSizes(); buildGallery(); updateKV(); updateAddBtn();
 
-  // Añadir al carrito
   $("#addBtn").addEventListener("click", ()=>{
     const vid = p.colors?.[selColor]?.sizes?.[selSize];
     if(!vid) return;
@@ -105,26 +101,8 @@ function renderProduct(p){
     });
     openCart();
   });
-}
 
-// ===== Carga y eventos
-async function loadProduct(){
-  const sku=new URL(location).searchParams.get("sku");
-  if(!sku){ location.href="./"; return; }
-  try{
-    const r=await fetch(`${BACKEND_URL}/api/printful/product?sku=${encodeURIComponent(sku)}`,{cache:"no-store"});
-    const {product}=await r.json();
-    renderProduct(product);
-  }catch(e){
-    const r2=await fetch(`${BACKEND_URL}/api/printful/products`,{cache:"no-store"});
-    const data=await r2.json();
-    const p=(data?.products||[]).find(x=>String(x.sku)===String(sku));
-    if(p) renderProduct(p);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", ()=>{
-  loadProduct();
+  // Eventos carrito
   $("#openCart")?.addEventListener("click", openCart);
   $("#closeCart")?.addEventListener("click", closeCart);
   $("#drawerBackdrop")?.addEventListener("click", closeCart);
@@ -136,4 +114,22 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const data = await res.json(); if(data?.url) location.href=data.url;
   });
   renderCart();
-});
+}
+
+// ===== Load
+async function loadProduct(){
+  const sku=new URL(location).searchParams.get("sku");
+  if(!sku){ location.href="./"; return; }
+  try{
+    const r=await fetch(`${BACKEND_URL}/api/printful/product?sku=${encodeURIComponent(sku)}`,{cache:"no-store"});
+    if(!r.ok) throw 0;
+    const {product}=await r.json();
+    renderProduct(product);
+  }catch(e){
+    const r2=await fetch(`${BACKEND_URL}/api/printful/products`,{cache:"no-store"});
+    const data=await r2.json();
+    const p=(data?.products||[]).find(x=>String(x.sku)===String(sku));
+    if(p) renderProduct(p); else alert("Producto no encontrado");
+  }
+}
+document.addEventListener("DOMContentLoaded", loadProduct);
