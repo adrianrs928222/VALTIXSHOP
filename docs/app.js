@@ -276,7 +276,7 @@ function renderProducts(){
         <div class="options" role="group" aria-label="Tallas" data-sizes></div>
 
         <div class="grid-2">
-          <button class="btn qv-btn" data-id="${p.id}">Vista rápida</button>
+          <button class="btn qv-btn" data-id="${p.id}">Añadir al carrito</button>
           <button class="btn btn-alt share-btn" type="button">Compartir</button>
         </div>
       </div>
@@ -337,37 +337,26 @@ function renderProducts(){
       });
     });
 
-    /* ------------------------------------------------------------------
-       >>> AÑADIDO EXACTAMENTE AQUÍ (antes de appendChild):
-       - Clic en imagen y título abre Vista Rápida
-       - Botón Vista Rápida (si existe)
-       - Botón Compartir (si existe)
-    ------------------------------------------------------------------- */
-
-    // 1) Clic en la imagen abre Vista Rápida
+    // === PULSAR PRENDA → VISTA RÁPIDA ===
     card.querySelector(".card-img-wrap").addEventListener("click", (e)=>{
       e.preventDefault();
       buildAndOpenQV(p);
     });
-
-    // 2) Clic en el título abre Vista Rápida (y evita navegación)
     card.querySelector(".card-title").addEventListener("click", (e)=>{
       e.preventDefault();
       buildAndOpenQV(p);
     });
 
-    // 3) (Opcional) Botón "Vista rápida" sigue funcionando
+    // Botón “Añadir al carrito” (en tarjeta) → abre Quick View
     card.querySelector(".qv-btn")?.addEventListener("click", ()=> buildAndOpenQV(p));
 
-    // 4) Botón "Compartir" (si lo tienes en la tarjeta)
+    // Compartir
     card.querySelector(".share-btn")?.addEventListener("click", async ()=>{
       setHashSlug(p.slug);
       await copyShareURL(p.slug);
-      // O si prefieres compartir nativo:
-      // await shareNativeOrCopy(p.slug, p.name);
+      // o: await shareNativeOrCopy(p.slug, p.name);
     });
 
-    // Finalmente, añadimos la card al grid
     grid.appendChild(card);
   });
 
