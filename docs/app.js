@@ -1,5 +1,22 @@
-// ===== Config
-const BACKEND_URL = "https://valtixshop.onrender.com";
+// ============================================================
+// VALTIX – App Catálogo (app.js)
+// - BACKEND_URL dinámico (GitHub Pages / Hostinger / Render)
+// - Catálogo desde /api/printful/products
+// - Tarjetas enlazan a producto.html?sku=...
+// - Carrito + Checkout Stripe
+// - Promo: "Envíos a toda Europa en pedidos superiores a 60€"
+// - Misma estructura y nombres que tu código original
+// ============================================================
+
+// ===== Config (backend dinámico)
+const HOST = location.hostname;
+// Cambia estos endpoints si usas API propia en Hostinger:
+const BACKEND_RENDER    = "https://valtixshop.onrender.com";
+const BACKEND_HOSTINGER = "https://api.valtixshop.com"; // si no lo tienes, no pasa nada
+// Si estás en GitHub Pages usa Render; si no, usa Hostinger (o Render de fallback)
+const BACKEND_URL = HOST.endsWith(".github.io") ? BACKEND_RENDER : (BACKEND_HOSTINGER || BACKEND_RENDER);
+
+// Ruta de checkout (no tocar)
 const CHECKOUT_PATH = "/checkout";
 
 // ===== Helpers
@@ -35,12 +52,20 @@ async function loadProducts(){
   const grid = $("#grid");
   try{
     const res = await fetch(`${BACKEND_URL}/api/printful/products?refresh=1`, { cache:"no-store" });
+    if(!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     const data = await res.json();
     products = data?.products || [];
     renderProducts();
   }catch(e){
     console.error("❌ Error al cargar productos:", e);
-    if (grid) grid.innerHTML = "<p style='color:#c00;font-weight:700'>Error al cargar productos.</p>";
+    if (grid) {
+      grid.innerHTML = `
+        <div style="padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;">
+          <h3 style="margin-top:0">No se pudo cargar el catálogo</h3>
+          <p style="color:#666">Verifica CORS en el backend y que <code>/api/printful/products</code> responde OK.</p>
+          <p style="margin:0"><a class="btn btn-alt" href="#" onclick="location.reload();return false;">Reintentar</a></p>
+        </div>`;
+    }
   }
 }
 
@@ -65,12 +90,18 @@ function renderProducts(){
     let selectedSize =
       (selectedColor && Object.keys(p.colors[selectedColor].sizes)[0]) || null;
 
+    const href = `./producto.html?sku=${encodeURIComponent(p.sku)}`;
+
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
-      <img class="card-img" src="${ (selectedColor && p.colors[selectedColor].image) || p.image }" alt="${p.name}">
+      <a class="card-img-wrap" href="${href}" aria-label="Ver ${p.name}">
+        <img class="card-img" src="${ (selectedColor && p.colors[selectedColor].image) || p.image }" alt="${p.name}">
+      </a>
       <div class="card-body">
-        <h3 class="card-title">${p.name}</h3>
+        <h3 class="card-title">
+          <a href="${href}">${p.name}</a>
+        </h3>
         <p class="card-price">${money(p.price)}</p>
         <div class="stock-line"><span class="stock-badge ok">En stock</span></div>
 
@@ -82,7 +113,10 @@ function renderProducts(){
 
         <div class="options" role="group" aria-label="Tallas" data-sizes></div>
 
-        <button class="btn add-btn" data-sku="${p.sku}">Añadir al carrito</button>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a class="btn btn-alt" href="${href}" style="flex:1 1 140px;">Ver ficha</a>
+          <button class="btn add-btn" data-sku="${p.sku}" style="flex:1 1 160px;">Añadir al carrito</button>
+        </div>
       </div>
     `;
 
@@ -213,15 +247,15 @@ function updateActiveNavLink(){
   });
 }
 
-// ===== Promo (como antes)
+// ===== Promo (actualizado Europa)
 function startPromo(){
   const box=$("#promoBox"); const textEl=box?.querySelector(".promo-text"); if(!box||!textEl) return;
   if(window.innerWidth <= 520){
-    textEl.textContent = "🚚 Envíos GRATIS en pedidos superiores a 60€";
+    textEl.textContent = "🚚 Envíos a toda Europa en pedidos superiores a 60€";
   } else {
     const msgs=[
-      "Compra hoy y recibe en España o en cualquier parte del mundo 🌍",
-      "🚚 Envíos GRATIS en pedidos superiores a 60€"
+      "🚚 Envíos a toda Europa en pedidos superiores a 60€",
+      "Pagos seguros con Stripe 🔒"
     ];
     let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
     show(); setInterval(show,8000);
