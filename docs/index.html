@@ -3,34 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VALTIX – Tu look, tu historia, tu marca</title>
-  <meta name="description" content="Explora la colección oficial de VALTIX. Streetwear premium para quienes dejan huella. Envíos a toda Europa en pedidos superiores a 60€." />
+  <title>VALTIX | Estilo que evoluciona – Moda premium para cada día y cada momento</title>
+  <meta name="description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
+  <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
+  <meta property="og:title" content="VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento" />
+  <meta property="og:description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
+  <meta property="og:image" content="https://via.placeholder.com/1200x630" />
+  <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- Breadcrumbs (SEO) -->
-  <script id="breadcrumbs-jsonld" type="application/ld+json"></script>
+  <!-- JSON-LD para breadcrumbs (lo actualiza app.js) -->
+  <script id="breadcrumbs-jsonld" type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
+  ]}
+  </script>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
-  <style>
-    .prod { padding: 24px 0; }
-    .prod-inner { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
-    .gallery { display: grid; gap: 10px; }
-    .main-img { width:100%; aspect-ratio: 1/1; object-fit: cover; border:1px solid var(--border); border-radius: 12px; background:#f6f6f6; }
-    .thumbs { display:flex; gap:10px; flex-wrap:wrap; }
-    .thumbs img { width:72px; height:72px; object-fit:cover; border:1px solid var(--border); border-radius:8px; cursor:pointer; }
-    .thumbs img.active { outline:2px solid #000; }
-    @media (max-width: 960px){ .prod-inner{ grid-template-columns: 1fr; } }
-  </style>
 </head>
+
 <body>
-  <div class="envio-bar">🚚 Envíos a toda Europa en pedidos superiores a 60€</div>
+  <div class="envio-bar">🚚 Envíos gratis en pedidos superiores a 60€</div>
 
   <header class="header">
     <div class="container header-inner">
       <a class="brand" href="./" aria-label="Inicio VALTIX">
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
+
       <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
+
       <nav id="main-nav" class="nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
@@ -38,36 +44,45 @@
         <a href="#c/zapatos">Zapatos</a>
         <a href="#c/accesorios">Accesorios</a>
       </nav>
+
       <button id="openCart" class="cart-btn" aria-haspopup="dialog">
         Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
     </div>
   </header>
 
+  <section class="hero">
+    <div class="container hero-inner">
+      <div>
+        <h1>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</h1>
+        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. Envíos 2–5 días (ES) e internacionales.</h2>
+        <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
+      </div>
+      <div class="hero-img" role="region" aria-label="Mensaje destacado">
+        <div class="promo-box" id="promoBox"><span class="promo-text"></span></div>
+      </div>
+    </div>
+  </section>
+
   <main class="main">
-    <section class="hero container">
-      <div class="hero-inner">
-        <div>
-          <h1>Tu look, tu historia, tu marca.</h1>
-          <p class="sub">Explora la colección oficial de VALTIX. Streetwear premium para quienes dejan huella. Envíos a toda Europa en pedidos superiores a 60€.</p>
-          <a href="#catalogo" class="cta" id="goCatalog">Ver catálogo</a>
-        </div>
-        <div class="hero-img">
-          <strong>VALTIX</strong>
-        </div>
+    <section class="section" id="catalogo" aria-labelledby="catalogo-title">
+      <div class="container">
+        <h3 id="catalogo-title" class="visualmente-oculto">Catálogo</h3>
+        <div id="grid" class="grid"></div>
       </div>
-    </section>
-
-    <section class="container" style="display:grid;place-items:center;margin-bottom:18px">
-      <div id="promoBox" class="promo-box">
-        <span class="promo-text">🚚 Envíos a toda Europa en pedidos superiores a 60€</span>
-      </div>
-    </section>
-
-    <section id="catalogo" class="section container">
-      <div id="grid" class="grid"></div>
     </section>
   </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>© <span id="year"></span> VALTIX</div>
+      <nav class="legal-links" aria-label="Información legal">
+        <a href="#info/aviso-legal">Aviso legal</a>
+        <a href="#info/politica-compras">Política de compras</a>
+        <a href="#info/privacidad">Política de privacidad</a>
+      </nav>
+    </div>
+  </footer>
 
   <!-- Drawer Carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
@@ -84,43 +99,7 @@
     </div>
   </aside>
 
-  <!-- ===== Quick View (Vista rápida) ===== -->
-  <div id="qvBackdrop" class="qv-backdrop" aria-hidden="true"></div>
-  <aside id="qvModal" class="qv-modal" role="dialog" aria-modal="true" aria-label="Vista rápida de producto">
-    <div class="qv-header"><button id="qvClose" class="qv-close" aria-label="Cerrar">✕</button></div>
-    <div class="qv-body">
-      <div class="qv-media">
-        <img id="qvMain" alt="Imagen principal" />
-        <div id="qvThumbs" class="qv-thumbs"></div>
-      </div>
-      <div class="qv-info">
-        <h2 id="qvName" class="qv-name">Producto</h2>
-        <div id="qvPrice" class="qv-price">0,00 €</div>
-        <div class="qv-stock">En stock</div>
-        <div class="qv-field">
-          <div class="qv-label">Color</div>
-          <div id="qvColors" class="qv-colors"></div>
-          <div id="qvColorName" class="qv-muted"></div>
-        </div>
-        <div class="qv-field">
-          <div class="qv-label">Talla</div>
-          <div id="qvSizes" class="qv-sizes"></div>
-        </div>
-        <button id="qvAdd" class="btn">Añadir al carrito</button>
-        <ul class="qv-badges">
-          <li>Pago seguro con Stripe</li>
-          <li>Envío 2–5 días en España</li>
-          <li>Devoluciones fáciles</li>
-        </ul>
-        <a id="qvFullLink" class="qv-full" href="#">Ver ficha completa →</a>
-      </div>
-    </div>
-  </aside>
-
-  <footer class="footer">
-    <div class="container">© <span id="year"></span> VALTIX — Envíos a toda Europa 🌍</div>
-  </footer>
-
-  <script src="./app.js"></script>
+  <!-- Solo app.js (sin products.js) -->
+  <script src="./app.js?v=hex1"></script>
 </body>
 </html>
