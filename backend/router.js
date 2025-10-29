@@ -48,7 +48,7 @@ function detectCategories(name=""){
   return ["otros"];
 }
 
-/* ---------- Color → HEX (map amplio + códigos nativos) ---------- */
+/* ---------- Color → HEX ---------- */
 function colorHexFromName(name=""){
   const k = String(name).trim().toLowerCase().replace(/\s+/g," ");
   const map = {
@@ -57,12 +57,11 @@ function colorHexFromName(name=""){
     white:"#ffffff","ivory":"#fffff0","cream":"#fffdd0","beige":"#f5f5dc","sand":"#c2b280",
     navy:"#001f3f","midnight navy":"#001a33","blue":"#0057ff","royal":"#4169e1",
     "light blue":"#87cefa","sky blue":"#87ceeb","cyan":"#00ffff","teal":"#008080",
-    green:"#008000","forest":"#0b3d02","olive":"#556b2f","mint":"#98ff98",
+    green:"#008000","forest":"#0b3d02","olive:"#556b2f","mint":"#98ff98",
     red:"#ff0000","maroon":"#800000","burgundy":"#800020","wine":"#722f37",
-    orange:"#ff7f00","rust":"#b7410e","gold":"#ffd700","yellow":"#ffea00","mustard":"#e1ad01",
+    orange:"#ff7f00","rust":"#b7410e","gold:"#ffd700","yellow":"#ffea00","mustard":"#e1ad01",
     purple:"#800080","violet":"#8a2be2","lavender":"#b57edc","magenta":"#ff00ff","pink":"#ffc0cb",
     brown:"#5c4033","chocolate":"#7b3f00","khaki":"#bdb76b",
-    // ES
     negro:"#000000", blanco:"#ffffff", gris:"#808080", azul:"#0057ff", rojo:"#ff0000",
     verde:"#008000", amarillo:"#ffea00", naranja:"#ff7f00", morado:"#800080", rosa:"#ffc0cb",
     burdeos:"#800020", beige:"#f5f5dc", marrón:"#5c4033", caqui:"#bdb76b", oro:"#ffd700"
@@ -70,12 +69,11 @@ function colorHexFromName(name=""){
   return map[k] || null;
 }
 
-/* ---------- Normalizador robusto: COLORES (HEX) + FOTO POR COLOR + TALLAS ---------- */
+/* ---------- Normalizador ---------- */
 function normalizeProduct(detail){
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
 
-  // precio base
   const prices = variants.map(v=>parseFloat(v.retail_price)).filter(n=>!Number.isNaN(n));
   const price = prices.length ? Math.min(...prices) : 0;
 
@@ -94,7 +92,7 @@ function normalizeProduct(detail){
     if (!colorName) colorName = "Color Único";
     colorName = cap(colorName);
 
-    // HEX: nativo (color_code/hex_code) o por nombre
+    // HEX
     let hex = product.hex_code || v?.color_code || v?.color_hex || null;
     if (hex && /^#?[0-9A-Fa-f]{3,6}$/.test(hex)) hex = hex.startsWith("#") ? hex : `#${hex}`;
     if (!hex) hex = colorHexFromName(colorName);
@@ -134,7 +132,7 @@ function normalizeProduct(detail){
     image: cover,
     sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
-    colors,       // { "Navy": {hex:"#001f3f", image:"...", sizes:{S:123,...}} , ... }
+    colors,
     variant_map,
   };
 }
