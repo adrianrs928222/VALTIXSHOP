@@ -1,10 +1,5 @@
 // ============================================================
-// VALTIX – App principal (catálogo + carrito + disponibilidad)
-// - Promo box pulido (móvil/desktop)
-// - Carga de productos desde backend Printful
-// - Chequeo de disponibilidad por variant_id (Printful probe)
-// - Render: oculta colores sin tallas disponibles y desactiva tallas agotadas
-// - Enlaces a ficha: producto.html?sku=...
+// VALTIX – App principal (catálogo + carrito + disponibilidad + Quick View)
 // ============================================================
 
 // ===== Config
@@ -54,6 +49,15 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
+// ===== Quick View state
+let QV = { product: null, selectedColor: null, selectedSize: null };
+function openQV(){ $("#qvBackdrop").classList.add("show"); $("#qvModal").classList.add("open"); $("#qvModal").setAttribute("aria-hidden","false"); }
+function closeQV(){ $("#qvBackdrop").classList.remove("show"); $("#qvModal").classList.remove("open"); $("#qvModal").setAttribute("aria-hidden","true"); QV={product:null,selectedColor:null,selectedSize:null}; }
+document.addEventListener("DOMContentLoaded", ()=>{
+  $("#qvBackdrop")?.addEventListener("click", closeQV);
+  $("#qvClose")?.addEventListener("click", closeQV);
+});
+
 // ===== Data
 async function loadProducts(){
   const grid = $("#grid");
@@ -66,7 +70,7 @@ async function loadProducts(){
       grid.innerHTML = `<p style="color:#777">No hay productos añadidos en Printful o falta la API key.</p>`;
       return;
     }
-    // Después de obtener productos, consultamos disponibilidad de TODOS los variant_id
+    // Disponibilidad de TODOS los variant_id
     const allVariantIds = [];
     products.forEach(p=>{
       Object.values(p.colors||{}).forEach(c=>{
@@ -75,7 +79,6 @@ async function loadProducts(){
         });
       });
     });
-    // Evita payloads enormes por duplicados
     const unique = [...new Set(allVariantIds)];
     availability = await fetchAvailability(unique);
     renderProducts();
@@ -96,7 +99,6 @@ async function fetchAvailability(variantIds){
     const data = await res.json();
     if (data?.ok && data.availability) return data.availability;
   }catch(e){ console.error("❌ availability:", e); }
-  // Si falla, devolvemos 'null' (desconocido) para no bloquear la compra
   const out={}; variantIds.forEach(v=>out[v]=null); return out;
 }
 
@@ -114,7 +116,7 @@ function renderProducts(){
   const list=(cat==="all") ? products : products.filter(p=>Array.isArray(p.categories)&&p.categories.includes(cat));
 
   list.forEach(p=>{
-    // Filtrar colores que no tengan NINGUNA talla disponible
+    // Filtrar colores sin stock
     const colorEntries = Object.entries(p.colors||{});
     const filteredColors = colorEntries
       .map(([name,meta])=>{
@@ -127,7 +129,7 @@ function renderProducts(){
       })
       .filter(Boolean);
 
-    if (!filteredColors.length) return; // nada disponible, no pintamos tarjeta
+    if (!filteredColors.length) return;
 
     const colorNames = filteredColors.map(([n])=>n);
     const colorsMap  = Object.fromEntries(filteredColors);
@@ -149,7 +151,7 @@ function renderProducts(){
     card.className="card";
     card.innerHTML=`
       <div class="card-img-wrap">
-        <img class="card-img" src="${ colorsMap[selectedColor]?.image || p.image }" alt="${p.name}">
+        <img class="card-img" src="${ colorsMap[selectedColor]?.image || p.image }" alt="${p.name}" loading="lazy" decoding="async">
       </div>
       <div class="card-body">
         <h3 class="card-title"><a href="./producto.html?sku=${encodeURIComponent(p.sku)}" class="card-link">${p.name}</a></h3>
@@ -176,7 +178,7 @@ function renderProducts(){
         <div class="options" role="group" aria-label="Tallas" data-sizes></div>
 
         <div class="grid-2">
-          <button class="btn add-btn" data-sku="${p.sku}">Añadir al carrito</button>
+          <button class="btn qv-btn" data-sku="${p.sku}">Vista rápida</button>
           <a class="btn btn-alt" href="./producto.html?sku=${encodeURIComponent(p.sku)}">Ver ficha</a>
         </div>
       </div>
@@ -195,7 +197,6 @@ function renderProducts(){
         return `<button class="option-btn ${active}" data-sz="${sz}" ${disabledAttr}>${sz}</button>`;
       }).join("");
 
-      // si la seleccion actual está agotada, elige la primera disponible
       const currentVid = colorsMap[selectedColor].sizes[selectedSize];
       if (availability[String(currentVid)] === false) {
         const firstOk = sizeEntries.find(([,vid])=>{
@@ -225,7 +226,6 @@ function renderProducts(){
         selectedColor = btn.dataset.color;
         imgEl.src = colorsMap[selectedColor]?.image || p.image;
 
-        // elegir primera talla disponible del nuevo color
         const sizeEntries = Object.entries(colorsMap[selectedColor].sizes||{});
         const firstOk = sizeEntries.find(([,vid])=>{
           const a = availability[String(vid)];
@@ -237,20 +237,89 @@ function renderProducts(){
       });
     });
 
-    // Add to cart
-    card.querySelector(".add-btn").addEventListener("click", ()=>{
-      if (!selectedColor || !selectedSize) return;
-      const vid = colorsMap[selectedColor].sizes[selectedSize];
-      const a = availability[String(vid)];
-      if (a === false) return alert("Esa talla/color está agotada.");
-      addToCart({
-        sku: `${p.sku}_${selectedColor}_${selectedSize}`,
-        name: `${p.name} ${selectedColor} ${selectedSize}`,
-        price: p.price,
-        image: colorsMap[selectedColor]?.image || p.image,
-        variant_id: vid
+    // Add to cart (desde card — si lo añades aquí)
+    // (Si quieres mantener solo Quick View para CTA principal, puedes omitir este bloque)
+
+    // Quick View open
+    card.querySelector(".qv-btn").addEventListener("click", ()=>{
+      QV.product = p;
+      QV.selectedColor = selectedColor;
+      QV.selectedSize  = selectedSize;
+
+      $("#qvName").textContent = p.name;
+      $("#qvPrice").textContent = `${Number(p.price).toFixed(2)} €`;
+      $("#qvImg").src = colorsMap[QV.selectedColor]?.image || p.image;
+      $("#qvLink").href = `./producto.html?sku=${encodeURIComponent(p.sku)}`;
+
+      // Colores
+      const colorEntries = Object.entries(colorsMap);
+      $("#qvColors").innerHTML = colorEntries.map(([cn,meta])=>{
+        const anyAvail = Object.values(meta.sizes||{}).some(vid=>{
+          const a = availability[String(vid)];
+          return a===true || a===null;
+        });
+        if(!anyAvail) return "";
+        const active = (cn===QV.selectedColor) ? "active":"";
+        return `<button class="color-circle ${active}" title="${cn}" data-color="${cn}" style="background-color:${meta?.hex||"#ddd"};"></button>`;
+      }).join("");
+
+      $("#qvColors").querySelectorAll(".color-circle").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          $("#qvColors").querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
+          btn.classList.add("active");
+          QV.selectedColor = btn.dataset.color;
+          $("#qvImg").src = colorsMap[QV.selectedColor]?.image || p.image;
+          const entries = Object.entries(colorsMap[QV.selectedColor].sizes||{});
+          const firstOk = entries.find(([,vid])=> (availability[String(vid)]===true || availability[String(vid)]===null));
+          QV.selectedSize = firstOk ? firstOk[0] : (entries[0]?.[0] || null);
+          renderQVSizes();
+          updateQVCTA();
+        });
       });
-      openCart();
+
+      function renderQVSizes(){
+        const entries = Object.entries(colorsMap[QV.selectedColor].sizes||{});
+        $("#qvSizes").innerHTML = entries.map(([sz,vid])=>{
+          const a = availability[String(vid)];
+          const isAvail = (a===true || a===null);
+          const disabledAttr = isAvail ? "" : "disabled";
+          const active = (sz===QV.selectedSize && isAvail) ? "active" : "";
+          return `<button class="option-btn ${active}" data-sz="${sz}" ${disabledAttr}>${sz}</button>`;
+        }).join("");
+        $("#qvSizes").querySelectorAll(".option-btn").forEach(btn=>{
+          btn.addEventListener("click", ()=>{
+            if (btn.hasAttribute("disabled")) return;
+            $("#qvSizes").querySelectorAll(".option-btn").forEach(b=>b.classList.remove("active"));
+            btn.classList.add("active");
+            QV.selectedSize = btn.dataset.sz;
+            updateQVCTA();
+          });
+        });
+      }
+      function updateQVCTA(){
+        const vid = colorsMap[QV.selectedColor].sizes[QV.selectedSize];
+        const a = availability[String(vid)];
+        const btn = $("#qvAdd");
+        if (!vid || a===false){ btn.disabled=true; btn.textContent="Agotado"; return; }
+        btn.disabled=false; btn.textContent="Añadir al carrito";
+      }
+      renderQVSizes(); updateQVCTA();
+
+      $("#qvAdd").onclick = ()=>{
+        const vid = colorsMap[QV.selectedColor].sizes[QV.selectedSize];
+        const a = availability[String(vid)];
+        if (a===false) return;
+        addToCart({
+          sku: `${p.sku}_${QV.selectedColor}_${QV.selectedSize}`,
+          name: `${p.name} ${QV.selectedColor} ${QV.selectedSize}`,
+          price: p.price,
+          image: colorsMap[QV.selectedColor]?.image || p.image,
+          variant_id: vid
+        });
+        closeQV(); openCart();
+      };
+
+      openQV();
     });
 
     grid.appendChild(card);
@@ -288,7 +357,7 @@ function renderCart(){
       const row=document.createElement("div");
       row.className="drawer-item";
       row.innerHTML=`
-        <img src="${i.image}" alt="${i.name}">
+        <img src="${i.image}" alt="${i.name}" loading="lazy" decoding="async">
         <div style="flex:1">
           <div style="font-weight:700">${i.name}</div>
           <div class="qty">
