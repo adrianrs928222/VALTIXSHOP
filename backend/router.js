@@ -14,80 +14,29 @@ let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
 /* =========================
-   Color helpers (FIX)
+   Color helpers
 ========================= */
 function hexFromName(name = "") {
   const k = String(name).trim().toLowerCase().replace(/\s+/g, " ");
   const COLOR_MAP = {
     // EN
-    "black": "#000000",
-    "black heather": "#1f1f1f",
-    "charcoal": "#36454f",
-    "dark gray": "#555555",
-    "gray": "#808080",
-    "athletic heather": "#a7a7a7",
-    "silver": "#c0c0c0",
-    "ash": "#b2b2b2",
-    "white": "#ffffff",
-    "ivory": "#fffff0",
-    "cream": "#fffdd0",
-    "beige": "#f5f5dc",
-    "sand": "#c2b280",
-    "navy": "#001f3f",
-    "midnight navy": "#001a33",
-    "blue": "#0057ff",
-    "royal": "#4169e1",
-    "light blue": "#87cefa",
-    "sky blue": "#87ceeb",
-    "cyan": "#00ffff",
-    "teal": "#008080",
-    "green": "#008000",
-    "forest": "#0b3d02",
-    "forest green": "#0b3d02",
-    "olive": "#556b2f",
-    "mint": "#98ff98",
-    "red": "#ff0000",
-    "maroon": "#800000",
-    "burgundy": "#800020",
-    "wine": "#722f37",
-    "orange": "#ff7f00",
-    "rust": "#b7410e",
-    "gold": "#ffd700",
-    "yellow": "#ffea00",
-    "mustard": "#e1ad01",
-    "purple": "#800080",
-    "violet": "#8a2be2",
-    "lavender": "#b57edc",
-    "magenta": "#ff00ff",
-    "pink": "#ffc0cb",
-    "brown": "#5c4033",
-    "chocolate": "#7b3f00",
-    "khaki": "#bdb76b",
-
+    "black":"#000000","black heather":"#1f1f1f","charcoal":"#36454f","dark gray":"#555555",
+    "gray":"#808080","athletic heather":"#a7a7a7","silver":"#c0c0c0","ash":"#b2b2b2",
+    "white":"#ffffff","ivory":"#fffff0","cream":"#fffdd0","beige":"#f5f5dc","sand":"#c2b280",
+    "navy":"#001f3f","midnight navy":"#001a33","blue":"#0057ff","royal":"#4169e1",
+    "light blue":"#87cefa","sky blue":"#87ceeb","cyan":"#00ffff","teal":"#008080",
+    "green":"#008000","forest":"#0b3d02","forest green":"#0b3d02","olive":"#556b2f","mint":"#98ff98",
+    "red":"#ff0000","maroon":"#800000","burgundy":"#800020","wine":"#722f37",
+    "orange":"#ff7f00","rust":"#b7410e","gold":"#ffd700","yellow":"#ffea00","mustard":"#e1ad01",
+    "purple":"#800080","violet":"#8a2be2","lavender":"#b57edc","magenta":"#ff00ff","pink":"#ffc0cb",
+    "brown":"#5c4033","chocolate":"#7b3f00","khaki":"#bdb76b",
     // ES
-    "negro": "#000000",
-    "blanco": "#ffffff",
-    "gris": "#808080",
-    "azul": "#0057ff",
-    "rojo": "#ff0000",
-    "verde": "#008000",
-    "amarillo": "#ffea00",
-    "naranja": "#ff7f00",
-    "morado": "#800080",
-    "rosa": "#ffc0cb",
-    "burdeos": "#800020",
-    "beige": "#f5f5dc",
-    "marrón": "#5c4033",
-    "caqui": "#bdb76b",
-    "oro": "#ffd700",
-
-    // Printful comunes
-    "heather grey": "#a7a7a7",
-    "heather gray": "#a7a7a7",
-    "charcoal heather": "#3c3c3c",
-    "sand dune": "#c2b280"
+    "negro":"#000000","blanco":"#ffffff","gris":"#808080","azul":"#0057ff","rojo":"#ff0000",
+    "verde":"#008000","amarillo":"#ffea00","naranja":"#ff7f00","morado":"#800080","rosa":"#ffc0cb",
+    "burdeos":"#800020","beige":"#f5f5dc","marrón":"#5c4033","caqui":"#bdb76b","oro":"#ffd700",
+    // Comunes Printful
+    "heather grey":"#a7a7a7","heather gray":"#a7a7a7","charcoal heather":"#3c3c3c","sand dune":"#c2b280"
   };
-
   return COLOR_MAP[k] || null;
 }
 
@@ -95,28 +44,19 @@ const STOPWORDS =
   /(unisex|men'?s|women'?s|youth|kids|premium|classic|heavyweight|lightweight|hoodie|sweatshirt|t[-\s]?shirt|tee|tank|long[-\s]?sleeve|crewneck|pullover|zip[-\s]?hoodie|embroidery|printed|eco|recycled|cap|beanie|hat|snapback)/gi;
 
 function cleanToken(s = "") {
-  return s
-    .replace(/\s*\|\s*/g, " ")
-    .replace(STOPWORDS, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
+  return s.replace(/\s*\|\s*/g, " ").replace(STOPWORDS, "").replace(/\s{2,}/g, " ").trim();
 }
 
-/**
- * Extrae {color,size} desde campos de Printful o desde v.name
- * Formatos típicos: "… | Forest Green / S", "… - Black / 2XL"
- */
 function extractColorAndSize(v) {
   const product = v?.product || {};
   const raw = String(v?.name || "").trim();
 
   let color = product.color_name || product.color || "";
-  let size = product.size || "";
+  let size  = product.size || "";
 
   if ((!color || !size) && raw) {
     const parts = raw.split("/").map(s => s.trim());
     if (!size && parts.length >= 2) size = parts[parts.length - 1];
-
     let left = parts[0] || raw;
     left = left.split("|").pop().split("-").pop();
     left = cleanToken(left);
@@ -129,7 +69,7 @@ function extractColorAndSize(v) {
   }
 
   color = color ? color.replace(/\b\w/g, c => c.toUpperCase()) : "Color Único";
-  size = size ? size.toUpperCase() : `VAR_${v.variant_id}`;
+  size  = size  ? size.toUpperCase() : `VAR_${v.variant_id}`;
 
   let hex = product.hex_code || product.color_code || null;
   if (hex && /^#?[0-9A-Fa-f]{3,6}$/.test(hex)) hex = hex.startsWith("#") ? hex : `#${hex}`;
@@ -141,15 +81,15 @@ function extractColorAndSize(v) {
 /* ---------- Categorías ---------- */
 function detectCategories(name = "") {
   const n = name.toLowerCase();
-  if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
-  if (/(hoodie|sudadera)/i.test(n)) return ["sudaderas"];
-  if (/(pant|pantal[oó]n|leggings|jogger)/i.test(n)) return ["pantalones"];
-  if (/(shoe|sneaker|zapatilla|bota)/i.test(n)) return ["zapatos"];
-  if (/(cap|gorra|beanie|gorro)/i.test(n)) return ["accesorios"];
+  if (/(tee|t-shirt|camiseta)/.test(n)) return ["camisetas"];
+  if (/(hoodie|sudadera)/.test(n)) return ["sudaderas"];
+  if (/(pant|pantal[oó]n|leggings|jogger)/.test(n)) return ["pantalones"];
+  if (/(shoe|sneaker|zapatilla|bota)/.test(n)) return ["zapatos"];
+  if (/(cap|gorra|beanie|gorro)/.test(n)) return ["accesorios"];
   return ["otros"];
 }
 
-/* ---------- Fetch helpers ---------- */
+/* ---------- HTTP helpers ---------- */
 async function pfGet(path) {
   const res = await fetch(`${PRINTFUL_API}${path}`, { headers: PF_HEADERS });
   const json = await res.json().catch(() => null);
@@ -160,7 +100,6 @@ async function pfGet(path) {
   return json;
 }
 
-/* ---------- Fetch all products ---------- */
 async function fetchAllSyncedProducts() {
   const limit = 100;
   let offset = 0;
@@ -187,16 +126,33 @@ function normalizeProduct(detail) {
 
   for (const v of variants) {
     const { color, size, hex } = extractColorAndSize(v);
-    const fromFiles =
-      (v?.files || []).find(f => f.type === "preview" && f.preview_url)?.preview_url ||
-      (v?.files || []).find(f => f.preview_url)?.preview_url ||
-      (v?.files || []).find(f => f.thumbnail_url)?.thumbnail_url ||
-      (v?.files || []).find(f => f.url)?.url ||
-      sp?.thumbnail_url ||
-      null;
 
-    if (!colors[color]) colors[color] = { hex, image: fromFiles, sizes: {} };
-    if (!colors[color].image && fromFiles) colors[color].image = fromFiles;
+    // Reunir TODAS las imágenes posibles de la variante
+    const fileImgs = (v?.files || []).flatMap(f => {
+      const arr = [];
+      if (f.preview_url) arr.push(f.preview_url);
+      if (f.thumbnail_url) arr.push(f.thumbnail_url);
+      if (f.url) arr.push(f.url);
+      return arr;
+    });
+
+    // Quitar duplicados conservando orden
+    const imgs = [...new Set(fileImgs)].filter(Boolean);
+
+    const primary =
+      imgs[0] ||
+      sp?.thumbnail_url ||
+      "https://i.postimg.cc/k5ZGwR5W/producto1.png";
+
+    if (!colors[color]) colors[color] = { hex, image: primary, images: imgs.length ? imgs : [primary], sizes: {} };
+    if (!colors[color].image && primary) colors[color].image = primary;
+
+    // Fusionar imágenes nuevas en el color (por si otras variantes aportan más vistas)
+    if (imgs.length) {
+      const merged = new Set([...(colors[color].images || []), ...imgs]);
+      colors[color].images = [...merged];
+    }
+
     colors[color].sizes[size] = v.variant_id;
   }
 
@@ -210,13 +166,11 @@ function normalizeProduct(detail) {
     image: cover,
     sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
-    colors,
+    colors, // { Color: { hex, image, images:[], sizes:{} } }
   };
 }
 
 /* ---------- Endpoints ---------- */
-
-// Lista de productos (con caché)
 router.get("/api/printful/products", async (req, res) => {
   try {
     if (!process.env.PRINTFUL_API_KEY) {
@@ -241,26 +195,34 @@ router.get("/api/printful/products", async (req, res) => {
   }
 });
 
-// Producto individual (por SKU)
 router.get("/api/printful/product", async (req, res) => {
   try {
     const sku = String(req.query.sku || "").trim();
     if (!sku) return res.status(400).json({ error: "Falta parámetro sku" });
 
-    const all = productCache.data;
-    const found = all.find(p => p.sku === sku || p.id === sku);
-    if (found) return res.json({ product: found });
+    // Buscar en caché primero
+    if (productCache.data.length) {
+      const inCache = productCache.data.find(p => p.sku === sku || p.id === sku);
+      if (inCache) return res.json({ product: inCache });
+    }
 
-    const data = await pfGet(`/store/products/${sku}`);
-    const product = normalizeProduct(data);
-    res.json({ product });
+    // Resolver por ID externo
+    const all = await fetchAllSyncedProducts();
+    const found = all.find(p => String(p.external_id) === sku || String(p.id) === sku);
+    if (!found) return res.status(404).json({ error: "Producto no encontrado" });
+
+    const detail = await pfGet(`/store/products/${found.id}`);
+    const product = normalizeProduct(detail);
+
+    // guardar en caché
+    productCache.data = [product, ...productCache.data];
+    return res.json({ product });
   } catch (err) {
     console.error("PF /product error:", err.message);
     res.status(500).json({ error: String(err.message) });
   }
 });
 
-// Limpiar caché
 router.post("/api/printful/refresh", (req, res) => {
   productCache = { time: 0, data: [] };
   res.json({ ok: true, msg: "Caché invalidada" });
