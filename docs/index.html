@@ -3,32 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VALTIX – Tu look, tu historia, tu marca</title>
 
-  <title>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</title>
-  <meta name="description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
-  <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <meta property="og:title" content="VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento" />
-  <meta property="og:description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
-  <meta property="og:image" content="https://via.placeholder.com/1200x630" />
-  <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <!-- SEO -->
+  <meta name="description" content="VALTIX | Streetwear premium. Tu look, tu historia, tu marca. Camisetas, sudaderas y más con envíos a toda Europa y pagos seguros." />
   <meta name="theme-color" content="#000000" />
 
-  <!-- Breadcrumbs (app.js los actualiza) -->
-  <script id="breadcrumbs-jsonld" type="application/ld+json">
-  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
-  ]}
-  </script>
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="VALTIX – Tu look, tu historia, tu marca" />
+  <meta property="og:description" content="VALTIX redefine el streetwear con estilo, libertad y actitud. Envíos a toda Europa en pedidos superiores a 60€." />
+  <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
+  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/og-cover.jpg" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="VALTIX – Tu look, tu historia, tu marca" />
+  <meta name="twitter:description" content="Moda urbana premium con envíos a toda Europa. VALTIX – Tu look, tu historia, tu marca." />
+  <meta name="twitter:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/og-cover.jpg" />
+
+  <!-- Manifest + Styles -->
+  <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./style.css" />
 </head>
+
 <body>
   <!-- Barra superior -->
-  <div class="envio-bar">🚚 Envíos gratis en pedidos superiores a 60€</div>
+  <div class="envio-bar">🚚 Envíos a toda Europa en pedidos superiores a 60€</div>
 
   <!-- Header -->
   <header class="header">
@@ -37,10 +38,8 @@
         <span class="brand-logo">V</span><span class="brand-name">VALTIX</span>
       </a>
 
-      <!-- Botón hamburguesa (solo móvil) -->
       <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="main-nav">☰</button>
 
-      <!-- Menú -->
       <nav id="main-nav" class="nav" aria-label="Categorías">
         <a href="#c/camisetas">Camisetas</a>
         <a href="#c/sudaderas">Sudaderas</a>
@@ -55,41 +54,34 @@
     </div>
   </header>
 
-  <!-- Hero -->
+  <!-- Hero principal -->
   <section class="hero">
     <div class="container hero-inner">
       <div>
-        <h1>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</h1>
-        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. Envíos 2–5 días (ES) e internacionales.</h2>
-        <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
+        <h1>Tu look,<br>tu historia,<br>tu marca.</h1>
+        <p class="sub">Explora la colección oficial de VALTIX. Streetwear premium diseñado para quienes dejan huella. Envíos a toda Europa.</p>
+        <a href="#catalogo" id="goCatalog" class="cta">Ver catálogo</a>
       </div>
-      <div class="hero-img" role="region" aria-label="Mensaje destacado">
-        <div class="promo-box" id="promoBox"><span class="promo-text"></span></div>
+      <div class="hero-img">
+        <img src="./img/og-cover.jpg" alt="Colección VALTIX" style="border-radius:18px;object-fit:cover;width:100%;height:100%;">
       </div>
     </div>
   </section>
 
-  <!-- Catálogo -->
-  <main class="main">
-    <section class="section" id="catalogo" aria-labelledby="catalogo-title">
-      <div class="container">
-        <h3 id="catalogo-title" class="visualmente-oculto">Catálogo</h3>
-        <div id="grid" class="grid"></div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container footer-inner">
-      <div>© <span id="year"></span> VALTIX</div>
-      <nav class="legal-links">
-        <a href="#info/aviso-legal">Aviso legal</a>
-        <a href="#info/politica-compras">Política de compras</a>
-        <a href="#info/privacidad">Política de privacidad</a>
-      </nav>
+  <!-- Promoción -->
+  <div class="container" style="display:flex;justify-content:center;margin-bottom:40px;">
+    <div class="promo-box" id="promoBox" role="status" aria-live="polite">
+      <span class="promo-text">🚚 Envíos a toda Europa en pedidos superiores a 60€</span>
     </div>
-  </footer>
+  </div>
+
+  <!-- Catálogo -->
+  <main id="catalogo" class="main section">
+    <div class="container">
+      <h2 style="margin:0 0 12px;">Catálogo</h2>
+      <div id="grid" class="grid" aria-live="polite"></div>
+    </div>
+  </main>
 
   <!-- Drawer Carrito -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
@@ -106,8 +98,45 @@
     </div>
   </aside>
 
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>© <span id="year"></span> VALTIX — Tu look, tu historia, tu marca.
+        <span class="legal-links">
+          <a href="#">Aviso legal</a>
+          <a href="#">Privacidad</a>
+          <a href="#">Contacto</a>
+        </span>
+      </p>
+    </div>
+  </footer>
+
   <!-- Scripts -->
-  <script src="./products.js"></script>
   <script src="./app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Menú móvil
+      const btn = document.getElementById("menu-toggle");
+      const nav = document.getElementById("main-nav");
+      if (btn && nav) {
+        btn.addEventListener("click", () => {
+          const isOpen = nav.classList.toggle("show");
+          btn.setAttribute("aria-expanded", String(isOpen));
+        });
+        nav.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
+          nav.classList.remove("show");
+          btn.setAttribute("aria-expanded", "false");
+        }));
+      }
+
+      // PWA (si tienes sw.js)
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js").catch(()=>{});
+      }
+
+      // Año footer
+      const y=document.getElementById("year"); if(y) y.textContent=new Date().getFullYear();
+    });
+  </script>
 </body>
 </html>
