@@ -9,13 +9,15 @@ const PF_HEADERS = {
   "Content-Type": "application/json",
 };
 
-/* ---------- Caché ---------- */
+/* ============================================================
+   Caché en memoria
+============================================================ */
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
-/* =========================
-   Color helpers
-========================= */
+/* ============================================================
+   Utilidades: colores (HEX) + parsing color/talla
+============================================================ */
 function hexFromName(name = "") {
   const k = String(name).trim().toLowerCase().replace(/\s+/g, " ");
   const COLOR_MAP = {
@@ -47,6 +49,9 @@ function cleanToken(s = "") {
   return s.replace(/\s*\|\s*/g, " ").replace(STOPWORDS, "").replace(/\s{2,}/g, " ").trim();
 }
 
+/** Extrae { color, size, hex } desde campos nativos o desde v.name
+ * Soporta formatos: "… | Forest Green / S", "… - Black / 2XL", etc.
+ */
 function extractColorAndSize(v) {
   const product = v?.product || {};
   const raw = String(v?.name || "").trim();
@@ -78,7 +83,9 @@ function extractColorAndSize(v) {
   return { color, size, hex };
 }
 
-/* ---------- Categorías ---------- */
+/* ============================================================
+   Categorías
+============================================================ */
 function detectCategories(name = "") {
   const n = name.toLowerCase();
   if (/(tee|t-shirt|camiseta)/.test(n)) return ["camisetas"];
@@ -89,7 +96,9 @@ function detectCategories(name = "") {
   return ["otros"];
 }
 
-/* ---------- HTTP helpers ---------- */
+/* ============================================================
+   HTTP helpers a Printful
+============================================================ */
 async function pfGet(path) {
   const res = await fetch(`${PRINTFUL_API}${path}`, { headers: PF_HEADERS });
   const json = await res.json().catch(() => null);
@@ -114,7 +123,9 @@ async function fetchAllSyncedProducts() {
   return all;
 }
 
-/* ---------- Normalización ---------- */
+/* ============================================================
+   Normalización: colores + tallas + múltiples imágenes por color
+============================================================ */
 function normalizeProduct(detail) {
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
@@ -130,24 +141,19 @@ function normalizeProduct(detail) {
     // Reunir TODAS las imágenes posibles de la variante
     const fileImgs = (v?.files || []).flatMap(f => {
       const arr = [];
-      if (f.preview_url) arr.push(f.preview_url);
+      if (f.preview_url)   arr.push(f.preview_url);
       if (f.thumbnail_url) arr.push(f.thumbnail_url);
-      if (f.url) arr.push(f.url);
+      if (f.url)           arr.push(f.url);
       return arr;
     });
-
-    // Quitar duplicados conservando orden
     const imgs = [...new Set(fileImgs)].filter(Boolean);
 
-    const primary =
-      imgs[0] ||
-      sp?.thumbnail_url ||
-      "https://i.postimg.cc/k5ZGwR5W/producto1.png";
+    const primary = imgs[0] || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
 
     if (!colors[color]) colors[color] = { hex, image: primary, images: imgs.length ? imgs : [primary], sizes: {} };
     if (!colors[color].image && primary) colors[color].image = primary;
 
-    // Fusionar imágenes nuevas en el color (por si otras variantes aportan más vistas)
+    // Fusionar imágenes nuevas (por si otras variantes del mismo color aportan más vistas)
     if (imgs.length) {
       const merged = new Set([...(colors[color].images || []), ...imgs]);
       colors[color].images = [...merged];
@@ -161,16 +167,20 @@ function normalizeProduct(detail) {
 
   return {
     id: String(sp?.id || sp?.external_id || `pf_${Date.now()}`),
+    sku: sp?.external_id || String(sp?.id || ""),
     name: sp?.name || "Producto Printful",
     price: Number(price.toFixed(2)),
     image: cover,
-    sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
-    colors, // { Color: { hex, image, images:[], sizes:{} } }
+    colors, // { "Navy": { hex, image, images:[], sizes:{S:123,...} }, ... }
   };
 }
 
-/* ---------- Endpoints ---------- */
+/* ============================================================
+   Endpoints
+============================================================ */
+
+// Catálogo completo (usa caché; forzar con ?refresh=1)
 router.get("/api/printful/products", async (req, res) => {
   try {
     if (!process.env.PRINTFUL_API_KEY) {
@@ -179,7 +189,8 @@ router.get("/api/printful/products", async (req, res) => {
 
     const force = String(req.query.refresh || "") === "1";
     const now = Date.now();
-    if (!force && now - productCache.time < PRODUCT_CACHE_TTL && productCache.data.length) {
+
+    if (!force && productCache.data.length && now - productCache.time < PRODUCT_CACHE_TTL) {
       return res.json({ products: productCache.data, cached: true });
     }
 
@@ -195,18 +206,19 @@ router.get("/api/printful/products", async (req, res) => {
   }
 });
 
+// Ficha individual por SKU (external_id o id)
 router.get("/api/printful/product", async (req, res) => {
   try {
     const sku = String(req.query.sku || "").trim();
     if (!sku) return res.status(400).json({ error: "Falta parámetro sku" });
 
-    // Buscar en caché primero
+    // Intenta caché primero
     if (productCache.data.length) {
-      const inCache = productCache.data.find(p => p.sku === sku || p.id === sku);
-      if (inCache) return res.json({ product: inCache });
+      const cached = productCache.data.find(p => p.sku === sku || p.id === sku);
+      if (cached) return res.json({ product: cached });
     }
 
-    // Resolver por ID externo
+    // Resuelve contra listado de sincronizados
     const all = await fetchAllSyncedProducts();
     const found = all.find(p => String(p.external_id) === sku || String(p.id) === sku);
     if (!found) return res.status(404).json({ error: "Producto no encontrado" });
@@ -214,18 +226,45 @@ router.get("/api/printful/product", async (req, res) => {
     const detail = await pfGet(`/store/products/${found.id}`);
     const product = normalizeProduct(detail);
 
-    // guardar en caché
+    // Guarda en caché (al inicio)
     productCache.data = [product, ...productCache.data];
-    return res.json({ product });
+    res.json({ product });
   } catch (err) {
     console.error("PF /product error:", err.message);
     res.status(500).json({ error: String(err.message) });
   }
 });
 
+// Invalidar caché manualmente
 router.post("/api/printful/refresh", (req, res) => {
   productCache = { time: 0, data: [] };
   res.json({ ok: true, msg: "Caché invalidada" });
+});
+
+// Debug del parseo por SKU (opcional)
+router.get("/api/printful/debug", async (req, res) => {
+  try {
+    const sku = String(req.query.sku || "").trim();
+    if (!sku) return res.status(400).json({ error: "sku requerido" });
+
+    const all = await fetchAllSyncedProducts();
+    const found = all.find(p => String(p.external_id) === sku || String(p.id) === sku);
+    if (!found) return res.status(404).json({ error: "Producto no encontrado" });
+
+    const detail = await pfGet(`/store/products/${found.id}`);
+    const variants = detail?.result?.sync_variants || [];
+    const parsed = variants.map(v => ({
+      variant_id: v.variant_id,
+      name: v.name,
+      product_fields: v.product,
+      parsed: extractColorAndSize(v),
+      file_count: (v?.files || []).length
+    }));
+
+    res.json({ sku, parsed });
+  } catch (err) {
+    res.status(500).json({ error: String(err.message || err) });
+  }
 });
 
 export default router;
