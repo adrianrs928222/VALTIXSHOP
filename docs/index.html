@@ -1,4 +1,30 @@
-<!DOCTYPE html>
+<!-- Quick View Modal -->
+<div id="qvBackdrop" class="drawer-backdrop"></div>
+<div id="qvModal" class="qv-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Vista rápida de producto">
+  <div class="qv-content">
+    <button id="qvClose" class="qv-close" aria-label="Cerrar vista rápida">✕</button>
+
+    <div class="qv-scroll">
+      <div class="qv-grid">
+        <img id="qvImg" class="qv-img" alt="Producto" loading="eager" decoding="async">
+        <div>
+          <h3 id="qvName" class="card-title"></h3>
+          <div id="qvPrice" class="card-price" style="font-size:1.1rem;"></div>
+          <div id="qvColors" class="options color-selector" role="group" aria-label="Colores"></div>
+          <div id="qvSizes" class="options" role="group" aria-label="Tallas"></div>
+        </div>
+      </div>
+      <!-- Espaciador para que el contenido no quede detrás del footer -->
+      <div style="height: 12px;"></div>
+    </div>
+
+    <!-- Footer fijo dentro del modal -->
+    <div class="qv-footer">
+      <button id="qvAdd" class="btn" disabled style="width:100%">Añadir al carrito</button>
+      <button id="qvShare" class="btn btn-alt" type="button" style="width:100%">Compartir</button>
+    </div>
+  </div>
+</div><!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -99,23 +125,30 @@
     </div>
   </aside>
 
-  <<!-- Quick View Modal -->
+  <!-- Quick View Modal -->
 <div id="qvBackdrop" class="drawer-backdrop"></div>
 <div id="qvModal" class="qv-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Vista rápida de producto">
   <div class="qv-content">
     <button id="qvClose" class="qv-close" aria-label="Cerrar vista rápida">✕</button>
-    <div class="qv-grid">
-      <img id="qvImg" class="qv-img" alt="Producto" loading="eager" decoding="async">
-      <div>
-        <h3 id="qvName" class="card-title"></h3>
-        <div id="qvPrice" class="card-price" style="font-size:1.1rem;"></div>
-        <div id="qvColors" class="options color-selector" role="group" aria-label="Colores"></div>
-        <div id="qvSizes" class="options" role="group" aria-label="Tallas"></div>
-        <div class="grid-2" style="margin-top:10px">
-          <button id="qvAdd" class="btn" disabled>Añadir al carrito</button>
-          <button id="qvShare" class="btn btn-alt" type="button">Copiar enlace</button>
+
+    <div class="qv-scroll">
+      <div class="qv-grid">
+        <img id="qvImg" class="qv-img" alt="Producto" loading="eager" decoding="async">
+        <div>
+          <h3 id="qvName" class="card-title"></h3>
+          <div id="qvPrice" class="card-price" style="font-size:1.1rem;"></div>
+          <div id="qvColors" class="options color-selector" role="group" aria-label="Colores"></div>
+          <div id="qvSizes" class="options" role="group" aria-label="Tallas"></div>
         </div>
       </div>
+      <!-- Espaciador para que el contenido no quede detrás del footer -->
+      <div style="height: 12px;"></div>
+    </div>
+
+    <!-- Footer fijo dentro del modal -->
+    <div class="qv-footer">
+      <button id="qvAdd" class="btn" disabled style="width:100%">Añadir al carrito</button>
+      <button id="qvShare" class="btn btn-alt" type="button" style="width:100%">Compartir</button>
     </div>
   </div>
 </div>
