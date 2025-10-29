@@ -26,7 +26,6 @@ async function loadProduct(){
 
   showMsg("Cargando producto…");
 
-  // 1) Intenta endpoint directo por SKU
   try{
     const r = await timeoutFetch(`${BACKEND_URL}/api/printful/product?sku=${encodeURIComponent(sku)}`, { cache:"no-store" });
     const j = await r.json();
@@ -36,7 +35,6 @@ async function loadProduct(){
     console.warn("Fallo /product:", e);
   }
 
-  // 2) Fallback: baja todo y busca el SKU
   try{
     const r2 = await timeoutFetch(`${BACKEND_URL}/api/printful/products?refresh=1`, { cache:"no-store" });
     const j2 = await r2.json();
@@ -100,10 +98,8 @@ function renderProduct(p){
     </div>
   `;
 
-  // Pintar UI
   buildColorSelector(p, selectedColor, (newColor)=>{
     selectedColor = newColor;
-    // al cambiar color, resetea talla a la primera disponible
     selectedSize = Object.keys(p.colors[selectedColor].sizes||{})[0] || null;
     buildGallery(p, selectedColor);
     buildSizeSelector(p, selectedColor, selectedSize, (sz)=>{ selectedSize = sz; });
@@ -111,7 +107,6 @@ function renderProduct(p){
   buildGallery(p, selectedColor);
   buildSizeSelector(p, selectedColor, selectedSize, (sz)=>{ selectedSize = sz; });
 
-  // Añadir al carrito
   $("#addToCartBtn").addEventListener("click", ()=>{
     if(!selectedColor || !selectedSize){
       alert("Selecciona color y talla."); return;
@@ -136,11 +131,11 @@ function renderProduct(p){
   });
 }
 
-/* ========== Componentes UI ========== */
+/* ========== Subcomponentes ========== */
 function buildColorSelector(p, activeColor, onChange){
   const cw = $("#colorWrap");
   const colors = Object.keys(p.colors||{});
-  cw.innerHTML = colors.map((c,i)=>`
+  cw.innerHTML = colors.map((c)=>`
     <button class="color-circle ${c===activeColor?"active":""}" title="${escapeHtml(c)}"
             data-color="${escapeHtml(c)}"
             style="background-color:${p.colors[c]?.hex || "#ddd"}"></button>
@@ -194,7 +189,6 @@ function buildGallery(p, color){
     });
   });
 
-  // Zoom suave
   main.style.transition = "transform .25s ease";
   main.addEventListener("mousemove", e=>{
     const r = main.getBoundingClientRect();
