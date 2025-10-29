@@ -12,9 +12,7 @@ const PF_HEADERS = {
 /* ---------- Cachés ---------- */
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
-
-// cache catálogo de variantes para evitar N llamadas repetidas
-const catalogVariantCache = new Map(); // key: variant_id -> { color, color_code, size, product_id }
+const catalogVariantCache = new Map(); // variant_id -> { size, color, color_code, product_id }
 
 /* ---------- Helpers ---------- */
 async function pfGet(path) {
@@ -41,27 +39,23 @@ async function fetchAllSyncedProducts() {
   return all;
 }
 
-/** Consulta el catálogo por variant_id: devuelve { color, color_code, size, product_id } */
 async function fetchCatalogVariant(variantId) {
   if (catalogVariantCache.has(variantId)) return catalogVariantCache.get(variantId);
   const data = await pfGet(`/products/variant/${variantId}`);
-  // estructura: { result: { variant: { id, size, color, color_code, product_id, ... } } }
   const v = data?.result?.variant || {};
   const out = {
     size: v.size || "",
     color: v.color || "",
-    color_code: v.color_code || null, // suele venir como HEX sin "#"
+    color_code: v.color_code || null,
     product_id: v.product_id || null,
   };
   catalogVariantCache.set(variantId, out);
   return out;
 }
 
-/** Batch: dado un array de variant_ids (string/number), devuelve {id: info} */
 async function fetchCatalogVariantsBatch(variantIds = []) {
   const unique = [...new Set(variantIds.map(String))];
   const result = {};
-  // paraleliza pero limita un poco (simple throttle)
   const chunkSize = 12;
   for (let i = 0; i < unique.length; i += chunkSize) {
     const slice = unique.slice(i, i + chunkSize);
@@ -76,7 +70,6 @@ async function fetchCatalogVariantsBatch(variantIds = []) {
   return result;
 }
 
-/* ---------- Clasificador simple por nombre de producto ---------- */
 function detectCategories(name=""){
   const n = name.toLowerCase();
   if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
@@ -87,29 +80,32 @@ function detectCategories(name=""){
   return ["otros"];
 }
 
-/* ---------- Normalizador FINAL usando catálogo oficial ---------- */
+function slugify(s=""){
+  return String(s)
+    .toLowerCase()
+    .normalize("NFD").replace(/\p{Diacritic}/gu,"")
+    .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+}
+
 function normalizeProduct(detail, catalogMap){
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
 
-  // precio base (mínimo retail)
   const prices = variants.map(v=>parseFloat(v.retail_price)).filter(n=>!Number.isNaN(n));
   const price = prices.length ? Math.min(...prices) : 0;
 
-  const colors = {}; // { [Color Name]: { hex, image, sizes: { [Size]: variant_id } } }
+  const colors = {}; // { [Color]: { hex, image, sizes: { [Size]: variant_id } } }
 
   for (const v of variants){
     const vid = String(v?.variant_id || "");
     if (!vid) continue;
 
-    // Datos oficiales del catálogo
     const cv = catalogMap[vid] || {};
     const colorName = String(cv.color || "Color Único").trim();
     const size = String(cv.size || "").trim() || `VAR_${vid}`;
-    // HEX directo del catálogo (color_code) o null
-    let hex = cv.color_code ? (cv.color_code.startsWith("#") ? cv.color_code : `#${cv.color_code}`) : null;
 
-    // Imagen preferida de esa variante (preview del file)
+    let hex = cv.color_code ? (String(cv.color_code).startsWith("#") ? cv.color_code : `#${cv.color_code}`) : null;
+
     const fromFiles =
       (v?.files||[]).find(f=>f.type==="preview" && f.preview_url)?.preview_url ||
       (v?.files||[]).find(f=>f.preview_url)?.preview_url ||
@@ -124,7 +120,6 @@ function normalizeProduct(detail, catalogMap){
     colors[colorName].sizes[size] = vid;
   }
 
-  // Portada: primera imagen de color o miniatura de producto
   const firstColor = Object.keys(colors)[0];
   const cover =
     (firstColor && colors[firstColor]?.image) ||
@@ -135,12 +130,14 @@ function normalizeProduct(detail, catalogMap){
 
   return {
     id: String(sp?.id || sp?.external_id || `pf_${Date.now()}`),
+    pid: String(sp?.id || ""),
     name: sp?.name || "Producto Printful",
+    slug: slugify(`${sp?.name || "producto"}-${sp?.id || ""}`),
     price: Number(price.toFixed(2)),
     image: cover,
     sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
-    colors,      // ← ahora viene 1:1 con el catálogo oficial
+    colors,
     variant_map,
   };
 }
@@ -159,17 +156,14 @@ router.get("/api/printful/products", async (req,res)=>{
       return res.json({ products: productCache.data, cached:true });
     }
 
-    // 1) Lista de productos de la tienda
     const list = await fetchAllSyncedProducts();
     if (!list.length){
       productCache = { time: now, data: [] };
       return res.json({ products: [], note:"No hay productos 'añadidos a tienda' en Printful." });
     }
 
-    // 2) Detalles de cada producto
     const details = await Promise.all(list.map(p=>pfGet(`/store/products/${p.id}`)));
 
-    // 3) Recolectar TODOS los variant_id para pedir al catálogo oficial
     const allVariantIds = [];
     for (const d of details){
       const vs = d?.result?.sync_variants || [];
@@ -177,7 +171,6 @@ router.get("/api/printful/products", async (req,res)=>{
     }
     const catalogMap = await fetchCatalogVariantsBatch(allVariantIds);
 
-    // 4) Normalizar con datos oficiales de color/size/hex por variant_id
     const products = details.map(detail => normalizeProduct(detail, catalogMap));
 
     productCache = { time: now, data: products };
