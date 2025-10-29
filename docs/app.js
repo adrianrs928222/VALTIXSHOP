@@ -1,8 +1,10 @@
 // ============================================================
-// VALTIX – App principal (catálogo + carrito + vista rápida)
-// - Toggle menú móvil
+// VALTIX – App principal (catálogo + carrito + disponibilidad)
+// - Promo box pulido (móvil/desktop)
 // - Carga de productos desde backend Printful
-// - Fallback demo si el backend falla (para no ver la página vacía)
+// - Chequeo de disponibilidad por variant_id (Printful probe)
+// - Render: oculta colores sin tallas disponibles y desactiva tallas agotadas
+// - Enlaces a ficha: producto.html?sku=...
 // ============================================================
 
 // ===== Config
@@ -13,11 +15,26 @@ const CHECKOUT_PATH = "/checkout";
 const $  = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 let products = [];
+let availability = {}; // { [variant_id]: true|false|null }
 let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
 function money(n){ return `${Number(n).toFixed(2)} €`; }
 function getActiveCategory(){ const h=location.hash||""; return h.startsWith("#c/") ? decodeURIComponent(h.slice(3)) : "all"; }
 function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFullYear(); }
+
+function setPromoText(){
+  const box=$("#promoBox"); const textEl=box?.querySelector(".promo-text"); if(!box||!textEl) return;
+  if(window.innerWidth <= 520){
+    textEl.textContent = "🚚 Envíos a toda Europa en pedidos superiores a 60€";
+  } else {
+    const msgs=[
+      "🚚 Envíos a toda Europa en pedidos superiores a 60€",
+      "📦 Entrega estimada 2–7 días en Europa",
+    ];
+    let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
+    show(); setInterval(show,7000);
+  }
+}
 
 // ===== Breadcrumbs
 function updateBreadcrumbsSchema(){
@@ -37,7 +54,7 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-// ===== Data (con fallback demo)
+// ===== Data
 async function loadProducts(){
   const grid = $("#grid");
   try{
@@ -46,30 +63,44 @@ async function loadProducts(){
     const data = await res.json();
     products = Array.isArray(data?.products) ? data.products : [];
     if (!products.length) {
-      grid.innerHTML = `<p style="color:#777">No hay productos añadidos en Printful o falta la API key en el backend.</p>`;
+      grid.innerHTML = `<p style="color:#777">No hay productos añadidos en Printful o falta la API key.</p>`;
       return;
     }
+    // Después de obtener productos, consultamos disponibilidad de TODOS los variant_id
+    const allVariantIds = [];
+    products.forEach(p=>{
+      Object.values(p.colors||{}).forEach(c=>{
+        Object.values(c.sizes||{}).forEach(vid=>{
+          if (vid) allVariantIds.push(String(vid));
+        });
+      });
+    });
+    // Evita payloads enormes por duplicados
+    const unique = [...new Set(allVariantIds)];
+    availability = await fetchAvailability(unique);
     renderProducts();
   }catch(e){
     console.error("❌ Error al cargar productos:", e);
-    // Fallback mínimo para poder probar UI aunque el backend falle
-    products = [{
-      sku: "DEMO-1",
-      name: "Valtix V",
-      price: 28.50,
-      image: "./img/valtix-v__negro.jpg",
-      categories: ["sudaderas"],
-      colors: {
-        "Negro": { hex:"#222", image:"./img/valtix-v__negro.jpg", images:["./img/valtix-v__negro.jpg"], sizes:{ "S":111,"M":112,"L":113,"XL":114,"2XL":115,"3XL":116 } },
-        "Verde": { hex:"#2e7d32", image:"./img/valtix-v__verde.jpg", images:["./img/valtix-v__verde.jpg"], sizes:{ "S":121,"M":122,"L":123 } }
-      },
-      variant_map: {}
-    }];
-    renderProducts();
+    if (grid) grid.innerHTML = "<p style='color:#c00;font-weight:700'>Error al cargar productos.</p>";
   }
 }
 
-// ===== Render catálogo
+async function fetchAvailability(variantIds){
+  if (!variantIds.length) return {};
+  try{
+    const res = await fetch(`${BACKEND_URL}/availability`, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ variant_ids: variantIds })
+    });
+    const data = await res.json();
+    if (data?.ok && data.availability) return data.availability;
+  }catch(e){ console.error("❌ availability:", e); }
+  // Si falla, devolvemos 'null' (desconocido) para no bloquear la compra
+  const out={}; variantIds.forEach(v=>out[v]=null); return out;
+}
+
+// ===== Render
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -83,18 +114,42 @@ function renderProducts(){
   const list=(cat==="all") ? products : products.filter(p=>Array.isArray(p.categories)&&p.categories.includes(cat));
 
   list.forEach(p=>{
-    const colorNames = Object.keys(p.colors || {});
-    const firstColor = colorNames[0] || null;
+    // Filtrar colores que no tengan NINGUNA talla disponible
+    const colorEntries = Object.entries(p.colors||{});
+    const filteredColors = colorEntries
+      .map(([name,meta])=>{
+        const sizeEntries = Object.entries(meta.sizes||{});
+        const hasAvail = sizeEntries.some(([,vid])=>{
+          const a = availability[String(vid)];
+          return a === true || a === null; // true o desconocido = mostrar
+        });
+        return hasAvail ? [name,meta] : null;
+      })
+      .filter(Boolean);
 
+    if (!filteredColors.length) return; // nada disponible, no pintamos tarjeta
+
+    const colorNames = filteredColors.map(([n])=>n);
+    const colorsMap  = Object.fromEntries(filteredColors);
+
+    const firstColor = colorNames[0] || null;
     let selectedColor = firstColor;
-    let selectedSize =
-      (selectedColor && Object.keys(p.colors[selectedColor].sizes)[0]) || null;
+
+    // primera talla disponible de ese color
+    let selectedSize = (()=>{
+      const sizes = Object.entries(colorsMap[selectedColor].sizes||{});
+      const firstAvail = sizes.find(([,vid])=>{
+        const a = availability[String(vid)];
+        return a === true || a === null;
+      });
+      return firstAvail ? firstAvail[0] : (sizes[0]?.[0] || null);
+    })();
 
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
       <div class="card-img-wrap">
-        <img class="card-img" src="${ (selectedColor && p.colors[selectedColor].image) || p.image }" alt="${p.name}">
+        <img class="card-img" src="${ colorsMap[selectedColor]?.image || p.image }" alt="${p.name}">
       </div>
       <div class="card-body">
         <h3 class="card-title"><a href="./producto.html?sku=${encodeURIComponent(p.sku)}" class="card-link">${p.name}</a></h3>
@@ -102,9 +157,20 @@ function renderProducts(){
         <div class="stock-line"><span class="stock-badge ok">En stock</span></div>
 
         <div class="options color-selector" role="group" aria-label="Colores">
-          ${colorNames.map((cn,idx)=>`
-            <button class="color-circle ${idx===0?"active":""}" title="${cn}" data-color="${cn}" style="background-color:${p.colors[cn]?.hex || "#ddd"};"></button>
-          `).join("")}
+          ${colorNames.map((cn,idx)=>{
+            const meta = colorsMap[cn];
+            const sizeEntries = Object.entries(meta.sizes||{});
+            const anyAvail = sizeEntries.some(([,vid])=>{
+              const a = availability[String(vid)];
+              return a === true || a === null;
+            });
+            const disabled = anyAvail ? "" : "disabled";
+            return `
+              <button class="color-circle ${idx===0?"active":""}" ${disabled}
+                title="${cn}" data-color="${cn}"
+                style="background-color:${meta?.hex || "#ddd"};"></button>
+            `;
+          }).join("")}
         </div>
 
         <div class="options" role="group" aria-label="Tallas" data-sizes></div>
@@ -120,13 +186,28 @@ function renderProducts(){
     const sizesWrap = card.querySelector("[data-sizes]");
 
     function renderSizes(){
-      const sizes = selectedColor ? Object.keys(p.colors[selectedColor].sizes) : [];
-      selectedSize = sizes[0] || null;
-      sizesWrap.innerHTML = sizes.map((sz,idx)=>`
-        <button class="option-btn ${idx===0?"active":""}" data-sz="${sz}">${sz}</button>
-      `).join("");
+      const sizeEntries = Object.entries(colorsMap[selectedColor].sizes||{});
+      sizesWrap.innerHTML = sizeEntries.map(([sz,vid])=>{
+        const a = availability[String(vid)];
+        const isAvail = (a === true || a === null);
+        const active = (sz===selectedSize) && isAvail ? "active" : "";
+        const disabledAttr = isAvail ? "" : "disabled";
+        return `<button class="option-btn ${active}" data-sz="${sz}" ${disabledAttr}>${sz}</button>`;
+      }).join("");
+
+      // si la seleccion actual está agotada, elige la primera disponible
+      const currentVid = colorsMap[selectedColor].sizes[selectedSize];
+      if (availability[String(currentVid)] === false) {
+        const firstOk = sizeEntries.find(([,vid])=>{
+          const a = availability[String(vid)];
+          return a === true || a === null;
+        });
+        selectedSize = firstOk ? firstOk[0] : null;
+      }
+
       sizesWrap.querySelectorAll(".option-btn").forEach(btn=>{
         btn.addEventListener("click", ()=>{
+          if (btn.hasAttribute("disabled")) return;
           sizesWrap.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("active"));
           btn.classList.add("active");
           selectedSize = btn.dataset.sz;
@@ -138,10 +219,20 @@ function renderProducts(){
     // Cambiar foto al elegir color
     card.querySelectorAll(".color-circle").forEach(btn=>{
       btn.addEventListener("click", ()=>{
+        if (btn.hasAttribute("disabled")) return;
         card.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         selectedColor = btn.dataset.color;
-        imgEl.src = p.colors[selectedColor]?.image || p.image;
+        imgEl.src = colorsMap[selectedColor]?.image || p.image;
+
+        // elegir primera talla disponible del nuevo color
+        const sizeEntries = Object.entries(colorsMap[selectedColor].sizes||{});
+        const firstOk = sizeEntries.find(([,vid])=>{
+          const a = availability[String(vid)];
+          return a === true || a === null;
+        });
+        selectedSize = firstOk ? firstOk[0] : (sizeEntries[0]?.[0] || null);
+
         renderSizes();
       });
     });
@@ -149,12 +240,14 @@ function renderProducts(){
     // Add to cart
     card.querySelector(".add-btn").addEventListener("click", ()=>{
       if (!selectedColor || !selectedSize) return;
-      const vid = p.colors[selectedColor].sizes[selectedSize];
+      const vid = colorsMap[selectedColor].sizes[selectedSize];
+      const a = availability[String(vid)];
+      if (a === false) return alert("Esa talla/color está agotada.");
       addToCart({
         sku: `${p.sku}_${selectedColor}_${selectedSize}`,
         name: `${p.name} ${selectedColor} ${selectedSize}`,
         price: p.price,
-        image: p.colors[selectedColor]?.image || p.image,
+        image: colorsMap[selectedColor]?.image || p.image,
         variant_id: vid
       });
       openCart();
@@ -243,34 +336,18 @@ function updateActiveNavLink(){
   });
 }
 
-// ===== Promo (igual que antes)
-function startPromo(){
-  const box=$("#promoBox"); const textEl=box?.querySelector(".promo-text"); if(!box||!textEl) return;
-  if(window.innerWidth <= 520){
-    textEl.textContent = "🚚 Envíos a toda Europa en pedidos superiores a 60€";
-  } else {
-    const msgs=[
-      "Compra hoy y recibe en Europa en 2–7 días 📦",
-      "🚚 Envíos a toda Europa en pedidos superiores a 60€"
-    ];
-    let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
-    show(); setInterval(show,8000);
-  }
-}
-
 // ===== Init
 document.addEventListener("DOMContentLoaded", async ()=>{
   setYear();
-  startPromo();
+  setPromoText();
 
-  // --- Toggle menú móvil
+  // Toggle menú móvil
   const mt = document.getElementById("menu-toggle");
   const nav = document.getElementById("main-nav");
   if (mt && nav) {
     mt.addEventListener("click", () => {
       nav.classList.toggle("show");
-      const open = nav.classList.contains("show");
-      mt.setAttribute("aria-expanded", String(open));
+      mt.setAttribute("aria-expanded", String(nav.classList.contains("show")));
     });
   }
 
