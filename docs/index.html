@@ -99,26 +99,26 @@
     </div>
   </aside>
 
-  <!-- Quick View Modal -->
-  <div id="qvBackdrop" class="drawer-backdrop"></div>
-  <div id="qvModal" class="qv-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Vista rápida de producto">
-    <div class="qv-content">
-      <button id="qvClose" class="qv-close" aria-label="Cerrar vista rápida">✕</button>
-      <div class="qv-grid">
-        <img id="qvImg" class="qv-img" alt="Producto" loading="eager" decoding="async">
-        <div>
-          <h3 id="qvName" class="card-title"></h3>
-          <div id="qvPrice" class="card-price" style="font-size:1.1rem;"></div>
-          <div id="qvColors" class="options color-selector" role="group" aria-label="Colores"></div>
-          <div id="qvSizes" class="options" role="group" aria-label="Tallas"></div>
-          <div class="grid-2" style="margin-top:10px">
-            <button id="qvAdd" class="btn" disabled>Añadir al carrito</button>
-            <a id="qvLink" class="btn btn-alt" href="./producto.html">Ver ficha</a>
-          </div>
+  <<!-- Quick View Modal -->
+<div id="qvBackdrop" class="drawer-backdrop"></div>
+<div id="qvModal" class="qv-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Vista rápida de producto">
+  <div class="qv-content">
+    <button id="qvClose" class="qv-close" aria-label="Cerrar vista rápida">✕</button>
+    <div class="qv-grid">
+      <img id="qvImg" class="qv-img" alt="Producto" loading="eager" decoding="async">
+      <div>
+        <h3 id="qvName" class="card-title"></h3>
+        <div id="qvPrice" class="card-price" style="font-size:1.1rem;"></div>
+        <div id="qvColors" class="options color-selector" role="group" aria-label="Colores"></div>
+        <div id="qvSizes" class="options" role="group" aria-label="Tallas"></div>
+        <div class="grid-2" style="margin-top:10px">
+          <button id="qvAdd" class="btn" disabled>Añadir al carrito</button>
+          <button id="qvShare" class="btn btn-alt" type="button">Copiar enlace</button>
         </div>
       </div>
     </div>
   </div>
+</div>
 
   <!-- Scripts -->
   <script src="./app.js?v=hex1" defer></script>
