@@ -469,3 +469,21 @@ a { text-decoration: none; color: inherit; }
   .grid { grid-template-columns: 1fr; }
   .cart-btn { padding: 8px 10px; }
 }
+
+/* ===== Quick View Modal ===== */
+.qv-modal {
+  position: fixed; inset: 0; display: none; z-index: 100;
+  align-items: center; justify-content: center;
+}
+.qv-modal.open { display: flex; }
+.qv-content {
+  width: min(900px, 92vw); background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; position: relative;
+}
+.qv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.qv-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f6f6f6; border-radius: 12px; }
+.qv-close {
+  position: absolute; right: 14px; top: 10px; border: 1px solid var(--border); background: #fff;
+  border-radius: 8px; padding: 6px 10px; cursor: pointer;
+}
+@media (max-width: 720px){ .qv-grid{ grid-template-columns: 1fr; } }
