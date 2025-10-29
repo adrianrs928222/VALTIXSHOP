@@ -1,179 +1,167 @@
 /* ============================================================
-   VALTIX PRODUCT VIEW – v3.0 “Nike/Zara Gallery”
-   - Carrusel con múltiples imágenes por color (Printful)
-   - Zoom suave en la principal
-   - Selector color+talla con variant_id real
+   VALTIX PRODUCT VIEW 2.0 – Sincronizado con Printful
+   ------------------------------------------------------------
+   - Galería completa por color (Printful)
+   - Selector de colores y tallas
+   - Zoom suave tipo Nike
+   - Añadir al carrito localStorage
    ============================================================ */
 
 const BACKEND_URL = "https://valtixshop.onrender.com";
-const $  = s => document.querySelector(s);
+const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-function money(n){ return `${Number(n).toFixed(2)} €`; }
-function getSku(){ return new URLSearchParams(location.search).get("sku"); }
+function money(n) { return `${Number(n).toFixed(2)} €`; }
+function qsParam(name) { return new URLSearchParams(location.search).get(name); }
 
-document.addEventListener("DOMContentLoaded", init);
+/* ---------- Cargar producto ---------- */
+async function loadProduct() {
+  const sku = qsParam("sku");
+  const cont = $("#productSection");
 
-async function init(){
-  const sku = getSku();
-  if(!sku){ location.href="./"; return; }
+  if (!sku) return cont.innerHTML = `<p>❌ Falta SKU.</p>`;
 
-  try{
-    const r = await fetch(`${BACKEND_URL}/api/printful/product?sku=${sku}`, { cache:"no-store" });
-    const data = await r.json();
-    if(!data?.product) throw new Error("Producto no encontrado");
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/printful/product?sku=${sku}`, { cache: "no-store" });
+    const data = await res.json();
+    if (!data?.product) throw new Error("No encontrado");
     renderProduct(data.product);
-  }catch(e){
+  } catch (e) {
     console.error(e);
-    const box = document.getElementById("productSection") || document.body;
-    box.innerHTML = "<p style='color:#c00;font-weight:700'>Error cargando producto.</p>";
+    cont.innerHTML = `<p style="color:red">Error al cargar producto.</p>`;
   }
 }
 
-function renderProduct(p){
-  // Estado
-  const colors = Object.keys(p.colors||{});
-  let selColor = colors[0] || null;
-  let selSize  = selColor ? Object.keys(p.colors[selColor].sizes||{})[0] : null;
+/* ---------- Render ficha ---------- */
+function renderProduct(p) {
+  const colorNames = Object.keys(p.colors || {});
+  const firstColor = colorNames[0];
+  let selectedColor = firstColor;
+  let selectedSize = Object.keys(p.colors[firstColor]?.sizes || {})[0];
 
-  // Layout
-  const host = $("#productSection") || document.body;
-  host.innerHTML = `
+  const main = $("#productSection");
+  const imgs = p.colors[firstColor]?.images || [p.image];
+
+  main.innerHTML = `
+  <div class="product-container">
     <div class="product-gallery">
-      <div class="main-image"><img id="mainImg" alt="${p.name}"></div>
-      <div id="thumbs" class="thumbs"></div>
-    </div>
-    <div class="product-info">
-      <h1 class="product-title" id="pName">${p.name}</h1>
-      <div class="product-price" id="pPrice">${money(p.price)}</div>
-
-      <div class="color-selector" id="colorWrap" aria-label="Colores"></div>
-      <div class="size-selector" id="sizeWrap" aria-label="Tallas"></div>
-
-      <button id="addBtn" class="btn-primary" disabled>Añadir al carrito</button>
-
-      <div class="product-desc">
-        <h3>Detalles del producto</h3>
-        <p>Streetwear premium VALTIX fabricado bajo demanda con Printful. Materiales de calidad, producción responsable.</p>
-        <h3>Talla y ajuste</h3>
-        <ul>
-          <li>Elige tu talla habitual; si dudas entre dos, selecciona la superior.</li>
-          <li>Guía de tallas disponible durante el checkout.</li>
-        </ul>
-        <h3>Devoluciones y envíos</h3>
-        <ul>
-          <li>Envíos a toda Europa en pedidos superiores a 60€.</li>
-          <li>Tiempo estimado: producción 2–5 días + envío 3–7 días.</li>
-          <li>Devoluciones por defecto de fabricación o impresión.</li>
-        </ul>
+      <div class="main-img-wrap">
+        <img id="mainImage" src="${imgs[0]}" alt="${p.name}" loading="lazy">
+      </div>
+      <div class="thumbs">
+        ${imgs.map((u,i)=>`
+          <img src="${u}" class="thumb ${i===0?"active":""}" data-url="${u}" loading="lazy">
+        `).join("")}
       </div>
     </div>
+
+    <div class="product-info">
+      <h1 class="pname">${p.name}</h1>
+      <p class="pprice">${money(p.price)}</p>
+
+      <div class="color-selector">
+        ${colorNames.map((c,i)=>`
+          <button class="color-circle ${i===0?"active":""}"
+                  title="${c}" data-color="${c}"
+                  style="background-color:${p.colors[c]?.hex || "#ddd"}"></button>
+        `).join("")}
+      </div>
+
+      <div class="size-selector"></div>
+      <button id="addToCartBtn" class="btn">Añadir al carrito</button>
+
+      <div class="desc">
+        <h3>Detalles</h3>
+        <p>Diseño exclusivo VALTIX fabricado bajo demanda en Printful con materiales premium. 
+        <br>Envíos a toda Europa en pedidos superiores a 60€.</p>
+
+        <h3>Devoluciones</h3>
+        <p>Los productos se fabrican bajo demanda. Solo se admiten devoluciones por defectos de fabricación.</p>
+      </div>
+    </div>
+  </div>
   `;
 
-  // Construir selectores
-  buildColors();
-  buildSizes();
-  buildGallery();
-  updateAddBtn();
+  const mainImg = $("#mainImage");
 
-  // Eventos
-  $("#addBtn").addEventListener("click", ()=>{
-    if(!(selColor && selSize)) return;
-    const vid = p.colors[selColor].sizes[selSize];
-    const item = {
-      sku: `${p.sku}_${selColor}_${selSize}`,
-      name: `${p.name} ${selColor} ${selSize}`,
-      price: p.price,
-      image: p.colors[selColor]?.image || p.image,
-      variant_id: vid, qty:1
-    };
+  // Miniaturas
+  $$(".thumb").forEach(t=>{
+    t.addEventListener("click", ()=>{
+      $$(".thumb").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      mainImg.src = t.dataset.url;
+    });
+  });
+
+  // Selector de color
+  $$(".color-circle").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      $$(".color-circle").forEach(x=>x.classList.remove("active"));
+      btn.classList.add("active");
+      selectedColor = btn.dataset.color;
+      selectedSize = Object.keys(p.colors[selectedColor].sizes)[0];
+
+      // Actualizar galería
+      const imgs = p.colors[selectedColor]?.images || [p.image];
+      const thumbs = $(".thumbs");
+      thumbs.innerHTML = imgs.map((u,i)=>`
+        <img src="${u}" class="thumb ${i===0?"active":""}" data-url="${u}" loading="lazy">
+      `).join("");
+      mainImg.src = imgs[0];
+      $$(".thumb").forEach(t=>{
+        t.addEventListener("click", ()=>{
+          $$(".thumb").forEach(x=>x.classList.remove("active"));
+          t.classList.add("active");
+          mainImg.src = t.dataset.url;
+        });
+      });
+
+      renderSizes(p, selectedColor);
+    });
+  });
+
+  // Zoom
+  mainImg.addEventListener("mousemove", e=>{
+    const { left, top, width, height } = mainImg.getBoundingClientRect();
+    const x = ((e.pageX - left)/width)*100;
+    const y = ((e.pageY - top)/height)*100;
+    mainImg.style.transformOrigin = `${x}% ${y}%`;
+    mainImg.style.transform = "scale(1.7)";
+  });
+  mainImg.addEventListener("mouseleave", ()=> mainImg.style.transform = "scale(1)");
+
+  renderSizes(p, selectedColor);
+
+  $("#addToCartBtn").addEventListener("click", ()=>{
+    if(!selectedColor || !selectedSize) return alert("Selecciona color y talla");
+    const vid = p.colors[selectedColor].sizes[selectedSize];
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const idx  = cart.findIndex(i=>i.sku===item.sku && i.variant_id===item.variant_id);
-    if(idx>=0) cart[idx].qty += 1; else cart.push(item);
+    const sku = `${p.sku}_${selectedColor}_${selectedSize}`;
+    const idx = cart.findIndex(i=>i.sku===sku);
+    if(idx>=0) cart[idx].qty++;
+    else cart.push({
+      sku, name:`${p.name} (${selectedColor}, ${selectedSize})`,
+      price:p.price, image:p.colors[selectedColor].image, variant_id:vid, qty:1
+    });
     localStorage.setItem("cart", JSON.stringify(cart));
-    alert("Añadido al carrito ✅");
-  });
-
-  /* ---------- helpers UI ---------- */
-  function buildColors(){
-    const cw = $("#colorWrap");
-    cw.innerHTML = colors.map((c,idx)=>{
-      const hex = p.colors[c]?.hex || "#ddd";
-      return `<button class="color-circle ${idx===0?"active":""}" title="${c}" data-c="${c}" style="background:${hex}"></button>`;
-    }).join("");
-    $$("#colorWrap .color-circle").forEach(btn=>{
-      btn.addEventListener("click",()=>{
-        $$("#colorWrap .color-circle").forEach(x=>x.classList.remove("active"));
-        btn.classList.add("active");
-        selColor = btn.dataset.c;
-        selSize  = Object.keys(p.colors[selColor].sizes||{})[0] || null;
-        buildSizes();
-        buildGallery();
-        updateAddBtn();
-      });
-    });
-  }
-
-  function buildSizes(){
-    const sw = $("#sizeWrap");
-    const sizes = selColor ? Object.keys(p.colors[selColor].sizes||{}) : [];
-    sw.innerHTML = sizes.map((sz,idx)=>`
-      <button class="size-btn ${idx===0?"active":""}" data-sz="${sz}">${sz}</button>
-    `).join("");
-    $$("#sizeWrap .size-btn").forEach(btn=>{
-      btn.addEventListener("click",()=>{
-        $$("#sizeWrap .size-btn").forEach(x=>x.classList.remove("active"));
-        btn.classList.add("active");
-        selSize = btn.dataset.sz;
-        updateAddBtn();
-      });
-    });
-  }
-
-  function buildGallery(){
-    const imgs = (p.colors[selColor]?.images && p.colors[selColor].images.length)
-      ? p.colors[selColor].images
-      : [p.colors[selColor]?.image || p.image].filter(Boolean);
-
-    const main = $("#mainImg");
-    main.src = imgs[0] || "";
-    main.alt = `${p.name} - ${selColor}`;
-
-    const thumbs = $("#thumbs");
-    thumbs.innerHTML = imgs.map((u,idx)=>`
-      <img src="${u}" class="thumb ${idx===0?"active":""}" data-idx="${idx}" alt="Vista ${idx+1}" loading="lazy">
-    `).join("");
-
-    // Miniaturas → principal
-    $$("#thumbs .thumb").forEach(t=>{
-      t.addEventListener("click",()=>{
-        $$("#thumbs .thumb").forEach(x=>x.classList.remove("active"));
-        t.classList.add("active");
-        main.src = t.getAttribute("src");
-      });
-    });
-
-    // Zoom suave
-    enableZoom(main);
-  }
-
-  function updateAddBtn(){
-    $("#addBtn").disabled = !(selColor && selSize && p.colors?.[selColor]?.sizes?.[selSize]);
-  }
-}
-
-/* ---------- Zoom helper ---------- */
-function enableZoom(imgEl){
-  imgEl.style.transition = "transform .15s ease";
-  imgEl.style.transformOrigin = "center center";
-  imgEl.addEventListener("mousemove", (e)=>{
-    const r = imgEl.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * 100;
-    const y = ((e.clientY - r.top) / r.height) * 100;
-    imgEl.style.transformOrigin = `${x}% ${y}%`;
-    imgEl.style.transform = "scale(1.8)";
-  });
-  imgEl.addEventListener("mouseleave", ()=>{
-    imgEl.style.transform = "scale(1)";
+    alert("✅ Añadido al carrito");
   });
 }
+
+/* ---------- Render tallas ---------- */
+function renderSizes(p, color){
+  const wrap = $(".size-selector");
+  const sizes = Object.keys(p.colors[color].sizes || {});
+  wrap.innerHTML = sizes.map((sz,i)=>`
+    <button class="size-btn ${i===0?"active":""}" data-sz="${sz}">${sz}</button>
+  `).join("");
+  $$(".size-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      $$(".size-btn").forEach(x=>x.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+}
+
+/* ---------- Init ---------- */
+document.addEventListener("DOMContentLoaded", loadProduct);
