@@ -1,107 +1,138 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VALTIX – Producto</title>
-  <meta name="description" content="Streetwear premium VALTIX. Envíos a toda Europa en pedidos superiores a 60€.">
-
-  <meta property="og:type" content="product">
-  <meta property="og:title" content="VALTIX – Producto" id="ogTitle">
-  <meta property="og:description" content="Streetwear premium VALTIX." id="ogDesc">
-  <meta property="og:image" content="" id="ogImage">
-  <meta property="og:url" content="" id="ogUrl">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="VALTIX – Producto" id="twTitle">
-  <meta name="twitter:description" content="Streetwear premium VALTIX." id="twDesc">
-  <meta name="twitter:image" content="" id="twImage">
-  <script type="application/ld+json" id="jsonld-product">{}</script>
-
-  <link rel="preconnect" href="https://valtixshop.onrender.com">
-  <link rel="stylesheet" href="./style.css">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Descubre los productos exclusivos de VALTIX: moda moderna, materiales premium y envíos a toda Europa. Personaliza tu estilo con nuestras prendas Printful de alta calidad." />
+  <meta name="keywords" content="Valtix, tienda, moda, ropa, streetwear, sudaderas, camisetas, Printful, dropshipping, Europa" />
+  <meta property="og:title" content="VALTIX — Tu look, tu historia, tu marca" />
+  <meta property="og:description" content="Descubre la colección oficial VALTIX. Envíos a toda Europa. Diseño premium, fabricado bajo demanda." />
+  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/img/og-valtix.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
+  <title>VALTIX — Ficha de Producto</title>
+  <link rel="icon" href="img/favicon.png" />
+  <link rel="stylesheet" href="style.css" />
   <style>
-    :root {
-      --border: #ddd;
-      --muted: #666;
-      font-family: "Poppins", sans-serif;
+    /* --- Estilos adicionales para ficha profesional --- */
+    .product-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
     }
-    body { margin: 0; background: #fafafa; color: #111; }
-    .container { max-width: 1150px; margin: auto; padding: 20px; }
-    .envio-bar { text-align:center; background:#111; color:#fff; padding:8px; font-weight:700; }
+    .product-gallery {
+      flex: 1 1 50%;
+      min-width: 320px;
+    }
+    .main-img-wrap {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f9f9f9;
+      position: relative;
+    }
+    #mainImage {
+      width: 100%;
+      transition: transform .3s ease;
+      cursor: zoom-in;
+    }
+    .thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: .8rem;
+    }
+    .thumb {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .thumb.active, .thumb:hover { outline: 2px solid #000; }
+    .product-info {
+      flex: 1 1 45%;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .pname { font-size: 1.8rem; font-weight: 700; }
+    .pprice { font-size: 1.4rem; color: #111; font-weight: 600; }
+    .color-selector, .size-selector {
+      display: flex; flex-wrap: wrap; gap: .6rem;
+    }
+    .color-circle {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .color-circle.active { border-color: #000; transform: scale(1.1); }
+    .size-btn {
+      padding: .4rem .8rem;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: .2s;
+    }
+    .size-btn.active, .size-btn:hover {
+      background: #000; color: #fff; border-color: #000;
+    }
+    .btn {
+      background: #000;
+      color: #fff;
+      border: none;
+      padding: .9rem 1.4rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background .2s;
+    }
+    .btn:hover { background: #111; }
+    .desc h3 {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+    .desc p {
+      color: #555;
+      line-height: 1.5;
+      margin-bottom: .8rem;
+    }
 
-    .prod-inner { display:grid; grid-template-columns:1.1fr 0.9fr; gap:30px; margin-top:20px; }
-    @media(max-width:960px){.prod-inner{grid-template-columns:1fr;}}
-    .main-img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:18px;background:#eee;}
-    .thumbs{display:flex;gap:8px;margin-top:8px;}
-    .thumbs img{width:80px;height:80px;object-fit:cover;border-radius:10px;cursor:pointer;border:2px solid transparent;}
-    .thumbs img.active{border-color:#000;}
-
-    .p-title{font-size:clamp(22px,3vw,30px);margin:0;}
-    .p-meta{color:var(--muted);margin:6px 0 14px;display:flex;gap:14px;flex-wrap:wrap;}
-    .p-price{font-size:1.4rem;font-weight:700;}
-    .color-circle{width:30px;height:30px;border-radius:50%;border:2px solid #ccc;cursor:pointer;}
-    .color-circle.active{border-color:#000;}
-    .option-btn{border:1px solid var(--border);padding:8px 12px;border-radius:8px;cursor:pointer;}
-    .option-btn.active{background:#111;color:#fff;border-color:#111;}
-    .btn{padding:12px 18px;border:none;border-radius:8px;background:#111;color:#fff;font-weight:700;cursor:pointer;}
-    .btn:disabled{background:#999;cursor:not-allowed;}
-
-    .box{border-top:1px solid var(--border);padding:18px 0;}
-    .box h3{margin:0 0 8px;}
-    .box ul{margin:0 0 0 20px;color:var(--muted);}
+    @media (max-width: 768px){
+      .product-container { flex-direction: column; padding: 1rem; }
+      .product-info { gap: 1rem; }
+      .main-img-wrap { max-height: 420px; }
+      .thumb { width: 60px; height: 60px; }
+    }
   </style>
 </head>
+
 <body>
-  <div class="envio-bar">🚚 Envíos a toda Europa en pedidos superiores a 60€</div>
+  <header>
+    <a href="index.html" class="logo">VALTIX</a>
+  </header>
 
-  <div class="container prod-inner">
-    <section>
-      <img id="mainImg" class="main-img" alt="Imagen del producto">
-      <div id="thumbs" class="thumbs"></div>
-    </section>
+  <main id="productSection">
+    <p style="text-align:center;padding:2rem;color:#666">Cargando producto...</p>
+  </main>
 
-    <section>
-      <h1 id="pName" class="p-title">Producto</h1>
-      <div class="p-meta">
-        <span id="pSku">SKU —</span>
-        <span id="pColor">Color —</span>
-        <span class="badge-ok">En stock</span>
-      </div>
-      <div class="p-price" id="pPrice"></div>
+  <footer>
+    <div class="footer-inner">
+      <p>© <span id="year"></span> VALTIX — Envíos a toda Europa 🌍</p>
+    </div>
+  </footer>
 
-      <div id="colorWrap" class="options"></div>
-      <div id="sizeWrap" class="options"></div>
-      <button id="addBtn" class="btn" disabled>Añadir al carrito</button>
-
-      <div class="box">
-        <h3>Características</h3>
-        <ul>
-          <li>Streetwear premium VALTIX fabricado bajo demanda con Printful.</li>
-          <li>Producción sostenible y materiales de alta calidad.</li>
-          <li>Colores y tallas verificados con stock actualizado.</li>
-        </ul>
-      </div>
-
-      <div class="box">
-        <h3>Talla y ajuste</h3>
-        <ul>
-          <li>Consulta la guía de tallas durante el checkout.</li>
-          <li>Si dudas entre dos tallas, te recomendamos la superior.</li>
-        </ul>
-      </div>
-
-      <div class="box">
-        <h3>Devoluciones y envíos</h3>
-        <ul>
-          <li>Producción: 2–5 días laborables.</li>
-          <li>Envío estándar UE: 3–7 días laborables.</li>
-          <li>Devoluciones: 30 días por defectos de fabricación o impresión.</li>
-        </ul>
-      </div>
-    </section>
-  </div>
-
-  <script src="./product.js?v=final"></script>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+  <script src="product.js"></script>
 </body>
 </html>
