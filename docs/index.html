@@ -1,45 +1,19 @@
-<!-- Quick View Modal -->
-<div id="qvBackdrop" class="drawer-backdrop"></div>
-<div id="qvModal" class="qv-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Vista rápida de producto">
-  <div class="qv-content">
-    <button id="qvClose" class="qv-close" aria-label="Cerrar vista rápida">✕</button>
-
-    <div class="qv-scroll">
-      <div class="qv-grid">
-        <img id="qvImg" class="qv-img" alt="Producto" loading="eager" decoding="async">
-        <div>
-          <h3 id="qvName" class="card-title"></h3>
-          <div id="qvPrice" class="card-price" style="font-size:1.1rem;"></div>
-          <div id="qvColors" class="options color-selector" role="group" aria-label="Colores"></div>
-          <div id="qvSizes" class="options" role="group" aria-label="Tallas"></div>
-        </div>
-      </div>
-      <!-- Espaciador para que el contenido no quede detrás del footer -->
-      <div style="height: 12px;"></div>
-    </div>
-
-    <!-- Footer fijo dentro del modal -->
-    <div class="qv-footer">
-      <button id="qvAdd" class="btn" disabled style="width:100%">Añadir al carrito</button>
-      <button id="qvShare" class="btn btn-alt" type="button" style="width:100%">Compartir</button>
-    </div>
-  </div>
-</div><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VALTIX | Estilo que evoluciona – Moda premium para cada día y cada momento</title>
-  <meta name="description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
+  <title>VALTIX | Estilo que evoluciona – Moda premium para cada día</title>
+  <meta name="description" content="VALTIX: camisetas, sudaderas, pantalones y accesorios con envío rápido y pago seguro. Elige color y talla con vista rápida y mockups por color." />
   <link rel="canonical" href="https://adrianrs928222.github.io/VALTIXSHOP/" />
-  <meta property="og:title" content="VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento" />
-  <meta property="og:description" content="Descubre VALTIX: moda premium, camisetas, sudaderas, pantalones, zapatos y accesorios que cuentan tu historia. Envío rápido y pago seguro con Stripe." />
-  <meta property="og:image" content="https://via.placeholder.com/1200x630" />
+  <meta property="og:title" content="VALTIX | Estilo que evoluciona" />
+  <meta property="og:description" content="Moda premium con selector de colores y tallas. Envío rápido y pago seguro." />
+  <meta property="og:image" content="https://adrianrs928222.github.io/VALTIXSHOP/assets/og-cover.jpg" />
   <meta property="og:url" content="https://adrianrs928222.github.io/VALTIXSHOP/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#000000" />
 
-  <!-- JSON-LD para breadcrumbs (lo actualiza app.js) -->
+  <!-- JSON-LD Breadcrumbs -->
   <script id="breadcrumbs-jsonld" type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
     {"@type":"ListItem","position":1,"name":"Inicio","item":"https://adrianrs928222.github.io/VALTIXSHOP/"}
@@ -51,10 +25,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
 </head>
-
 <body>
-  <div class="envio-bar">🚚 Envíos gratis en pedidos superiores a 60€</div>
+  <!-- Barra aviso -->
+  <div class="envio-bar">🚚 Envío gratis en pedidos superiores a 60€</div>
 
+  <!-- Header -->
   <header class="header">
     <div class="container header-inner">
       <a class="brand" href="./" aria-label="Inicio VALTIX">
@@ -71,89 +46,79 @@
         <a href="#c/accesorios">Accesorios</a>
       </nav>
 
-      <button id="openCart" class="cart-btn" aria-haspopup="dialog">
+      <button id="openCart" class="cart-btn" aria-label="Abrir carrito">
         Carrito <span id="cartCount" class="cart-count">0</span>
       </button>
     </div>
   </header>
 
+  <!-- Hero -->
   <section class="hero">
     <div class="container hero-inner">
       <div>
-        <h1>VALTIX | Tu look, tu historia – Moda premium para cada día y cada momento</h1>
-        <h2 class="sub">Camisetas, sudaderas, pantalones, zapatos y accesorios para cada día. Envíos 2–5 días (ES) e internacionales.</h2>
+        <h1>VALTIX — Tu look, tu historia</h1>
+        <p class="sub">Camisetas, sudaderas y más. Selector de colores con mockups reales por color. Pago seguro y envíos rápidos.</p>
         <a class="cta" href="#catalogo" id="goCatalog">Ver catálogo</a>
       </div>
       <div class="hero-img" role="region" aria-label="Mensaje destacado">
-        <div class="promo-box" id="promoBox"><span class="promo-text"></span></div>
+        <div class="promo-box" id="promoBox"><span class="promo-text">🚚 Envíos a toda Europa en pedidos superiores a 60€</span></div>
       </div>
     </div>
   </section>
 
-  <main class="main">
-    <section class="section" id="catalogo" aria-labelledby="catalogo-title">
-      <div class="container">
-        <h3 id="catalogo-title" class="visualmente-oculto">Catálogo</h3>
-        <div id="grid" class="grid"></div>
-      </div>
-    </section>
+  <!-- Catálogo -->
+  <main class="main" id="catalogo">
+    <div class="container section">
+      <h2 class="visualmente-oculto">Catálogo</h2>
+      <div id="grid" class="grid"></div>
+    </div>
   </main>
 
+  <!-- Footer -->
   <footer class="footer">
     <div class="container footer-inner">
       <div>© <span id="year"></span> VALTIX</div>
       <nav class="legal-links" aria-label="Información legal">
         <a href="#info/aviso-legal">Aviso legal</a>
         <a href="#info/politica-compras">Política de compras</a>
-        <a href="#info/privacidad">Política de privacidad</a>
+        <a href="#info/privacidad">Privacidad</a>
       </nav>
     </div>
   </footer>
 
-  <!-- Drawer Carrito -->
-  <div class="drawer-backdrop" id="drawerBackdrop"></div>
-  <aside id="cartDrawer" class="drawer" aria-hidden="true" aria-label="Carrito de compra">
+  <!-- ===== Quick View (Vista rápida) ===== -->
+  <div class="drawer-backdrop" id="qvBackdrop"></div>
+  <aside id="qvModal" class="drawer" aria-hidden="true" aria-label="Vista rápida">
     <div class="drawer-header">
-      <h3>Tu carrito</h3>
-      <button id="closeCart" aria-label="Cerrar carrito">✕</button>
+      <h3 id="qvName">Producto</h3>
+      <button id="qvClose" aria-label="Cerrar">✕</button>
     </div>
-    <div id="cartItems" class="drawer-body"></div>
-    <div class="drawer-footer">
-      <div class="subtotal"><span>Subtotal</span><strong id="subtotal">0,00 €</strong></div>
-      <button id="clearCart" class="btn btn-alt">Vaciar carrito</button>
-      <button id="checkoutBtn" class="btn">Pagar</button>
+    <div class="drawer-body">
+      <img id="qvImg" alt="Mockup" style="width:100%;border-radius:12px;margin-bottom:12px" loading="lazy" decoding="async">
+      <div id="qvPrice" class="card-price" style="font-size:1.1rem;margin-bottom:10px;"></div>
+      <div class="options color-selector" id="qvColors" role="group" aria-label="Colores"></div>
+      <div class="options" id="qvSizes" role="group" aria-label="Tallas"></div>
+      <div class="grid-2" style="margin-top:8px">
+        <button id="qvAdd" class="btn" disabled>Añadir al carrito</button>
+        <button id="qvShare" class="btn btn-alt" type="button">Compartir</button>
+      </div>
     </div>
   </aside>
 
-  <!-- Quick View Modal -->
-<div id="qvBackdrop" class="drawer-backdrop"></div>
-<div id="qvModal" class="qv-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Vista rápida de producto">
-  <div class="qv-content">
-    <button id="qvClose" class="qv-close" aria-label="Cerrar vista rápida">✕</button>
+  <!-- Script: menú móvil mínimo -->
+  <script>
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const nav = document.getElementById('main-nav');
+      const t   = document.getElementById('menu-toggle');
+      function closeMenu(){ nav?.classList.remove('show'); document.body.classList.remove('nav-open'); }
+      t?.addEventListener('click', ()=>{ nav.classList.toggle('show'); document.body.classList.toggle('nav-open', nav.classList.contains('show')); });
+      document.querySelectorAll('#main-nav a').forEach(a=>a.addEventListener('click', closeMenu));
+      window.addEventListener('scroll', closeMenu);
+      const y=document.getElementById('year'); if(y) y.textContent = new Date().getFullYear();
+    });
+  </script>
 
-    <div class="qv-scroll">
-      <div class="qv-grid">
-        <img id="qvImg" class="qv-img" alt="Producto" loading="eager" decoding="async">
-        <div>
-          <h3 id="qvName" class="card-title"></h3>
-          <div id="qvPrice" class="card-price" style="font-size:1.1rem;"></div>
-          <div id="qvColors" class="options color-selector" role="group" aria-label="Colores"></div>
-          <div id="qvSizes" class="options" role="group" aria-label="Tallas"></div>
-        </div>
-      </div>
-      <!-- Espaciador para que el contenido no quede detrás del footer -->
-      <div style="height: 12px;"></div>
-    </div>
-
-    <!-- Footer fijo dentro del modal -->
-    <div class="qv-footer">
-      <button id="qvAdd" class="btn" disabled style="width:100%">Añadir al carrito</button>
-      <button id="qvShare" class="btn btn-alt" type="button" style="width:100%">Compartir</button>
-    </div>
-  </div>
-</div>
-
-  <!-- Scripts -->
-  <script src="./app.js?v=hex1" defer></script>
+  <!-- App principal -->
+  <script src="./app.js?v=pro3"></script>
 </body>
 </html>
