@@ -1,3 +1,4 @@
+// router.js
 import express from "express";
 import fetch from "node-fetch";
 
@@ -9,14 +10,19 @@ const PF_HEADERS = {
   "Content-Type": "application/json",
 };
 
-/* ---------- Caché ---------- */
+/* =======================
+   Caché simple en memoria
+======================= */
 let productCache = { time: 0, data: [] };
 const PRODUCT_CACHE_TTL = 60 * 60 * 1000; // 1h
 
-/* ---------- Helpers ---------- */
+/* =======================
+   Helpers Printful
+======================= */
 async function pfGet(path) {
   const res = await fetch(`${PRINTFUL_API}${path}`, { headers: PF_HEADERS });
-  let json = null; try { json = await res.json(); } catch {}
+  let json = null;
+  try { json = await res.json(); } catch {}
   if (!res.ok) {
     const msg = json?.error || json || (await res.text().catch(()=>"" ));
     throw new Error(`Printful GET ${path} -> ${res.status} ${JSON.stringify(msg)}`);
@@ -39,18 +45,19 @@ async function fetchAllSyncedProducts() {
 }
 
 function detectCategories(name=""){
-  const n = name.toLowerCase();
+  const n = String(name||"").toLowerCase();
   if (/(tee|t-shirt|camiseta)/i.test(n)) return ["camisetas"];
-  if (/(hoodie|sudadera)/i.test(n)) return ["sudaderas"];
+  if (/(hoodie|sudadera|sweatshirt)/i.test(n)) return ["sudaderas"];
   if (/(pant|pantal[oó]n|leggings|jogger)/i.test(n)) return ["pantalones"];
   if (/(shoe|sneaker|zapatilla|bota)/i.test(n)) return ["zapatos"];
-  if (/(cap|gorra|beanie|gorro)/i.test(n)) return ["accesorios"];
+  if (/(cap|gorra|beanie|gorro|bag|tote)/i.test(n)) return ["accesorios"];
   return ["otros"];
 }
 
-/* ---------- Color → HEX ---------- */
+function toTitle(s=""){ return s.trim().toLowerCase().replace(/\s+/g," ").replace(/\b\w/g,c=>c.toUpperCase()); }
+
 function colorHexFromName(name=""){
-  const k = String(name).trim().toLowerCase().replace(/\s+/g," ");
+  const k = String(name).trim().toLowerCase();
   const map = {
     black:"#000000","black heather":"#1f1f1f","charcoal":"#36454f","dark gray":"#555555",
     gray:"#808080","athletic heather":"#a7a7a7","silver":"#c0c0c0","ash":"#b2b2b2",
@@ -70,104 +77,96 @@ function colorHexFromName(name=""){
   return map[k] || null;
 }
 
-/* ---------- Normalizador: COLORES + MOCKUP por color + TALLAS ---------- */
+// Mejor imagen a partir de files
+function bestImageFromFiles(files=[]){
+  const findType = (t)=> files.find(f => String(f?.type||"").toLowerCase()===t && (f.preview_url||f.thumbnail_url||f.url));
+  const byPreview = findType("preview");
+  const byMockup  = findType("mockup");
+  const byDefault = findType("default");
+  const anyPrev   = files.find(f=>f.preview_url);
+  const anyThumb  = files.find(f=>f.thumbnail_url);
+  const anyUrl    = files.find(f=>f.url);
+  return (
+    byPreview?.preview_url ||
+    byMockup?.preview_url ||
+    byDefault?.preview_url ||
+    anyPrev?.preview_url ||
+    anyThumb?.thumbnail_url ||
+    anyUrl?.url ||
+    null
+  );
+}
+
+/* =======================
+   Normalizador: COLORES + IMÁGENES + TALLAS
+======================= */
 function normalizeProduct(detail){
   const sp = detail?.result?.sync_product;
   const variants = detail?.result?.sync_variants || [];
+  if (!sp) return null;
 
-  // precio base
-  const prices = variants.map(v=>parseFloat(v.retail_price)).filter(n=>!Number.isNaN(n));
-  const price = prices.length ? Math.min(...prices) : 0;
-
-  const cap = s => String(s||"").toLowerCase().replace(/\s+/g," ").replace(/\b\w/g,c=>c.toUpperCase());
-  const colors = {}; // {ColorName:{hex,image,sizes:{size:variantId}}}
-
-  // Mejor imagen desde files de la variante
-  const bestImageFromFiles = (files=[])=>{
-    const low = (x)=>String(x||"").toLowerCase();
-    const has = (t)=> files.find(f => low(f?.type)===(t) && (f.preview_url||f.thumbnail_url||f.url));
-    const byPreview = has("preview");
-    const byMockup  = has("mockup");
-    const byDefault = has("default");
-    const anyPrev   = files.find(f=>f.preview_url);
-    const anyThumb  = files.find(f=>f.thumbnail_url);
-    const anyUrl    = files.find(f=>f.url);
-    return (
-      byPreview?.preview_url ||
-      byMockup?.preview_url ||
-      byDefault?.preview_url ||
-      anyPrev?.preview_url ||
-      anyThumb?.thumbnail_url ||
-      anyUrl?.url ||
-      null
-    );
-  };
+  const colors = {}; // { ColorName: { hex, image, images[], sizes:{size:variantId} } }
+  const prices = [];
 
   for (const v of variants){
-    const product = v?.product || {};
-    const raw = String(v?.name || "").trim();
+    const prod = v?.product || {};
+    const rawName = String(v?.name || "");
 
-    // --- COLOR ---
-    let colorName = product.color_name || product.color || "";
-    if (!colorName && raw.includes("/")) colorName = raw.split("/")[0].split("-").pop().trim();
-    if (!colorName && raw.includes("-")) colorName = raw.split("-").pop().trim();
+    // Detectar color
+    let colorName = prod.color_name || prod.color || "";
+    if (!colorName && rawName.includes("/")) colorName = rawName.split("/")[0].trim();
+    if (!colorName && rawName.includes("-")) colorName = rawName.split("-")[0].trim();
     if (!colorName) colorName = "Color Único";
-    colorName = cap(colorName);
+    colorName = toTitle(colorName);
 
-    // --- HEX ---
-    let hex = product.hex_code || v?.color_code || v?.color_hex || null;
-    if (hex && /^#?[0-9A-Fa-f]{3,6}$/.test(hex)) hex = hex.startsWith("#") ? hex : `#${hex}`;
-    if (!hex) hex = colorHexFromName(colorName);
+    // Detectar talla
+    let size = prod.size || "";
+    if (!size && rawName.includes("/")) size = rawName.split("/").pop().trim();
+    if (!size) size = "Único";
 
-    // --- TALLA ---
-    let size = product.size || "";
-    if (!size && raw.includes("/")) size = raw.split("/").pop().trim();
-    if (!size) size = `VAR_${v.variant_id}`;
+    // Imagen por variante → imagen por color
+    const img = bestImageFromFiles(v?.files||[]) || prod.image || sp?.thumbnail_url || null;
 
-    // --- IMAGEN por COLOR (desde variante) ---
-    const imgFromFiles = bestImageFromFiles(v?.files||[]);
-    const fallbackImg = product.image || sp?.thumbnail_url || null;
-    const candidateImg = imgFromFiles || fallbackImg;
+    const hex = (prod.hex_code && `#${String(prod.hex_code).replace(/^#/,"")}`) || colorHexFromName(colorName) || null;
 
-    if (!colors[colorName]) colors[colorName] = { hex, image: candidateImg, sizes:{} };
-    if (!colors[colorName].image && candidateImg) colors[colorName].image = candidateImg;
-
+    if (!colors[colorName]) colors[colorName] = { hex, image: img, images: [], sizes:{} };
+    if (!colors[colorName].image && img) colors[colorName].image = img;
+    if (img) colors[colorName].images.push(img);
     colors[colorName].sizes[size] = v.variant_id;
+
+    const rp = parseFloat(v.retail_price);
+    if (!Number.isNaN(rp)) prices.push(rp);
   }
 
-  // Fallback de imagen si alguna entrada quedó vacía
-  const firstImg = Object.values(colors).find(c => !!c.image)?.image || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
-  Object.values(colors).forEach(c => { if (!c.image) c.image = firstImg; });
+  // Fallback imagen
+  const firstImg = Object.values(colors).find(c=>!!c.image)?.image || sp?.thumbnail_url || "https://i.postimg.cc/k5ZGwR5W/producto1.png";
+  Object.values(colors).forEach(c=>{ if(!c.image) c.image = firstImg; });
 
-  const firstColor = Object.keys(colors)[0];
-  const cover =
-    (firstColor && colors[firstColor]?.image) ||
-    sp?.thumbnail_url ||
-    "https://i.postimg.cc/k5ZGwR5W/producto1.png";
-
-  const variant_map = firstColor ? { ...colors[firstColor].sizes } : {};
+  const price = prices.length ? Math.min(...prices) : 0;
 
   // Slug compartible estable
-  const slug =
-    String(sp?.name || `pf-${sp?.id||""}`)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g,"-")
-      .replace(/(^-|-$)/g,"") + "-" + String(sp?.id||sp?.external_id||Date.now());
+  const slug = `${String(sp?.name||"producto").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}-${sp?.id||Date.now()}`;
+
+  // Variante inicial (primer color)
+  const firstColor = Object.keys(colors)[0];
+  const variant_map = firstColor ? { ...colors[firstColor].sizes } : {};
 
   return {
-    id: String(sp?.id || sp?.external_id || `pf_${Date.now()}`),
+    id: String(sp?.id || ""),
     name: sp?.name || "Producto Printful",
     price: Number(price.toFixed(2)),
-    image: cover,
+    image: firstImg,
     sku: sp?.external_id || String(sp?.id || ""),
     categories: detectCategories(sp?.name || ""),
-    colors,       // { "Navy": {hex:"#001f3f", image:"...", sizes:{S:123,...}} , ... }
+    colors,        // { "Agave": { hex, image, images[], sizes:{S:123,...} }, ... }
     variant_map,
     slug
   };
 }
 
-/* ---------- Endpoints ---------- */
+/* =======================
+   Endpoints
+======================= */
 router.get("/api/printful/products", async (req,res)=>{
   try{
     if (!process.env.PRINTFUL_API_KEY) {
@@ -188,7 +187,7 @@ router.get("/api/printful/products", async (req,res)=>{
     }
 
     const details = await Promise.all(list.map(p=>pfGet(`/store/products/${p.id}`)));
-    const products = details.map(normalizeProduct);
+    const products = details.map(normalizeProduct).filter(Boolean);
 
     productCache = { time: now, data: products };
     res.json({ products, cached:false, refreshed:force });
