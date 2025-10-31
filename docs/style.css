@@ -455,3 +455,5 @@ body.nav-open { overflow: hidden; }
 @media (max-width: 520px) {
   .qv-footer { grid-template-columns: 1fr; }
 }
+.card-img, #qvImg { transition: opacity .18s ease; }
+.img-fade { opacity: .15; }
