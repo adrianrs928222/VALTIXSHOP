@@ -19,28 +19,30 @@ function setYear(){ const y=$("#year"); if (y) y.textContent = new Date().getFul
 function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
 function subtotal(){ return cart.reduce((s,i)=> s + (Number(i.price)*i.qty), 0); }
 
-function getHashSlug(){
-  const h = location.hash || "";
-  if (h.startsWith("#p/")) return decodeURIComponent(h.slice(3)); // #p/<slug>
-  return null;
-}
-function setHashSlug(slug){
-  if (!slug) return;
-  const target = `#p/${encodeURIComponent(slug)}`;
-  if (location.hash !== target) location.hash = target;
+// Deep link
+function getHashSlug(){ const h=location.hash||""; return h.startsWith("#p/") ? decodeURIComponent(h.slice(3)) : null; }
+function setHashSlug(slug){ if (!slug) return; const t=`#p/${encodeURIComponent(slug)}`; if (location.hash!==t) location.hash=t; }
+
+// Fade al cambiar imagen
+function swapImg(el, src){
+  if (!el) return;
+  el.classList.add("img-fade");
+  const i = new Image();
+  i.onload = ()=>{ el.src = src; el.classList.remove("img-fade"); };
+  i.src = src;
 }
 
-// ===== Promo adaptativa
+// Promo adaptativa
 function setPromoText(){
   const box=$("#promoBox"); const textEl=box?.querySelector(".promo-text"); if(!box||!textEl) return;
-  const msgsMobile=["🚚 Envíos a toda Europa en pedidos > 60€"];
-  const msgsDesktop=["🚚 Envíos a toda Europa en pedidos > 60€","📦 Entrega estimada 2–7 días en Europa"];
-  const msgs = (window.innerWidth <= 520) ? msgsMobile : msgsDesktop;
+  const msgs = (window.innerWidth <= 520)
+    ? ["🚚 Envíos a toda Europa en pedidos > 60€"]
+    : ["🚚 Envíos a toda Europa en pedidos > 60€","📦 Entrega estimada 2–7 días en Europa"];
   let i=0; const show=()=>{ textEl.textContent=msgs[i]; i=(i+1)%msgs.length; };
   show(); setInterval(show,7000);
 }
 
-// ===== Breadcrumbs JSON-LD
+// Breadcrumbs
 function updateBreadcrumbsSchema(){
   const el = $("#breadcrumbs-jsonld"); if(!el) return;
   const base = {
@@ -58,7 +60,7 @@ function updateBreadcrumbsSchema(){
   el.textContent = JSON.stringify(base);
 }
 
-// ===== Disponibilidad (sondeo backend)
+// Disponibilidad (backend)
 async function fetchAvailability(variantIds){
   if (!variantIds.length) return {};
   try{
@@ -70,10 +72,10 @@ async function fetchAvailability(variantIds){
     const data = await res.json();
     if (data?.ok && data.availability) return data.availability;
   }catch(e){ console.error("❌ availability:", e); }
-  const out={}; variantIds.forEach(v=>out[v]=null); return out;
+  const out={}; variantIds.forEach(v=>out[v]=null); return out; // null = desconocido (no ocultar)
 }
 
-// ===== Datos
+// Datos
 async function loadProducts(){
   const grid = $("#grid");
   try{
@@ -85,7 +87,7 @@ async function loadProducts(){
       grid.innerHTML = `<p style="color:#777">No hay productos añadidos en Printful o falta la API key.</p>`;
       return;
     }
-    // Variante → disponibilidad
+    // Variantes → disponibilidad
     const allVariantIds = [];
     products.forEach(p=>{
       Object.values(p.colors||{}).forEach(c=>{
@@ -94,9 +96,10 @@ async function loadProducts(){
     });
     const unique = [...new Set(allVariantIds)];
     availability = await fetchAvailability(unique);
+
     renderProducts();
 
-    // Si hay slug en hash, abrir Quick View directo
+    // Abrir QV si hay slug en el hash
     const slug = getHashSlug();
     if (slug) openProductBySlug(slug);
   }catch(e){
@@ -105,7 +108,7 @@ async function loadProducts(){
   }
 }
 
-// ===== Carrito
+// Carrito
 function addToCart(item){
   const idx = cart.findIndex(i=>i.sku===item.sku && i.variant_id===item.variant_id);
   if (idx>=0) cart[idx].qty += 1; else cart.push({ ...item, qty:1 });
@@ -150,11 +153,11 @@ function renderCart(){
   $("#subtotal").textContent = money(subtotal());
 }
 
-// ===== Drawer
+// Drawer
 function openCart(){ $("#drawerBackdrop").classList.add("show"); $("#cartDrawer").classList.add("open"); $("#cartDrawer").setAttribute("aria-hidden","false"); renderCart(); }
 function closeCart(){ $("#drawerBackdrop").classList.remove("show"); $("#cartDrawer").classList.remove("open"); $("#cartDrawer").setAttribute("aria-hidden","true"); }
 
-// ===== Checkout
+// Checkout
 async function goCheckout(){
   if(!cart.length) return alert("Tu carrito está vacío.");
   const items = cart.map(i=>({ variant_id:i.variant_id, quantity:i.qty, sku:i.sku, name:i.name, price:Number(i.price) }));
@@ -168,29 +171,27 @@ async function goCheckout(){
   }catch(e){ console.error(e); alert("Error de conexión con el servidor."); }
 }
 
-// ===== Quick View (estado y helpers)
+// Quick View
 let QV = { product: null, selectedColor: null, selectedSize: null };
 function openQV(){ $("#qvBackdrop").classList.add("show"); $("#qvModal").classList.add("open"); $("#qvModal").setAttribute("aria-hidden","false"); }
 function closeQV(){ $("#qvBackdrop").classList.remove("show"); $("#qvModal").classList.remove("open"); $("#qvModal").setAttribute("aria-hidden","true"); QV={product:null,selectedColor:null,selectedSize:null}; }
 
-// Deep Link → abrir por slug
 function openProductBySlug(slug){
   const p = products.find(x => x.slug === slug);
-  if (!p) return; // slug inválido
+  if (!p) return;
   buildAndOpenQV(p);
 }
 
-// Copiar enlace
 async function copyShareURL(slug){
+  const url = `${location.origin}${location.pathname}#p/${encodeURIComponent(slug)}`;
   try{
-    const url = `${location.origin}${location.pathname}#p/${encodeURIComponent(slug)}`;
     await navigator.clipboard.writeText(url);
     const btn = $("#qvShare");
     if (btn){ btn.textContent = "¡Enlace copiado!"; setTimeout(()=>btn.textContent="Compartir", 1400); }
   }catch{ alert("No se pudo copiar el enlace"); }
 }
 
-// ===== Render catálogo
+// Render catálogo
 function renderProducts(){
   const grid=$("#grid"); if(!grid) return;
   grid.innerHTML="";
@@ -204,33 +205,16 @@ function renderProducts(){
   const list=(cat==="all") ? products : products.filter(p=>Array.isArray(p.categories)&&p.categories.includes(cat));
 
   list.forEach(p=>{
-    // Filtrar colores sin stock
-    const colorEntries = Object.entries(p.colors||{});
-    const filteredColors = colorEntries
-      .map(([name,meta])=>{
-        const sizeEntries = Object.entries(meta.sizes||{});
-        const hasAvail = sizeEntries.some(([,vid])=>{
-          const a = availability[String(vid)];
-          return a === true || a === null;
-        });
-        return hasAvail ? [name,meta] : null;
-      })
-      .filter(Boolean);
-
-    if (!filteredColors.length) return;
-
-    const colorsMap  = Object.fromEntries(filteredColors);
+    // NO filtramos por disponibilidad → mostrar TODOS los colores
+    const colorsMap  = Object.fromEntries(Object.entries(p.colors||{}));
     const colorNames = Object.keys(colorsMap);
-    let selectedColor = colorNames[0] || null;
+    if (!colorNames.length) return;
 
-    // primera talla disponible del color seleccionado
+    let selectedColor = colorNames[0];
     let selectedSize = (()=>{
       const sizes = Object.entries(colorsMap[selectedColor].sizes||{});
-      const firstAvail = sizes.find(([,vid])=>{
-        const a = availability[String(vid)];
-        return a === true || a === null;
-      });
-      return firstAvail ? firstAvail[0] : (sizes[0]?.[0] || null);
+      const first = sizes.find(([,vid])=> (availability[String(vid)]!==false));
+      return first ? first[0] : (sizes[0]?.[0] || null);
     })();
 
     const card=document.createElement("div");
@@ -248,22 +232,13 @@ function renderProducts(){
           ${colorNames.map((cn,idx)=>{
             const meta = colorsMap[cn];
             const sizeEntries = Object.entries(meta.sizes||{});
-            const anyAvail = sizeEntries.some(([,vid])=>{
-              const a = availability[String(vid)];
-              return a === true || a === null;
-            });
-            const disabled = anyAvail ? "" : "disabled";
-
-            // Mockup por color en el dot; fallback al HEX.
+            // deshabilitar SOLO si TODAS las tallas están explícitamente agotadas
+            const allOut = sizeEntries.length>0 && sizeEntries.every(([,vid])=> availability[String(vid)]===false);
+            const disabled = allOut ? "disabled" : "";
             const styleInline = meta?.image
               ? `background-image:url('${meta.image}'); background-size:cover; background-position:center;`
               : `background-color:${meta?.hex || "#ddd"};`;
-
-            return `
-              <button class="color-circle ${idx===0?"active":""}" ${disabled}
-                title="${cn}" data-color="${cn}"
-                style="${styleInline}"></button>
-            `;
+            return `<button class="color-circle ${idx===0?"active":""}" ${disabled} title="${cn}" data-color="${cn}" style="${styleInline}"></button>`;
           }).join("")}
         </div>
 
@@ -283,19 +258,16 @@ function renderProducts(){
       const sizeEntries = Object.entries(colorsMap[selectedColor].sizes||{});
       sizesWrap.innerHTML = sizeEntries.map(([sz,vid])=>{
         const a = availability[String(vid)];
-        const isAvail = (a === true || a === null);
+        const isAvail = (a !== false); // true o null => visible
         const active = (sz===selectedSize) && isAvail ? "active" : "";
         const disabledAttr = isAvail ? "" : "disabled";
-        return `<button class="option-btn ${active}" data-sz="${sz}" ${disabledAttr}>${sz}</button>`;
+        return `<button class="option-btn ${active}" data-sz="${sz}" ${disabledAttr} aria-disabled="${!isAvail}">${sz}</button>`;
       }).join("");
 
-      // si la seleccion actual está agotada, elige la primera disponible
+      // si la selección actual quedó agotada, elige la primera disponible
       const currentVid = colorsMap[selectedColor].sizes[selectedSize];
       if (availability[String(currentVid)] === false) {
-        const firstOk = Object.entries(colorsMap[selectedColor].sizes||{}).find(([,vid])=>{
-          const a = availability[String(vid)];
-          return a === true || a === null;
-        });
+        const firstOk = Object.entries(colorsMap[selectedColor].sizes||{}).find(([,vid])=> (availability[String(vid)]!==false));
         selectedSize = firstOk ? firstOk[0] : null;
       }
 
@@ -310,30 +282,27 @@ function renderProducts(){
     }
     renderSizes();
 
-    // Cambiar foto al elegir color (usa mockup por color)
+    // Cambiar foto al elegir color (con fade)
     card.querySelectorAll(".color-circle").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         if (btn.hasAttribute("disabled")) return;
         card.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         selectedColor = btn.dataset.color;
-        imgEl.src = colorsMap[selectedColor]?.image || p.image;
+        swapImg(imgEl, colorsMap[selectedColor]?.image || p.image);
 
         // seleccionar primera talla disponible del nuevo color
         const sizeEntries = Object.entries(colorsMap[selectedColor].sizes||{});
-        const firstOk = sizeEntries.find(([,vid])=>{
-          const a = availability[String(vid)];
-          return a === true || a === null;
-        });
+        const firstOk = sizeEntries.find(([,vid])=> (availability[String(vid)]!==false));
         selectedSize = firstOk ? firstOk[0] : (sizeEntries[0]?.[0] || null);
 
         renderSizes();
       });
     });
 
-    // Abrir Vista Rápida
-    card.querySelector(".card-img-wrap").addEventListener("click", (e)=>{ e.preventDefault(); buildAndOpenQV(p); });
-    card.querySelector(".card-title").addEventListener("click", (e)=>{ e.preventDefault(); buildAndOpenQV(p); });
+    // Vista rápida en imagen o título
+    card.querySelector(".card-img-wrap").addEventListener("click",(e)=>{ e.preventDefault(); buildAndOpenQV(p); });
+    card.querySelector(".card-title").addEventListener("click",(e)=>{ e.preventDefault(); buildAndOpenQV(p); });
     card.querySelector(".qv-btn")?.addEventListener("click", ()=> buildAndOpenQV(p));
 
     // Compartir
@@ -349,7 +318,7 @@ function renderProducts(){
   updateBreadcrumbsSchema();
 }
 
-// Construir y abrir QV para un producto dado
+// Quick View
 function buildAndOpenQV(p){
   setHashSlug(p.slug);
 
@@ -359,7 +328,7 @@ function buildAndOpenQV(p){
   QV.selectedColor = colorNames[0] || null;
 
   const entries0 = Object.entries(colorsMap[QV.selectedColor]?.sizes||{});
-  const firstOk0 = entries0.find(([,vid])=> (availability[String(vid)]===true || availability[String(vid)]===null));
+  const firstOk0 = entries0.find(([,vid])=> (availability[String(vid)]!==false));
   QV.selectedSize  = firstOk0 ? firstOk0[0] : (entries0[0]?.[0] || null);
 
   $("#qvName").textContent = p.name;
@@ -367,14 +336,11 @@ function buildAndOpenQV(p){
   $("#qvImg").src = colorsMap[QV.selectedColor]?.image || p.image;
   $("#qvImg").alt = p.name;
 
-  // Colores con mockup en los dots
   const qvColors = $("#qvColors");
   qvColors.innerHTML = Object.entries(colorsMap).map(([cn,meta])=>{
-    const anyAvail = Object.values(meta.sizes||{}).some(vid=>{
-      const a = availability[String(vid)];
-      return a===true || a===null;
-    });
-    if(!anyAvail) return "";
+    const sizeEntries = Object.entries(meta.sizes||{});
+    const allOut = sizeEntries.length>0 && sizeEntries.every(([,vid])=> availability[String(vid)]===false);
+    if (allOut) return ""; // si todas tallas out, no pintamos el color en QV
     const active = (cn===QV.selectedColor) ? "active":"";
     const styleInline = meta?.image
       ? `background-image:url('${meta.image}'); background-size:cover; background-position:center;`
@@ -387,9 +353,9 @@ function buildAndOpenQV(p){
       qvColors.querySelectorAll(".color-circle").forEach(b=>b.classList.remove("active"));
       btn.classList.add("active");
       QV.selectedColor = btn.dataset.color;
-      $("#qvImg").src = colorsMap[QV.selectedColor]?.image || p.image;
+      swapImg($("#qvImg"), colorsMap[QV.selectedColor]?.image || p.image);
       const entries = Object.entries(colorsMap[QV.selectedColor].sizes||{});
-      const firstOk = entries.find(([,vid])=> (availability[String(vid)]===true || availability[String(vid)]===null));
+      const firstOk = entries.find(([,vid])=> (availability[String(vid)]!==false));
       QV.selectedSize = firstOk ? firstOk[0] : (entries[0]?.[0] || null);
       renderQVSizes();
       updateQVCTA();
@@ -400,10 +366,10 @@ function buildAndOpenQV(p){
     const entries = Object.entries(colorsMap[QV.selectedColor].sizes||{});
     $("#qvSizes").innerHTML = entries.map(([sz,vid])=>{
       const a = availability[String(vid)];
-      const isAvail = (a===true || a===null);
+      const isAvail = (a !== false);
       const disabledAttr = isAvail ? "" : "disabled";
       const active = (sz===QV.selectedSize && isAvail) ? "active" : "";
-      return `<button class="option-btn ${active}" data-sz="${sz}" ${disabledAttr}>${sz}</button>`;
+      return `<button class="option-btn ${active}" data-sz="${sz}" ${disabledAttr} aria-disabled="${!isAvail}">${sz}</button>`;
     }).join("");
     $("#qvSizes").querySelectorAll(".option-btn").forEach(btn=>{
       btn.addEventListener("click", ()=>{
@@ -443,7 +409,7 @@ function buildAndOpenQV(p){
   openQV();
 }
 
-// ===== Menú activo
+// Menú activo
 function updateActiveNavLink(){
   const cat = getActiveCategory();
   $$("#main-nav a").forEach(a=>{
@@ -453,8 +419,12 @@ function updateActiveNavLink(){
   });
 }
 
-// ===== Init
+// Init
 document.addEventListener("DOMContentLoaded", async ()=>{
+  setYear();
+  setPromoText();
+
+  // Toggle menú móvil accesible
   const mt = document.getElementById("menu-toggle");
   const nav = document.getElementById("main-nav");
   if (mt && nav) {
@@ -466,9 +436,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     $$("#main-nav a").forEach(a=>a.addEventListener('click', ()=>nav.classList.remove('show')));
     window.addEventListener('scroll', ()=>nav.classList.remove('show'));
   }
-
-  setYear();
-  setPromoText();
 
   // Quick View bindings globales
   $("#qvBackdrop")?.addEventListener("click", ()=>{
@@ -490,7 +457,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   $("#clearCart")?.addEventListener("click", clearCart);
   $("#checkoutBtn")?.addEventListener("click", goCheckout);
 
-  // Deep link / navegación con hash
   window.addEventListener("hashchange", ()=>{
     const slug = getHashSlug();
     if (slug) openProductBySlug(slug);
